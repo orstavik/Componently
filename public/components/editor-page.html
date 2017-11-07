@@ -1,0 +1,36 @@
+<dom-module id="editor-page">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+
+    <p>editor page</p>
+
+  </template>
+  <script>
+    class EditorPage extends IntertextMixin(Polymer.Element) {
+      static get is() {
+        return 'editor-page';
+      }
+
+      static get properties() {
+        return {
+          projectId: String
+        }
+      }
+
+      static get observers() {
+        return [
+          '_projectChange(projectId)'
+        ]
+      }
+
+      _projectChange(id) {
+        this.$emit('controller-get-project', id);
+      }
+    }
+    customElements.define(EditorPage.is, EditorPage);
+  </script>
+</dom-module>

@@ -1,0 +1,116 @@
+<script src="../utils/Tools.js"></script>
+
+<dom-module id="app-state">
+  <script>
+    class AppState extends IntertextMixin(Polymer.Element) {
+      static get is() {
+        return "app-state";
+      }
+
+      static get properties() {
+        return {
+          state: {
+            type: Object,
+            notify: true,
+            value: () => ({})
+          },
+          initial: {
+            type: Object,
+            value: () => ({
+              session: {},
+              persistent: {
+                user: null,
+                projects: []
+              }
+            })
+          },
+          history: {
+            type: Array,
+            value: () => []
+          },
+          _frozen: {
+            type: Boolean,
+            value: true
+          }
+        }
+      }
+
+      _snap(action) {
+        console.log(action, performance.now());
+        const snap = {
+          action: action,
+          snapshot: this.state,
+          timestamp: new Date().getTime(),
+          apptime: performance.now()
+        };
+        this.set('history', [snap].concat(this.history));
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+
+        window.addEventListener('state-change-route', this._changeRoute.bind(this));
+        window.addEventListener('app-connected', this._appConnected.bind(this));
+        window.addEventListener('state-user-in', this._userIn.bind(this));
+        window.addEventListener('state-user-out', this._userOut.bind(this));
+        window.addEventListener('state-user-projects', this._userProjects.bind(this));
+      }
+
+      _update(persistent, session, action) {
+        this.set('state', {
+          session: session,
+          persistent: persistent
+        });
+        this._snap(action);
+        if (persistent)
+          this._store(persistent);
+      }
+
+      _store(state) {
+        localStorage.setItem('state', JSON.stringify(state));
+      }
+
+      _getStored() {
+        return JSON.parse(localStorage.getItem('state'));
+      }
+
+      _changeRoute(e) {
+        const route = e.detail;
+        const session = Tools.setIn(this.state.session, ['route'], route, this._frozen);
+        this._update(this.state.persistent, session, e.type);
+      }
+
+      _appConnected(e) {
+        let persistent = this.state.persistent;
+        if (!persistent) {
+          const stored = this._getStored();
+          if (stored) {
+            persistent = Tools.deepFreeze(Object.assign(stored));
+          } else {
+            persistent = Tools.deepFreeze(Object.assign(this.initial.persistent))
+          }
+        }
+        const session = Tools.mergeDeepWithNullToDelete(this.state.session, this.initial.session, this._frozen);
+        this._update(persistent, session, e.type);
+      }
+
+      _userIn(e) {
+        const user = e.detail;
+        const persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
+        this._update(persistent, this.state.session, e.type);
+      }
+
+      _userOut(e) {
+        const persistent = Tools.setIn(this.state.persistent, ['user'], null, this._frozen);
+        this._update(persistent, this.state.session, e.type);
+      }
+
+      _userProjects(e) {
+        const projects = e.detail;
+        const persistent = Tools.setIn(this.state.persistent, ['projects'], projects, this._frozen);
+        this._update(persistent, this.state.session, e.type);
+      }
+    }
+    customElements.define(AppState.is, AppState);
+  </script>
+</dom-module>

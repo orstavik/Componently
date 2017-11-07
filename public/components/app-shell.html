@@ -1,0 +1,54 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="app-router.html">
+<link rel="import" href="app-state.html">
+<link rel="import" href="app-controller.html">
+<link rel="import" href="app-pages.html">
+
+<dom-module id="app-shell">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+      app-pages {
+        display: 
+      }
+    </style>
+
+    <app-state state="{{state}}"></app-state>
+    <app-controller user="[[state.persistent.user]]"></app-controller>
+    <app-router></app-router>
+
+    <a href="/user">user page</a>
+    <a href="/editor">editor page</a>
+    <app-pages page="[[state.session.route.segments.0]]">
+      <user-page page="user"
+                 user="[[state.persistent.user]]"
+                 projects="[[state.persistent.projects]]">
+      </user-page>
+      <editor-page page="editor" project-id="[[state.session.route.segments.1]]"></editor-page>
+      <notfound-page page="notfound"></notfound-page>
+    </app-pages>
+
+  </template>
+  <script>
+    class AppShell extends IntertextMixin(Polymer.Element) {
+      static get is() {
+        return 'app-shell';
+      }
+
+      static get properties() {
+        return {
+          state: Object
+        }
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        this.$emit('app-connected');
+        this.$emit('controller-check-user');
+      }
+    }
+    customElements.define(AppShell.is, AppShell);
+  </script>
+</dom-module>

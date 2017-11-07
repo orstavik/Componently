@@ -1,0 +1,51 @@
+<link rel="import" href="../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="../bower_components/lazy-imports/lazy-imports-mixin.html">
+
+<dom-module id="app-pages">
+  <link rel="lazy-import" href="user-page.html" group="user">
+  <link rel="lazy-import" href="editor-page.html" group="editor">
+  <link rel="lazy-import" href="notfound-page.html" group="notfound">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+
+    <iron-pages id="pages" selected="[[page]]" fallback-selection="notfound"
+                attr-for-selected="page" selected-attribute="current">
+      <slot></slot>
+    </iron-pages>
+
+  </template>
+  <script>
+    class AppPages extends Polymer.LazyImportsMixin(IntertextMixin(Polymer.Element)) {
+      static get is() {
+        return 'app-pages';
+      }
+
+      static get properties() {
+        return {
+          page: String
+        }
+      }
+      
+      static get observers() {
+        return [
+          '_pageChanged(page)'
+        ]
+      }
+
+      _pageChanged(page) {
+        if (['user','editor'].indexOf(page) === -1)
+          this.page = 'notfound';
+        this.importLazyGroup(page).then((results) => {
+          this.$emit('lazy-loaded', results);
+        }).catch((err) => {
+          throw err;
+        })
+      }
+    }
+    customElements.define(AppPages.is, AppPages);
+  </script>
+</dom-module>

@@ -1,0 +1,63 @@
+<dom-module id="user-page">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+
+    <div hidden="[[_userIn]]">
+      <p>
+        <button on-tap="_signIn">Sign In</button>
+      </p>
+    </div>
+    <div hidden="[[!_userIn]]">
+      <p>[[user.name]]</p>
+      <button on-tap="_signOut">Sign Out</button>
+    </div>
+    <p>Projects:</p>
+    <ul>
+      <template is="dom-repeat" items="[[projects]]">
+        <li><a href="/editor/[[item]]">[[item]]</a></li>
+      </template>
+    </ul>
+
+  </template>
+  <script>
+    class UserPage extends Polymer.GestureEventListeners(IntertextMixin(Polymer.Element)) {
+      static get is() {
+        return 'user-page';
+      }
+
+      static get properties() {
+        return {
+          user: {
+            type: Object,
+            value: null
+          },
+          projects: Array,
+          _userIn: Boolean
+        }
+      }
+
+      static get observers() {
+        return [
+          '_checkUser(user)'
+        ]
+      }
+
+      _checkUser(user) {
+        this._userIn = !!user;
+      }
+
+      _signIn() {
+        this.$emit('controller-sign-in');
+      }
+
+      _signOut() {
+        this.$emit('controller-sign-out');
+      }
+    }
+    customElements.define(UserPage.is, UserPage);
+  </script>
+</dom-module>

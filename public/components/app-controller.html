@@ -1,0 +1,87 @@
+<link rel="import" href="fire-auth.html">
+
+<dom-module id="app-controller">
+  <template>
+    <fire-auth id="auth"></fire-auth>
+  </template>
+  <script>
+    class AppController extends IntertextMixin(Polymer.Element) {
+      static get is() {
+        return 'app-controller';
+      }
+
+      static get properties() {
+        return {
+          user: Object
+        }
+      }
+
+      static makeUser(user) {
+        return {
+          name: user.displayName,
+          email: user.email,
+          photo: user.photoURL,
+          uid: user.uid
+        }
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+
+        window.addEventListener('controller-check-user', this._checkUser.bind(this));
+        window.addEventListener('controller-sign-in', this._signIn.bind(this));
+        window.addEventListener('controller-sign-out', this._signOut.bind(this));
+        window.addEventListener('controller-get-project', this._getProject.bind(this));
+      }
+
+      _checkUser() {
+        this.$.auth.checkUser().then((user) => {
+          if (user) {
+            user = AppController.makeUser(user);
+            this.$emit('state-user-in', user);
+            this._getProjects(user);
+          } else {
+            this.$emit('state-user-out', null);
+            this.$emit('state-user-projects', []);
+          }
+        });
+      }
+
+      _signIn() {
+        this.$.auth.signIn().then((result) => {
+          const user = AppController.makeUser(result.user);
+          this.$emit('state-user-in', user);
+          this._getProjects(user);
+        });
+      }
+
+      _signOut() {
+        this.$.auth.signOut().then(() => {
+          this.$emit('state-user-out', null);
+          this.$emit('state-user-projects', []);
+        })
+      }
+
+      _getProjects(user) {
+        const db = firebase.firestore();
+        db.collection(`users/${user.name}/projects`).get()
+          .then((querySnap) => {
+            const projects = querySnap.docs.map((doc) => {
+              return doc.id;
+            });
+            this.$emit('state-user-projects', projects);
+          });
+      }
+
+      _getProject(e) {
+        const id = e.detail;
+        const db = firebase.firestore();
+        db.doc(`users/${this.user.name}/projects/${id}`).get()
+          .then((snap) => {
+            debugger;
+          });
+      }
+    }
+    customElements.define(AppController.is, AppController);
+  </script>
+</dom-module>

@@ -1,0 +1,24 @@
+{
+  "name": "Componently",
+  "authors": [
+    "enlightenmentor <fales.tom.1994@gmail.com>"
+  ],
+  "description": "",
+  "main": "index.html",
+  "license": "MIT",
+  "homepage": "",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "^2.2.0",
+    "iron-location": "^2.0.2",
+    "iron-pages": "^2.0.0",
+    "lazy-imports": "^2.0.0"
+  }
+}

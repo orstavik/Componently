@@ -1,0 +1,26 @@
+<dom-module id="notfound-page">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+
+    <p>404</p>
+
+  </template>
+  <script>
+    class NotfoundPage extends Polymer.Element {
+      static get is() {
+        return 'notfound-page';
+      }
+
+      static get properties() {
+        return {}
+      }
+
+      
+    }
+    customElements.define(NotfoundPage.is, NotfoundPage);
+  </script>
+</dom-module>
