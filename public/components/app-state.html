@@ -54,6 +54,8 @@
         window.addEventListener('state-user-in', this._userIn.bind(this));
         window.addEventListener('state-user-out', this._userOut.bind(this));
         window.addEventListener('state-user-projects', this._userProjects.bind(this));
+        window.addEventListener('state-project-versions', this._projectVersions.bind(this));
+        window.addEventListener('state-version-files', this._versionFiles.bind(this));
       }
 
       _update(persistent, session, action) {
@@ -76,6 +78,9 @@
 
       _changeRoute(e) {
         const route = e.detail;
+        const projectId = route.segments[1];
+        if (projectId)
+          this.$emit('controller-get-project', projectId);
         const session = Tools.setIn(this.state.session, ['route'], route, this._frozen);
         this._update(this.state.persistent, session, e.type);
       }
@@ -108,6 +113,21 @@
       _userProjects(e) {
         const projects = e.detail;
         const persistent = Tools.setIn(this.state.persistent, ['projects'], projects, this._frozen);
+        this._update(persistent, this.state.session, e.type);
+      }
+
+      _projectVersions(e) {
+        const id = e.detail.id;
+        const versions = e.detail.versions;
+        const persistent = Tools.setIn(this.state.persistent, ['projects', id, 'versions'], versions, this._frozen);
+        this._update(persistent, this.state.session, e.type);
+      }
+
+      _versionFiles(e) {
+        const id = e.detail.id;
+        const version = e.detail.version;
+        const files = e.detail.files;
+        const persistent = Tools.setIn(this.state.persistent, ['projects', id, 'versions', version, 'files'], files, this._frozen);
         this._update(persistent, this.state.session, e.type);
       }
     }

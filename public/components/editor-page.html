@@ -1,12 +1,19 @@
+<link rel="import" href="code-editor.html">
+
 <dom-module id="editor-page">
   <template>
     <style>
       :host {
-        display: block;
+        display: flex;
+        width: 100vw;
+        height: 50vh;
+        position: relative;
       }
     </style>
 
-    <p>editor page</p>
+    <template is="dom-repeat" items="[[files]]">
+      <code-editor mode="[[_getExt(item.name)]]">[[item.value]]</code-editor>
+    </template>
 
   </template>
   <script>
@@ -17,18 +24,71 @@
 
       static get properties() {
         return {
-          projectId: String
+          project: Object,
+          version: Number,
+          files: {
+            type: Array,
+            computed: '_getFiles(project, version)'
+          }
+//           files: {
+//             type: Array,
+//             value: () => [
+//               {
+//                 name: 'html0.html',
+//                 value: `<head>
+//   <link rel="stylesheet" href="prGRgd.css">
+//   <script src="prGRgd.js"><\/script>
+// </head>
+// <body>
+//   <h1>BaDaS</h1>
+// </body>`
+//               },
+//               {
+//                 name: 'css0.css',
+//                 value: `* {
+//   font-family: Roboto;
+// }`
+//               },
+//               {
+//                 name: 'js0.js',
+//                 value: `const $ = (query) => {
+//   const res = document.querySelectorAll(query);
+//   if (res.length === 0)
+//     return null;
+//   else if (res.length === 1)
+//     return res[0];
+//   else
+//     return res;
+// }`
+//               },
+//               {
+//                 name: 'json0.json',
+//                 value: `{
+//   "css": "css",
+//   "html": "text"/html,
+//   "js": "javascript",
+//   "json": "javascript"
+// }`
+//               }
+//             ]
+//           }
         }
       }
 
-      static get observers() {
-        return [
-          '_projectChange(projectId)'
-        ]
+      _getFiles(project, version) {
+        version = version || 0;
+        if (project && project.versions && project.versions[version] && project.versions[version].files) {
+          const files = project.versions[version].files;
+          const filesArr = [];
+          for (let key in files) {
+            filesArr.push(files[key]);
+          }
+          return filesArr;
+        }
       }
 
-      _projectChange(id) {
-        this.$emit('controller-get-project', id);
+      _getExt(name) {
+        return name.split('.').pop();
       }
     }
     customElements.define(EditorPage.is, EditorPage);

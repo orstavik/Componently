@@ -17,10 +17,12 @@
     </div>
     <p>Projects:</p>
     <ul>
-      <template is="dom-repeat" items="[[projects]]">
+      <template is="dom-repeat" items="[[_toArray(projects)]]">
         <li><a href="/editor/[[item]]">[[item]]</a></li>
       </template>
     </ul>
+    Name: <input type="text" id="newProjectName">
+    <button on-tap="_addProject">Add Project</button>
 
   </template>
   <script>
@@ -56,6 +58,14 @@
 
       _signOut() {
         this.$emit('controller-sign-out');
+      }
+
+      _addProject() {
+        this.$emit('controller-add-project', this.$.newProjectName.value);
+      }
+
+      _toArray(obj) {
+        return Object.keys(obj);
       }
     }
     customElements.define(UserPage.is, UserPage);

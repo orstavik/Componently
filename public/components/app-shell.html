@@ -26,7 +26,7 @@
                  user="[[state.persistent.user]]"
                  projects="[[state.persistent.projects]]">
       </user-page>
-      <editor-page page="editor" project-id="[[state.session.route.segments.1]]"></editor-page>
+      <editor-page page="editor" project="[[currentProject]]" version="[[state.session.route.segments.2]]"></editor-page>
       <notfound-page page="notfound"></notfound-page>
     </app-pages>
 
@@ -39,7 +39,11 @@
 
       static get properties() {
         return {
-          state: Object
+          state: Object,
+          currentProject: {
+            type: Object,
+            computed: '_currentProject(state.persistent.projects, state.session.route.segments.1)'
+          }
         }
       }
 
@@ -47,6 +51,11 @@
         super.connectedCallback();
         this.$emit('app-connected');
         this.$emit('controller-check-user');
+      }
+
+      _currentProject(projects, id) {
+        if (projects && id)
+          return projects[id];
       }
     }
     customElements.define(AppShell.is, AppShell);

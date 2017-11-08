@@ -1,0 +1,65 @@
+<link rel="import" href="../libs/codemirror.html">
+<link rel="import" href="../libs/material.html">
+<script src="../bower_components/codemirror/lib/codemirror.js"></script>
+<script src="../bower_components/codemirror/mode/css/css.js"></script>
+<script src="../bower_components/codemirror/mode/xml/xml.js"></script>
+<script src="../bower_components/codemirror/mode/javascript/javascript.js"></script>
+
+<dom-module id="code-editor">
+  <template>
+    <style include="codemirror material">
+      :host {
+        display: inline-block;
+        width: 25%;
+        box-sizing: border-box;
+        border: 1px grey solid;
+      }
+      .CodeMirror {
+        height: 100%;
+      }
+    </style>
+  </template>
+  <script>
+    class CodeEditor extends Polymer.Element {
+      static get is() {
+        return 'code-editor';
+      }
+
+      static get properties() {
+        return {
+          mode: Object,
+          value: String,
+          theme: {
+            type: String,
+            value: 'material'
+          },
+          editor: Object,
+          MODES: {
+            type: Object,
+            readOnly: true,
+            value: () => ({
+              css: 'css',
+              html: 'text/html',
+              js: 'javascript',
+              json: 'javascript'
+            })
+          }
+        }
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        const value = this.textContent.trim();
+        this.editor = CodeMirror(this.shadowRoot, {
+          value: value,
+          mode: this.MODES[this.mode],
+          theme: this.theme,
+          tabSize: 2,
+          lineNumbers: true,
+          lineWrapping: true
+        });
+      }
+    }
+    customElements.define(CodeEditor.is, CodeEditor);
+  </script>
+</dom-module>

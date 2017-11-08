@@ -32,6 +32,7 @@
         window.addEventListener('controller-sign-in', this._signIn.bind(this));
         window.addEventListener('controller-sign-out', this._signOut.bind(this));
         window.addEventListener('controller-get-project', this._getProject.bind(this));
+        window.addEventListener('controller-add-project', this._addProject.bind(this));
       }
 
       _checkUser() {
@@ -66,8 +67,9 @@
         const db = firebase.firestore();
         db.collection(`users/${user.name}/projects`).get()
           .then((querySnap) => {
-            const projects = querySnap.docs.map((doc) => {
-              return doc.id;
+            const projects = {};
+            querySnap.docs.forEach((doc) => {
+              projects[doc.id] = {};
             });
             this.$emit('state-user-projects', projects);
           });
@@ -76,9 +78,36 @@
       _getProject(e) {
         const id = e.detail;
         const db = firebase.firestore();
-        db.doc(`users/${this.user.name}/projects/${id}`).get()
-          .then((snap) => {
-            debugger;
+        db.collection(`users/${this.user.name}/projects/${id}/versions`).orderBy('name','desc').get()
+          .then((querySnap) => {
+            const versions = {};
+            querySnap.docs.forEach((doc) => {
+              versions[doc.id] = {};
+            });
+            this.$emit('state-project-versions', {id: id, versions: versions});
+            this._getFiles(id, Object.keys(versions)[0]);
+          });
+      }
+
+      _addProject(e) {
+        const id = e.detail;
+        const db = firebase.firestore();
+        db.doc(`users/${this.user.name}/projects/${id}`).set({
+          name: id
+        }).then((snap) => {
+          this._getProjects(this.user);
+        });
+      }
+
+      _getFiles(projectId, version) {
+        const db = firebase.firestore();
+        db.collection(`users/${this.user.name}/projects/${projectId}/versions/${version}/files`).get()
+          .then((querySnap) => {
+            const files = {};
+            querySnap.docs.forEach((doc) => {
+              files[doc.id] = doc.data();
+            });
+            this.$emit('state-version-files', {id: projectId, version: version, files: files});
           });
       }
     }
