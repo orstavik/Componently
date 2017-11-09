@@ -35,6 +35,15 @@
         }
       }
 
+      static makeUser(user) {
+        return {
+          name: user.displayName,
+          email: user.email,
+          photo: user.photoURL,
+          uid: user.uid
+        }
+      }
+
       _snap(action) {
         console.log(action, performance.now());
         const snap = {
@@ -56,6 +65,12 @@
         window.addEventListener('state-user-projects', this._userProjects.bind(this));
         window.addEventListener('state-project-versions', this._projectVersions.bind(this));
         window.addEventListener('state-version-files', this._versionFiles.bind(this));
+
+        window.addEventListener('controller-check-user', this._checkUser.bind(this));
+        window.addEventListener('controller-sign-in', this._signIn.bind(this));
+        window.addEventListener('controller-sign-out', this._signOut.bind(this));
+        window.addEventListener('controller-get-project', this._getProject.bind(this));
+        window.addEventListener('controller-add-project', this._addProject.bind(this));
       }
 
       _update(persistent, session, action) {
@@ -88,16 +103,17 @@
         }
         const session = Tools.mergeDeepWithNullToDelete(this.state.session, this.initial.session, this._frozen);
         this._update(persistent, session, 'state-init');
+        this._checkUser();
       }
 
       _changeRoute(e) {
-        const route = e.detail;
+        const route = e.detail.payload;
         const session = Tools.setIn(this.state.session, ['route'], route, this._frozen);
         this._update(this.state.persistent, session, e.type);
       }
 
       _userIn(e) {
-        const user = e.detail;
+        const user = e.detail.payload;
         const persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
         this._update(persistent, this.state.session, e.type);
       }
@@ -108,24 +124,104 @@
       }
 
       _userProjects(e) {
-        const projects = e.detail;
+        const projects = e.detail.payload;
         const persistent = Tools.setIn(this.state.persistent, ['projects'], projects, this._frozen);
         this._update(persistent, this.state.session, e.type);
       }
 
       _projectVersions(e) {
-        const id = e.detail.id;
-        const versions = e.detail.versions;
+        const id = e.detail.payload.id;
+        const versions = e.detail.payload.versions;
         const persistent = Tools.setIn(this.state.persistent, ['projects', id, 'versions'], versions, this._frozen);
         this._update(persistent, this.state.session, e.type);
       }
 
       _versionFiles(e) {
-        const id = e.detail.id;
-        const version = e.detail.version;
-        const files = e.detail.files;
+        const id = e.detail.payload.id;
+        const version = e.detail.payload.version;
+        const files = e.detail.payload.files;
         const persistent = Tools.setIn(this.state.persistent, ['projects', id, 'versions', version, 'files'], files, this._frozen);
         this._update(persistent, this.state.session, e.type);
+      }
+
+      _checkUser() {
+        firebase.auth().onAuthStateChanged((user) => {
+          if (user) {
+            user = AppState.makeUser(user);
+            this.$commit('state-user-in', user, '_userIn');
+            this._getProjects();
+          } else {
+            this.$commit('state-user-out', null, '_userOut');
+            this.$commit('state-user-projects', [], '_userProjects');
+          }
+        });
+      }
+
+      _signIn() {
+        firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())
+          .then((result) => {
+            let user = AppState.makeUser(result.user);
+            this.$commit('state-user-in', user, '_userIn');
+            this._getProjects();
+          });
+      }
+
+      _signOut() {
+        firebase.auth().signOut()
+          .then(() => {
+            this.$commit('state-user-out', null, '_userOut');
+            this.$commit('state-user-projects', [], '_userProjects');
+          })
+      }
+
+      _getProjects() {
+        const db = firebase.firestore();
+        const user = this.state.persistent.user;
+        db.collection(`users/${user.name}/projects`).get()
+          .then((querySnap) => {
+            const projects = {};
+            querySnap.docs.forEach((doc) => {
+              projects[doc.id] = {};
+            });
+            this.$commit('state-user-projects', projects, '_userProjects');
+          });
+      }
+
+      _getProject(e) {
+        const id = e.detail.payload.projectId;
+        const user = e.detail.payload.user;
+        const db = firebase.firestore();
+        db.collection(`users/${user.name}/projects/${id}/versions`).orderBy('name','desc').get()
+          .then((querySnap) => {
+            const versions = {};
+            querySnap.docs.forEach((doc) => {
+              versions[doc.id] = {};
+            });
+            this.$commit('state-project-versions', {id: id, versions: versions}, '_projectVersions');
+            this._getFiles(id, Object.keys(versions)[0]);
+          });
+      }
+
+      _addProject(e) {
+        const id = e.detail.payload;
+        const db = firebase.firestore();
+        db.doc(`users/${this.user.name}/projects/${id}`).set({
+          name: id
+        }).then((snap) => {
+          this._getProjects(this.user);
+        });
+      }
+
+      _getFiles(projectId, version) {
+        const db = firebase.firestore();
+        db.collection(`users/${this.user.name}/projects/${projectId}/versions/${version}/files`).get()
+          .then((querySnap) => {
+            const files = {};
+            querySnap.docs.forEach((doc) => {
+              files[doc.id] = doc.data();
+            });
+            this.$commit('state-version-files', {id: projectId, version: version, files: files}, this._projectVersions);
+          });
       }
     }
     customElements.define(AppState.is, AppState);

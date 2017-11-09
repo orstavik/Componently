@@ -37,7 +37,7 @@
             type: Object,
             value: null
           },
-          projects: Array,
+          projects: Object,
           _userIn: Boolean
         }
       }
@@ -50,7 +50,6 @@
       
       connectedCallback() {
         super.connectedCallback();
-        this.$emit('controller-check-user');
       }
 
       _checkUser(user) {

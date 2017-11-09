@@ -1,7 +1,6 @@
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="app-router.html">
 <link rel="import" href="app-state.html">
-<link rel="import" href="app-controller.html">
 <link rel="import" href="app-pages.html">
 
 <dom-module id="app-shell">
@@ -13,8 +12,7 @@
     </style>
 
     <app-state state="{{state}}"></app-state>
-    <app-controller state="[[state]]"></app-controller>
-    <app-router></app-router>
+    <app-router default-url="user"></app-router>
 
     <a href="/user">user page</a>
     <a href="/editor">editor page</a>
