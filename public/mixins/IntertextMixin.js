@@ -8,6 +8,30 @@ const IntertextMixin = (superClass) => class extends superClass {
     }));
   }
 
+  $commit(name, detail) {
+    this.dispatchEvent(new CustomEvent('state-'+name, {
+      composed: true,
+      bubbles: true,
+      detail: detail
+    }));
+  }
+  
+  $action(name, detail) {
+    return new Promise((resolve, reject) => {
+      this.dispatchEvent(new CustomEvent('controller-'+name, {
+        composed: true,
+        bubbles: true,
+        detail: {
+          payload: detail,
+          promise: {
+            resolse: resolve,
+            reject: reject
+          }
+        }
+      }));
+    });
+  }
+
   $once(name) {
     return new Promise((resolve, reject) => {
       const callback = (e) => {

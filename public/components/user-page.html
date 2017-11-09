@@ -47,6 +47,11 @@
           '_checkUser(user)'
         ]
       }
+      
+      connectedCallback() {
+        super.connectedCallback();
+        this.$emit('controller-check-user');
+      }
 
       _checkUser(user) {
         this._userIn = !!user;

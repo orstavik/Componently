@@ -10,13 +10,10 @@
       :host {
         display: block;
       }
-      app-pages {
-        display: 
-      }
     </style>
 
     <app-state state="{{state}}"></app-state>
-    <app-controller user="[[state.persistent.user]]"></app-controller>
+    <app-controller state="[[state]]"></app-controller>
     <app-router></app-router>
 
     <a href="/user">user page</a>
@@ -26,7 +23,11 @@
                  user="[[state.persistent.user]]"
                  projects="[[state.persistent.projects]]">
       </user-page>
-      <editor-page page="editor" project="[[currentProject]]" version="[[state.session.route.segments.2]]"></editor-page>
+      <editor-page page="editor"
+                   projects="[[state.persistent.projects]]"
+                   project-id="[[state.session.route.segments.1]]"
+                   version="[[state.session.route.segments.2]]">
+      </editor-page>
       <notfound-page page="notfound"></notfound-page>
     </app-pages>
 
@@ -39,23 +40,8 @@
 
       static get properties() {
         return {
-          state: Object,
-          currentProject: {
-            type: Object,
-            computed: '_currentProject(state.persistent.projects, state.session.route.segments.1)'
-          }
+          state: Object
         }
-      }
-
-      connectedCallback() {
-        super.connectedCallback();
-        this.$emit('app-connected');
-        this.$emit('controller-check-user');
-      }
-
-      _currentProject(projects, id) {
-        if (projects && id)
-          return projects[id];
       }
     }
     customElements.define(AppShell.is, AppShell);

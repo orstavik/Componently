@@ -49,8 +49,8 @@
       connectedCallback() {
         super.connectedCallback();
 
+        this._init();
         window.addEventListener('state-change-route', this._changeRoute.bind(this));
-        window.addEventListener('app-connected', this._appConnected.bind(this));
         window.addEventListener('state-user-in', this._userIn.bind(this));
         window.addEventListener('state-user-out', this._userOut.bind(this));
         window.addEventListener('state-user-projects', this._userProjects.bind(this));
@@ -76,16 +76,7 @@
         return JSON.parse(localStorage.getItem('state'));
       }
 
-      _changeRoute(e) {
-        const route = e.detail;
-        const projectId = route.segments[1];
-        if (projectId)
-          this.$emit('controller-get-project', projectId);
-        const session = Tools.setIn(this.state.session, ['route'], route, this._frozen);
-        this._update(this.state.persistent, session, e.type);
-      }
-
-      _appConnected(e) {
+      _init(e) {
         let persistent = this.state.persistent;
         if (!persistent) {
           const stored = this._getStored();
@@ -96,7 +87,13 @@
           }
         }
         const session = Tools.mergeDeepWithNullToDelete(this.state.session, this.initial.session, this._frozen);
-        this._update(persistent, session, e.type);
+        this._update(persistent, session, 'state-init');
+      }
+
+      _changeRoute(e) {
+        const route = e.detail;
+        const session = Tools.setIn(this.state.session, ['route'], route, this._frozen);
+        this._update(this.state.persistent, session, e.type);
       }
 
       _userIn(e) {

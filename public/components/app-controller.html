@@ -12,7 +12,7 @@
 
       static get properties() {
         return {
-          user: Object
+          state: Object
         }
       }
 
@@ -76,9 +76,10 @@
       }
 
       _getProject(e) {
-        const id = e.detail;
+        const id = e.detail.projectId;
+        const user = e.detail.user;
         const db = firebase.firestore();
-        db.collection(`users/${this.user.name}/projects/${id}/versions`).orderBy('name','desc').get()
+        db.collection(`users/${user.name}/projects/${id}/versions`).orderBy('name','desc').get()
           .then((querySnap) => {
             const versions = {};
             querySnap.docs.forEach((doc) => {
