@@ -2,7 +2,7 @@
 <link rel="import" href="../bower_components/lazy-imports/lazy-imports-mixin.html">
 
 <dom-module id="app-pages">
-  <link rel="lazy-import" href="user-page.html" group="user">
+  <link rel="lazy-import" href="home-page.html" group="home">
   <link rel="lazy-import" href="editor-page.html" group="editor">
   <link rel="lazy-import" href="notfound-page.html" group="notfound">
   <template>
@@ -37,7 +37,7 @@
       }
 
       _pageChanged(page) {
-        if (['user','editor'].indexOf(page) === -1)
+        if (['home','editor'].indexOf(page) === -1)
           this.page = 'notfound';
         this.importLazyGroup(page).then((results) => {
           this.$emit('lazy-loaded', results);

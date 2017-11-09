@@ -12,15 +12,14 @@
     </style>
 
     <app-state state="{{state}}"></app-state>
-    <app-router default-url="user"></app-router>
+    <app-router default-url="home"></app-router>
 
-    <a href="/user">user page</a>
-    <a href="/editor">editor page</a>
+    <a href="/home">home</a>
     <app-pages page="[[state.session.route.segments.0]]">
-      <user-page page="user"
+      <home-page page="home"
                  user="[[state.persistent.user]]"
                  projects="[[state.persistent.projects]]">
-      </user-page>
+      </home-page>
       <editor-page page="editor"
                    projects="[[state.persistent.projects]]"
                    project-id="[[state.session.route.segments.1]]"

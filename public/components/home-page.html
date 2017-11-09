@@ -1,4 +1,4 @@
-<dom-module id="user-page">
+<dom-module id="home-page">
   <template>
     <style>
       :host {
@@ -18,17 +18,22 @@
     <p>Projects:</p>
     <ul>
       <template is="dom-repeat" items="[[_toArray(projects)]]">
-        <li><a href="/editor/[[item]]">[[item]]</a></li>
+        <li>
+          <a href="/editor/[[item]]">[[item]]</a>
+          <button on-tap="_removeProject">X</button>
+        </li>
       </template>
+      <li>
+        <input type="text" id="newProjectName" style="width: 120px;" placeholder="project">
+        <button on-tap="_addProject">+</button>
+      </li>
     </ul>
-    Name: <input type="text" id="newProjectName">
-    <button on-tap="_addProject">Add Project</button>
 
   </template>
   <script>
-    class UserPage extends Polymer.GestureEventListeners(IntertextMixin(Polymer.Element)) {
+    class HomePage extends Polymer.GestureEventListeners(IntertextMixin(Polymer.Element)) {
       static get is() {
-        return 'user-page';
+        return 'home-page';
       }
 
       static get properties() {
@@ -65,13 +70,21 @@
       }
 
       _addProject() {
-        this.$emit('controller-add-project', this.$.newProjectName.value);
+        const name = this.$.newProjectName.value;
+        if (name) {
+          this.$emit('controller-add-project', name);
+          this.$.newProjectName.value = '';
+        }
+      }
+
+      _removeProject(e) {
+        this.$emit('controller-remove-project', e.target.previousElementSibling.text);
       }
 
       _toArray(obj) {
         return Object.keys(obj);
       }
     }
-    customElements.define(UserPage.is, UserPage);
+    customElements.define(HomePage.is, HomePage);
   </script>
 </dom-module>

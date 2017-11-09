@@ -4,16 +4,36 @@
   <template>
     <style>
       :host {
+        display: block;
+      }
+      #header {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+      }
+      #editors {
         display: flex;
         width: 100vw;
-        height: 50vh;
+        height: 500px;
         position: relative;
       }
     </style>
 
-    <template is="dom-repeat" items="[[files]]">
-      <code-editor mode="[[_getExt(item.name)]]">[[item.value]]</code-editor>
-    </template>
+    <div id="header">
+      <b>[[projectId]]</b>
+      <div>
+        Version: <select on-change="_changeVersion">
+          <template is="dom-repeat" items="[[_versions]]">
+            <option value="[[item]]">[[item]]</option>
+          </template>
+        </select>
+      </div>
+    </div>
+    <div id="editors">
+      <template is="dom-repeat" items="[[_files]]">
+        <code-editor mode="[[_getExt(item.name)]]" value="[[item.value]]"></code-editor>
+      </template>
+    </div>
 
   </template>
   <script>
@@ -24,17 +44,50 @@
 
       static get properties() {
         return {
-          project: Object,
+          projects: Object,
+          projectId: String,
           version: Number,
-          files: {
+          _versions: {
             type: Array,
-            computed: '_getFiles(project, version)'
+            computed: '_makeVersions(projects, projectId)',
+            value: () => [0],
+          },
+          _files: {
+            type: Array,
+            computed: '_makeFiles(projects, projectId, version)',
+            value: () => [{
+                name: 'index.html',
+                value: '<!-- HTML -->'
+              }, {
+                name: 'index.css',
+                value: '/* CSS */'
+              }, {
+                name: 'index.js',
+                value: '// JS'
+              }, {
+                name: 'index.json',
+                value: '// JSON'
+            }]
           }
         }
       }
 
-      _getFiles(project, version) {
+      _makeVersions(projects, id) {
+        const project = projects[id];
+        if (project && project.versions) {
+          const versionsArr = [];
+          for (let key in project.versions) {
+            versionsArr.push(key);
+          }
+          return versionsArr;
+        } else {
+          return this._versions;
+        }
+      }
+
+      _makeFiles(projects, id, version) {
         version = version || 0;
+        const project = projects[id];
         if (project && project.versions && project.versions[version] && project.versions[version].files) {
           const files = project.versions[version].files;
           const filesArr = [];
@@ -42,7 +95,14 @@
             filesArr.push(files[key]);
           }
           return filesArr;
+        } else {
+          return this._files;
         }
+      }
+
+      _changeVersion(e) {
+        if (e.target.value)
+          this.$emit('controller-get-files', {id: this.projectId, version: e.target.value});
       }
 
       _getExt(name) {

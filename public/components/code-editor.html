@@ -47,17 +47,27 @@
         }
       }
 
+      static get observers() {
+        return [
+          '_updateEditor(value)'
+        ]
+      }
+
       connectedCallback() {
         super.connectedCallback();
-        const value = this.textContent.trim();
         this.editor = CodeMirror(this.shadowRoot, {
-          value: value,
+          value: this.value,
           mode: this.MODES[this.mode],
           theme: this.theme,
           tabSize: 2,
           lineNumbers: true,
           lineWrapping: true
         });
+      }
+
+      _updateEditor() {
+        if (this.editor)
+          this.editor.setValue(this.value)
       }
     }
     customElements.define(CodeEditor.is, CodeEditor);
