@@ -1,4 +1,5 @@
 <script src="../utils/Tools.js"></script>
+<script src="../utils/AppData.js"></script>
 
 <dom-module id="app-state">
   <script>
@@ -73,6 +74,7 @@
             })
             .catch(reject);
         }
+
         return new Promise((resolve, reject) => {
           deleteQueryBatch(db, query, batchSize, resolve, reject);
         })
@@ -143,10 +145,13 @@
       }
 
       _changeRoute(e) {
+        //a new route has changed, then get the route from the event,
+        //if the route has segments 1 & 2, then get the files
+
         const route = e.detail.payload;
         // if (route.segments[0] === 'editor' && route.segments[1]) {
         //   let projectId = route.segments[1];
-          
+
         //   if (!this.state.persistent.projects[projectId].versions)
         //     this._getVersions({
         //       detail: {
@@ -223,78 +228,41 @@
           })
       }
 
-      _getProjects() {
-        const db = firebase.firestore();
-        const user = this.state.persistent.user;
-        db.collection(`users/${user.name}/projects`).get()
-          .then((querySnap) => {
-            const projects = {};
-            querySnap.docs.forEach((doc) => {
-              projects[doc.id] = {};
-            });
-            this.$commit('state-user-projects', projects, '_userProjects');
-          });
+      async _getProjects() {
+        const projects = await AppData.getProjects(this.state.persistent.user);
+        this.$commit('state-user-projects', projects, '_userProjects');
       }
 
-      _getVersions(e) {
-        return new Promise((resolve, reject) => {
-          const id = e.detail.payload;
-          const user = this.state.persistent.user;
-          const db = firebase.firestore();
-          db.collection(`users/${user.name}/projects/${id}/versions`).orderBy('name', 'desc').get()
-            .then((querySnap) => {
-              const versions = {};
-              querySnap.docs.forEach((doc) => {
-                versions[doc.id] = {};
-              });
-              resolve();
-            });
-        });
+      async _getVersions(e) {
+        const versions = await AppData.getVersions(this.state.persistent.user, e.detail.payload);
+        this.$commit('state-project-versions', {id: e.detail.payload, versions: versions}, '_projectVersions');
       }
 
-      _addProject(e) {
+      async _addProject(e) {
         const id = e.detail.payload;
-        const db = firebase.firestore();
         const user = this.state.persistent.user;
-        db.doc(`users/${user.name}/projects/${id}`).set({
-          name: id
-        }).then((snap) => {
-          this._getProjects();
-        });
+        await AppData.addProject(user, id);
+        this._getProjects();
+        //todo update state directly by removing the project that was deleted from the state itself.
       }
 
-      _removeProject(e) {
+      async _removeProject(e) {
         const id = e.detail.payload;
-        const db = firebase.firestore();
         const user = this.state.persistent.user;
-        const deleteDoc = db.doc(`users/${user.name}/projects/${id}`).delete();
-        const deleteCollections = AppState.deleteCollection(db, db.collection(
-          `users/${user.name}/projects/${id}/versions`));
-        Promise.all([deleteDoc, deleteCollections])
-          .then(() => {
-            this._getProjects();
-          });
+        await AppData.removeProject(user, id);
+        await this._getProjects();
+        //todo update state directly by removing the project that was deleted from the state itself.
       }
 
-      _getFiles(e) {
-        const db = firebase.firestore();
+      async _getFiles(e) {
         const id = e.detail.payload.id;
         const version = e.detail.payload.version;
         const user = this.state.persistent.user;
-        db.collection(`users/${user.name}/projects/${id}/versions/${version}/files`).get()
-          .then((querySnap) => {
-            const files = {};
-            querySnap.docs.forEach((doc) => {
-              files[doc.id] = doc.data();
-            });
-            this.$commit('state-version-files', {
-              id: id,
-              version: version,
-              files: files
-            }, '_versionFiles');
-          });
+        const files = await AppData.getFiles(user, id, version);
+        this.$commit('state-version-files', {id: id, version: version, files: files}, '_versionFiles');
       }
     }
+
     customElements.define(AppState.is, AppState);
   </script>
 </dom-module>
