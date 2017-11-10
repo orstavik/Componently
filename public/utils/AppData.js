@@ -26,7 +26,7 @@ class AppData {
   /**
    * VERSIONS
    */
-  static async getVersions(user, projectId){
+  static async getVersions(user, projectId) {
     return AppData.getCollectionIds(`users/${user.name}/projects/${projectId}/versions`);
   }
 
@@ -51,36 +51,24 @@ class AppData {
   }
 
   static async deleteCollection(db, collectionRef, batchSize) {
-    batchSize = batchSize || 3;
+    batchSize = batchSize || 2;
     const query = collectionRef.orderBy('__name__').limit(batchSize);
 
-    function deleteQueryBatch(db, query, batchSize, resolve, reject) {
-      query.get()
-        .then((snapshot) => {
-          // When there are no documents left, we are done
-          if (snapshot.size == 0) {
-            return 0;
-          }
-          // Delete documents in a batch
-          const batch = db.batch();
-          snapshot.docs.forEach((doc) => {
-            batch.delete(doc.ref);
-          });
-          return batch.commit().then(() => snapshot.size);
-        })
-        .then(function (numDeleted) {
-          if (numDeleted <= batchSize) {
-            resolve();
-            return;
-          }
-          // Recurse on the next process tick, to avoid
-          // exploding the stack.
-          process.nextTick(() => deleteQueryBatch(db, query, batchSize, resolve, reject));
-        })
-        .catch(reject);
+    async function deleteQueryBatch(db, query, batchSize) {
+      const snapshot = await query.get();
+      // When there are no documents left, we are done
+      if (snapshot.size === 0)
+        return 0;
+      // Delete documents in a batch
+      const batch = db.batch();
+      for (let doc of snapshot.docs)
+        batch.delete(doc.ref);
+      await batch.commit();
+      const numDeleted = snapshot.size;
+      // Recurse on the next process tick, to avoid exploding the stack.
+      if (numDeleted >= batchSize)
+        setTimeout(() => deleteQueryBatch(db, query, batchSize), 0);
     }
-    return new Promise((resolve, reject) => {
-      deleteQueryBatch(db, query, batchSize, resolve, reject);
-    })
+    return await deleteQueryBatch(db, query, batchSize);
   }
 }
