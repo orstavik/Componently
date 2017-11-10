@@ -14,10 +14,6 @@ const IntertextMixin = (superClass) => class extends superClass {
     });
   }
 
-  $commit(name, payload, method) {
-    this[method]({type: name, detail: {payload: payload}});
-  }
-
   $once(name) {
     return new Promise((resolve, reject) => {
       const callback = (e) => {
