@@ -65,6 +65,7 @@
         window.addEventListener('controller-remove-project', this._removeProject.bind(this));
         window.addEventListener('controller-select-project', this._selectProject.bind(this));
         window.addEventListener('controller-select-version', this._selectVersion.bind(this));
+        window.addEventListener('controller-add-file', this._addFile.bind(this));
       }
 
       _snap(action) {
@@ -169,9 +170,9 @@
       async _addProject(e) {
         const id = e.detail.payload;
         const user = this.state.persistent.user;
-        await AppData.addProject(user, id);
+        await AppData.addProject(user.name, id);
         this._getProjects(e);
-        //todo update state directly by removing the project that was deleted from the state itself.
+        //todo update state directly by adding the project that was deleted from the state itself.
       }
 
       async _selectProject(e) {
@@ -204,6 +205,16 @@
         await AppData.removeProject(user, id);
         await this._getProjects(e);
         //todo update state directly by removing the project that was deleted from the state itself.
+      }
+
+      async _addFile(e){
+        const user = this.state.persistent.user;
+        const id = e.detail.payload.id;
+        const version = e.detail.payload.version;
+        const filename = e.detail.payload.filename;
+        await AppData.addFile(user.name, id, version, filename);
+        this._getProjects(e);
+        //todo update state directly by adding the file that was deleted from the state itself.
       }
 
       async _getFiles(e) {

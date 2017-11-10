@@ -3,9 +3,9 @@ class AppData {
   /**
    * PROJECT
    */
-  static async addProject(user, id) {
+  static async addProject(username, id) {
     const db = firebase.firestore();
-    await db.doc(`users/${user.name}/projects/${id}`).set({
+    await db.doc(`users/${username}/projects/${id}`).set({
       name: id
     });
   }
@@ -33,6 +33,14 @@ class AppData {
   /**
    * FILES
    */
+  static async addFile(username, id, version, filename) {
+    const db = firebase.firestore();
+    await db.doc(`users/${username}/projects/${id}/versions/${version}/files/${filename}`).set({
+      name: id,
+      value: "new file value"
+    });
+  }
+
   static async getFiles(user, projectId, version) {
     return AppData.getCollectionIds(`users/${user.name}/projects/${projectId}/versions/${version}/files`);
   }
@@ -69,6 +77,7 @@ class AppData {
       if (numDeleted >= batchSize)
         setTimeout(() => deleteQueryBatch(db, query, batchSize), 0);
     }
+
     return await deleteQueryBatch(db, query, batchSize);
   }
 }

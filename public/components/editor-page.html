@@ -23,10 +23,10 @@
       <b>[[projectId]]</b>
       <div>
         Version: <select on-change="_changeVersion">
-          <template is="dom-repeat" items="[[_versions]]">
-            <option value="[[item]]">[[item]]</option>
-          </template>
-        </select>
+        <template is="dom-repeat" items="[[_versions]]">
+          <option value="[[item]]">[[item]]</option>
+        </template>
+      </select>
       </div>
     </div>
     <div id="editors">
@@ -34,10 +34,12 @@
         <code-editor mode="[[_getExt(item.name)]]" value="[[item.value]]"></code-editor>
       </template>
     </div>
+    <input type="text" id="newFileName" style="width: 120px;" placeholder="file">
+    <button on-tap="_addFile">+</button>
 
   </template>
   <script>
-    class EditorPage extends IntertextMixin(Polymer.Element) {
+    class EditorPage extends Polymer.GestureEventListeners(IntertextMixin(Polymer.Element)) {
       static get is() {
         return 'editor-page';
       }
@@ -103,6 +105,21 @@
       _changeVersion(e) {
         if (e.target.value)
           this.$emit('controller-select-version', {id: this.projectId, version: e.target.value});
+      }
+
+      _addFile(e) {
+        const name = this.$.newFileName.value;
+        if (!EditorPage.validateFileName(name))
+          return alert("wrong filename!! " + name);
+        this.$emit('controller-add-file', {filename: name, id: this.projectId, version: this.version});
+        this.$.newFileName.value = '';
+      }
+
+      static validateFileName(name) {
+        if (!name)
+          return false;
+        const fileType = name.split(".").pop();
+        return ["html", "css", "js", "json"].indexOf(fileType) !== -1;
       }
 
       _getExt(name) {
