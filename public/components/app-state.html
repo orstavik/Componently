@@ -144,23 +144,29 @@
         this._checkUser();
       }
 
-      _changeRoute(e) {
-        //a new route has changed, then get the route from the event,
-        //if the route has segments 1 & 2, then get the files
+      static getLatestVersionNumber(versions){
+        let vs = Object.keys(versions).map(n=> Number(n)).sort().reverse()[0];
+        if (vs === undefined)
+          throw new Error("no versions!");
+        return vs;
+      }
 
+      async _changeRoute(e) {
         const route = e.detail.payload;
-        // if (route.segments[0] === 'editor' && route.segments[1]) {
-        //   let projectId = route.segments[1];
-
-        //   if (!this.state.persistent.projects[projectId].versions)
-        //     this._getVersions({
-        //       detail: {
-        //         payload: projectId
-        //       }
-        //     }).then(() => {
-        //       let version = route.segments[2] || this.state.persistent.projects[projectId].versions
-        //     });
-        // }
+        if (route.segments[0] === 'editor') {
+          let projectID = route.segments[1];
+          let versions = this.state.persistent.projects[projectID].versions;
+          if (projectID && !versions) {
+            await this._getVersions({detail: {payload: projectID}});
+            versions = this.state.persistent.projects[projectID].versions;
+            let version = route.segments[2];
+            if (version === undefined)                    //att!! version might be number 0!!
+              version = AppState.getLatestVersionNumber(versions);
+            if (version && versions[version] && !versions[version].files) {
+              await this._getFiles({detail: {payload: {id: projectID, version: version}}});
+            }
+          }
+        }
         const session = Tools.setIn(this.state.session, ['route'], route, this._frozen);
         this._update(this.state.persistent, session, e.type);
       }

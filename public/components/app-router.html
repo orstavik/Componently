@@ -55,6 +55,7 @@
           path: location.pathname.substr(1),
           search: location.search.substr(1),
           hash: location.hash.substr(1),
+          segments: [],
           url: AppRouter.pathSearchHashToURL(location.pathname, location.search, location.hash)
         };
         if (res.path)
