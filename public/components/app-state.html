@@ -45,8 +45,8 @@
         }
       }
 
-      static getLatestVersion(versions){
-        let vs = Object.keys(versions).map(n=> Number(n)).sort().reverse()[0];
+      static getLatestVersion(versions) {
+        let vs = Object.keys(versions).map(n => Number(n)).sort().reverse()[0];
         if (vs === undefined)
           throw new Error("no versions!");
         return vs;
@@ -56,15 +56,15 @@
         super.connectedCallback();
 
         this._init({type: "state-init"});
-        window.addEventListener('state-change-route', this._changeRoute.bind(this));
+        window.addEventListener('state-change-route', this._changeRoute.bind(this));          //select-project
 
         window.addEventListener('controller-check-user', this._checkUser.bind(this));
         window.addEventListener('controller-sign-in', this._signIn.bind(this));
         window.addEventListener('controller-sign-out', this._signOut.bind(this));
-        window.addEventListener('controller-get-versions', this._getVersions.bind(this));
         window.addEventListener('controller-add-project', this._addProject.bind(this));
         window.addEventListener('controller-remove-project', this._removeProject.bind(this));
-        window.addEventListener('controller-get-files', this._getFiles.bind(this));
+        window.addEventListener('controller-select-project', this._selectProject.bind(this));
+        window.addEventListener('controller-select-version', this._selectVersion.bind(this));
       }
 
       _snap(action) {
@@ -111,23 +111,10 @@
         this._checkUser(e);
       }
 
-      async _changeRoute(e) {
+      _changeRoute(e) {
         const route = e.detail.payload;
-        if (route.segments[0] === 'editor') {
-          let projectID = route.segments[1];
-          let versions = this.state.persistent.projects[projectID].versions;
-          if (projectID && !versions) {
-            await this._getVersions({detail: {payload: projectID}});
-            versions = this.state.persistent.projects[projectID].versions;
-            let version = route.segments[2];
-            if (version === undefined)                    //att!! version might be number 0!!
-              version = AppState.getLatestVersion(versions);
-            if (version && versions[version] && !versions[version].files) {
-              await this._getFiles({detail: {payload: {id: projectID, version: version}}});
-            }
-          }
-        }
         const session = Tools.setIn(this.state.session, ['route'], route, this._frozen);
+        //check that the files are there and then load them if they are not..
         this._update(this.state.persistent, session, e.type);
       }
 
@@ -176,6 +163,7 @@
         const versions = await AppData.getVersions(this.state.persistent.user, id);
         const persistent = Tools.setIn(this.state.persistent, ['projects', id, 'versions'], versions, this._frozen);
         this._update(persistent, this.state.session, e.type);
+        return versions;
       }
 
       async _addProject(e) {
@@ -184,6 +172,30 @@
         await AppData.addProject(user, id);
         this._getProjects(e);
         //todo update state directly by removing the project that was deleted from the state itself.
+      }
+
+      async _selectProject(e) {
+        const username = this.state.persistent.user.name;
+        const id = e.detail.payload;
+//        if (id === this.state.session.route.segments[2]) //if we dont do this, then reselecting will likely refresh everything. //if we do this, then it is not possible to reselect the project you are on.
+//          return;
+        this.$navigate(`/editor/${username}/${id}`);
+        let versions = this.state.persistent.projects[id].versions;
+        if (!versions)
+          versions = await this._getVersions({detail: {payload: id}});
+        let version = AppState.getLatestVersion(versions);
+        await this._selectVersion({detail: {payload: {id: id, version: version}}});
+      }
+
+      async _selectVersion(e) {
+        const id = e.detail.payload.id;
+        const version = e.detail.payload.version;
+        const username = this.state.persistent.user.name;
+        const versions = this.state.persistent.projects[id].versions;
+
+        this.$navigate(`/editor/${username}/${id}/${version}`);
+        if (version && versions[version] && !versions[version].files)
+          await this._getFiles({detail: {payload: {id: id, version: version}}});
       }
 
       async _removeProject(e) {

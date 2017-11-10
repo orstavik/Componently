@@ -4,6 +4,11 @@
       :host {
         display: block;
       }
+      li span {
+        cursor: pointer;
+        text-decoration: underline;
+        color: blue;
+      }
     </style>
 
     <div hidden="[[_userIn]]">
@@ -19,7 +24,7 @@
     <ul>
       <template is="dom-repeat" items="[[_toArray(projects)]]">
         <li>
-          <a href="/editor/[[item]]">[[item]]</a>
+          <span on-tap="_selectProject">[[item]]</span>
           <button on-tap="_removeProject">X</button>
         </li>
       </template>
@@ -78,7 +83,11 @@
       }
 
       _removeProject(e) {
-        this.$emit('controller-remove-project', e.target.previousElementSibling.text);
+        this.$emit('controller-remove-project', e.target.previousElementSibling.textContent);
+      }
+
+      _selectProject(e) {
+        this.$emit('controller-select-project', e.target.textContent);
       }
 
       _toArray(obj) {

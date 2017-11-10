@@ -55,19 +55,19 @@
           _files: {
             type: Array,
             computed: '_makeFiles(projects, projectId, version)',
-            value: () => [{
-                name: 'index.html',
-                value: '<!-- HTML -->'
-              }, {
-                name: 'index.css',
-                value: '/* CSS */'
-              }, {
-                name: 'index.js',
-                value: '// JS'
-              }, {
-                name: 'index.json',
-                value: '// JSON'
-            }]
+//            value: () => [{
+//                name: 'index.html',
+//                value: '<!-- HTML -->'
+//              }, {
+//                name: 'index.css',
+//                value: '/* CSS */'
+//              }, {
+//                name: 'index.js',
+//                value: '// JS'
+//              }, {
+//                name: 'index.json',
+//                value: '// JSON'
+//            }]
           }
         }
       }
@@ -102,11 +102,12 @@
 
       _changeVersion(e) {
         if (e.target.value)
-          this.$emit('controller-get-files', {id: this.projectId, version: e.target.value});
+          this.$emit('controller-select-version', {id: this.projectId, version: e.target.value});
       }
 
       _getExt(name) {
-        return name.split('.').pop();
+        if (name)
+          return name.split('.').pop();
       }
     }
     customElements.define(EditorPage.is, EditorPage);
