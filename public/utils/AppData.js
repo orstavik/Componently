@@ -1,6 +1,14 @@
 class AppData {
 
   /**
+   * USER
+   */
+  static async getCurrentUserData(username) {
+    const db = firebase.firestore();
+    return db.doc(`users/${username}`).get();
+  }
+
+  /**
    * PROJECT
    */
   static async addProject(username, id) {
@@ -21,6 +29,20 @@ class AppData {
       `users/${user.name}/projects/${id}/versions`));
     await deleteDoc;
     await deleteCollections;
+  }
+
+  static async setCurrentProject(username, projectId){
+    const db = firebase.firestore();
+    await db.doc(`users/${username}`).update({
+      currentProject: projectId
+    });
+  }
+
+  static async setCurrentVersion(username, versionNum){
+    const db = firebase.firestore();
+    await db.doc(`users/${username}`).update({
+      currentVersion: Number(versionNum)
+    });
   }
 
   /**
@@ -54,7 +76,7 @@ class AppData {
     const querySnap = await db.collection(queryPath).get();
     const collection = {};
     for (let doc of querySnap.docs)
-      collection[doc.id] = {};
+      collection[doc.id] = doc.data();
     return collection;
   }
 

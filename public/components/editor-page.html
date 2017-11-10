@@ -23,14 +23,14 @@
       <b>[[projectId]]</b>
       <div>
         Version: <select on-change="_changeVersion">
-        <template is="dom-repeat" items="[[_versions]]">
-          <option value="[[item]]">[[item]]</option>
+        <template is="dom-repeat" items="[[versions]]">
+          <option value="[[item]]" selected="[[_isSelectedVersion(item, version)]]">[[item]]</option>
         </template>
       </select>
       </div>
     </div>
     <div id="editors">
-      <template is="dom-repeat" items="[[_files]]">
+      <template is="dom-repeat" items="[[files]]">
         <code-editor mode="[[_getExt(item.name)]]" value="[[item.value]]"></code-editor>
       </template>
     </div>
@@ -49,14 +49,13 @@
           projects: Object,
           projectId: String,
           version: Number,
-          _versions: {
+          versions: {
             type: Array,
-            computed: '_makeVersions(projects, projectId)',
-            value: () => [0],
+            value: () => [],
           },
-          _files: {
+          files: {
             type: Array,
-            computed: '_makeFiles(projects, projectId, version)',
+            value: () => [],
 //            value: () => [{
 //                name: 'index.html',
 //                value: '<!-- HTML -->'
@@ -74,32 +73,8 @@
         }
       }
 
-      _makeVersions(projects, id) {
-        const project = projects[id];
-        if (project && project.versions) {
-          const versionsArr = [];
-          for (let key in project.versions) {
-            versionsArr.push(key);
-          }
-          return versionsArr;
-        } else {
-          return this._versions;
-        }
-      }
-
-      _makeFiles(projects, id, version) {
-        version = version || 0;
-        const project = projects[id];
-        if (project && project.versions && project.versions[version] && project.versions[version].files) {
-          const files = project.versions[version].files;
-          const filesArr = [];
-          for (let key in files) {
-            filesArr.push(files[key]);
-          }
-          return filesArr;
-        } else {
-          return this._files;
-        }
+      _isSelectedVersion(item, version){
+        return item === version;
       }
 
       _changeVersion(e) {

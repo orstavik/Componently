@@ -97,7 +97,7 @@
         return JSON.parse(localStorage.getItem('state'));
       }
 
-      _init(e) {
+      async _init(e) {
         let persistent = this.state.persistent;
         if (!persistent) {
           const stored = this._getStored();
@@ -109,28 +109,56 @@
         }
         const session = Tools.mergeDeepWithNullToDelete(this.state.session, this.initial.session, this._frozen);
         this._update(persistent, session, 'state-init');
-        this._checkUser(e);
+        await this._checkUser(e);
+        this._getCurrentProjectVersion(e);
       }
+
+      async _getCurrentProjectVersion(e) {
+        const username = this.state.persistent.user.name;
+        const userData = AppData.getCurrentUserData(username);
+        let persistent = Tools.setIn(this.state.persistent, ['user', 'currentProject'], userData.currentProject, this._frozen);
+        persistent = Tools.setIn(persistent, ['user', 'currentVersion'], userData.currentVersion, this._frozen);
+        this._update(persistent, this.state.session, e.type);
+      }
+
 
       _changeRoute(e) {
         const route = e.detail.payload;
+        let persistent = this.state.persistent;
+        if (route.segments[0] === "editor") {
+          let currentProject = route.segments[2];
+          if (!currentProject)
+            return this.$navigate("/home");
+          persistent = Tools.setIn(persistent, ['user', 'currentProject'], currentProject, this._frozen);
+          AppData.setCurrentProject(this.state.persistent.user.name, currentProject);
+          /*await*/
+          let currentVersion = route.segments[3];
+          if (currentVersion) {
+            persistent = Tools.setIn(persistent, ['user', 'currentVersion'], currentVersion, this._frozen);
+            AppData.setCurrentVersion(this.state.persistent.user.name, currentVersion);
+            /*await*/
+          }
+        }
         const session = Tools.setIn(this.state.session, ['route'], route, this._frozen);
         //check that the files are there and then load them if they are not..
-        this._update(this.state.persistent, session, e.type);
+        this._update(persistent, session, e.type);
       }
 
       _checkUser(e) {
-        firebase.auth().onAuthStateChanged((user) => {
-          if (user) {
-            user = AppState.makeUser(user);
-            const persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
-            this._update(persistent, this.state.session, e.type);
-            this._getProjects(e);
-          } else {
-            let persistent = Tools.setIn(this.state.persistent, ['user'], null, this._frozen);
-            persistent = Tools.setIn(persistent, ['projects'], [], this._frozen);
-            this._update(persistent, this.state.session, e.type);
-          }
+        return new Promise((resolve, reject) => {
+          firebase.auth().onAuthStateChanged(async (user) => {
+            if (user) {
+              user = AppState.makeUser(user);
+              const persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
+              this._update(persistent, this.state.session, e.type);
+              await this._getProjects(e);
+            } else {
+              let persistent = Tools.setIn(this.state.persistent, ['user'], null, this._frozen);
+              persistent = Tools.setIn(persistent, ['projects'], [], this._frozen);
+              this._update(persistent, this.state.session, e.type);
+            }
+            resolve();
+          })
         });
       }
 
@@ -195,7 +223,7 @@
         const versions = this.state.persistent.projects[id].versions;
 
         this.$navigate(`/editor/${username}/${id}/${version}`);
-        if (version && versions[version] && !versions[version].files)
+        if (versions && versions[version] && !versions[version].files)
           await this._getFiles({detail: {payload: {id: id, version: version}}});
       }
 
@@ -207,7 +235,7 @@
         //todo update state directly by removing the project that was deleted from the state itself.
       }
 
-      async _addFile(e){
+      async _addFile(e) {
         const user = this.state.persistent.user;
         const id = e.detail.payload.id;
         const version = e.detail.payload.version;

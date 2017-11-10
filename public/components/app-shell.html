@@ -21,9 +21,11 @@
                  projects="[[state.persistent.projects]]">
       </home-page>
       <editor-page page="editor"
-                   projects="[[state.persistent.projects]]"
-                   project-id="[[state.session.route.segments.2]]"
-                   version="[[state.session.route.segments.3]]">
+                   user-name="[[state.persistent.user.name]]"
+                   project-id="[[state.persistent.user.currentProject]]"
+                   version="[[state.persistent.user.currentVersion]]"
+                   versions="[[_currentVersions]]"
+                   files="[[_currentFiles]]">
       </editor-page>
       <notfound-page page="notfound"></notfound-page>
     </app-pages>
@@ -37,10 +39,35 @@
 
       static get properties() {
         return {
-          state: Object
+          state: Object,
+          _currentVersions: {
+            type: Array,
+            computed: "_retrieveVersions(state.persistent.user.currentProject)"
+          },
+          _currentFiles: {
+            type: Array,
+            computed: "_retrieveFiles(state.persistent.user.currentProject, state.persistent.user.currentVersion)"
+          }
         }
       }
+
+      _retrieveVersions(projectID) {
+        if (projectID && this.state.persistent.projects[projectID].versions)
+          return Object.keys(this.state.persistent.projects[projectID].versions);
+      }
+
+      _retrieveFiles(projectID, versionNumber) {
+        if (!projectID || !versionNumber)
+          return;
+        const project = this.state.persistent.projects[projectID];
+        const version = project.versions[versionNumber];
+        const res = [];
+        for (let file in version.files)
+          res.push(version.files[file]);
+        return res;
+      }
     }
+
     customElements.define(AppShell.is, AppShell);
   </script>
 </dom-module>
