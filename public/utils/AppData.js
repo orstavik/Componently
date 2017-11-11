@@ -8,6 +8,27 @@ class AppData {
     return db.doc(`users/${username}`).get();
   }
 
+  static async setCurrentProject(username, projectId){
+    const db = firebase.firestore();
+    try {
+      await db.doc(`users/${username}`).update({
+        currentProject: projectId
+      });
+    } catch (e){
+      console.log(e);
+    }
+  }
+
+  static async setCurrentVersion(username, versionNum){
+    const db = firebase.firestore();
+    try {
+      await db.doc(`users/${username}`).update({
+        currentVersion: Number(versionNum)
+      });
+    } catch (e){
+      console.log(e);
+    }
+  }
   /**
    * PROJECT
    */
@@ -31,19 +52,6 @@ class AppData {
     await deleteCollections;
   }
 
-  static async setCurrentProject(username, projectId){
-    const db = firebase.firestore();
-    await db.doc(`users/${username}`).update({
-      currentProject: projectId
-    });
-  }
-
-  static async setCurrentVersion(username, versionNum){
-    const db = firebase.firestore();
-    await db.doc(`users/${username}`).update({
-      currentVersion: Number(versionNum)
-    });
-  }
 
   /**
    * VERSIONS

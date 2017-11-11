@@ -122,23 +122,46 @@
       }
 
 
-      _changeRoute(e) {
+      async _changeRoute(e) {
         const route = e.detail.payload;
+        //the route is the same project and the same version as before, should do nothing
+        const urlPage = route.segments[0];
+        let urlUserName = decodeURI(route.segments[1]);
+        const urlProjectId = route.segments[2];
+        const urlVersion = route.segments[3];
         let persistent = this.state.persistent;
-        if (route.segments[0] === "editor") {
-          let currentProject = route.segments[2];
-          if (!currentProject)
-            return this.$navigate("/home");
-          persistent = Tools.setIn(persistent, ['user', 'currentProject'], currentProject, this._frozen);
-          AppData.setCurrentProject(this.state.persistent.user.name, currentProject);
-          /*await*/
-          let currentVersion = route.segments[3];
-          if (currentVersion) {
-            persistent = Tools.setIn(persistent, ['user', 'currentVersion'], currentVersion, this._frozen);
-            AppData.setCurrentVersion(this.state.persistent.user.name, currentVersion);
-            /*await*/
-          }
+
+        //if (asking for the same route as before)
+        //  just return;??
+
+        //"editor", but no selected project. Go home!!
+        if (urlPage === "editor" && !urlProjectId)
+          return this.$navigate("/home");
+
+        //"editor" + project + version.
+        else if (urlPage === "editor" && urlProjectId && urlVersion) {
+          persistent = Tools.setIn(persistent, ['user', 'currentVersion'], urlVersion, this._frozen);
+          AppData.setCurrentVersion(persistent.user.name, urlVersion); //await
+          AppData.setCurrentProject(persistent.user.name, urlProjectId); //await
+          //Ensure both versions and files are loaded
+          let versionsPromise = this._getVersions(urlProjectId);
+          let filesPromise = this._getFiles(urlProjectId, urlVersion);
+          let files = await filesPromise, versions = await versionsPromise;
+          persistent = Tools.setIn(persistent, ['projects', urlProjectId, 'versions'], versions, this._frozen);
+          persistent = Tools.setIn(persistent, ['projects', urlProjectId, 'versions', urlVersion, 'files'], files, this._frozen);
         }
+
+        //"editor" + project, but no version. Ensure versions are loaded, find latest version, and redirect.
+        else if (urlPage === "editor" && urlProjectId && !urlVersion) {//only have project, not version
+          persistent = Tools.setIn(persistent, ['user', 'currentProject'], urlProjectId, this._frozen);
+          AppData.setCurrentProject(persistent.user.name, urlProjectId); //await
+          //Ensure versions are loaded
+          let versions = await this._getVersions(urlProjectId);
+          persistent = Tools.setIn(persistent, ['projects', urlProjectId, 'versions'], versions, this._frozen);
+          let latest = AppState.getLatestVersion(versions);
+          return this.$navigate(`/editor/${urlUserName}/${urlProjectId}/${latest}`);
+        }
+
         const session = Tools.setIn(this.state.session, ['route'], route, this._frozen);
         //check that the files are there and then load them if they are not..
         this._update(persistent, session, e.type);
@@ -182,17 +205,18 @@
       }
 
       async _getProjects(e) {
+        if (this.state.persistent.projects)
+          return;
         const projects = await AppData.getProjects(this.state.persistent.user);
         const persistent = Tools.setIn(this.state.persistent, ['projects'], projects, this._frozen);
         this._update(persistent, this.state.session, e.type);
       }
 
-      async _getVersions(e) {
-        const id = e.detail.payload;
-        const versions = await AppData.getVersions(this.state.persistent.user, id);
-        const persistent = Tools.setIn(this.state.persistent, ['projects', id, 'versions'], versions, this._frozen);
-        this._update(persistent, this.state.session, e.type);
-        return versions;
+      async _getVersions(id) {
+        const projects = this.state.persistent.projects;
+        if (projects[id] && projects[id].versions)
+          return projects[id].versions;
+        return await AppData.getVersions(this.state.persistent.user, id);
       }
 
       async _addProject(e) {
@@ -206,32 +230,21 @@
       async _selectProject(e) {
         const username = this.state.persistent.user.name;
         const id = e.detail.payload;
-//        if (id === this.state.session.route.segments[2]) //if we dont do this, then reselecting will likely refresh everything. //if we do this, then it is not possible to reselect the project you are on.
-//          return;
         this.$navigate(`/editor/${username}/${id}`);
-        let versions = this.state.persistent.projects[id].versions;
-        if (!versions)
-          versions = await this._getVersions({detail: {payload: id}});
-        let version = AppState.getLatestVersion(versions);
-        await this._selectVersion({detail: {payload: {id: id, version: version}}});
       }
 
       async _selectVersion(e) {
         const id = e.detail.payload.id;
         const version = e.detail.payload.version;
         const username = this.state.persistent.user.name;
-        const versions = this.state.persistent.projects[id].versions;
-
         this.$navigate(`/editor/${username}/${id}/${version}`);
-        if (versions && versions[version] && !versions[version].files)
-          await this._getFiles({detail: {payload: {id: id, version: version}}});
       }
 
       async _removeProject(e) {
         const id = e.detail.payload;
         const user = this.state.persistent.user;
         await AppData.removeProject(user, id);
-        await this._getProjects(e);
+        //await this._getProjects(e);
         //todo update state directly by removing the project that was deleted from the state itself.
       }
 
@@ -241,18 +254,16 @@
         const version = e.detail.payload.version;
         const filename = e.detail.payload.filename;
         await AppData.addFile(user.name, id, version, filename);
-        this._getProjects(e);
+        //this._getProjects(e);
         //todo update state directly by adding the file that was deleted from the state itself.
       }
 
-      async _getFiles(e) {
-        const id = e.detail.payload.id;
-        const version = e.detail.payload.version;
+      async _getFiles(id, version) {
         const user = this.state.persistent.user;
-        const files = await AppData.getFiles(user, id, version);
-        const persistent = Tools.setIn(this.state.persistent, ['projects', id, 'versions', version, 'files'], files,
-          this._frozen);
-        this._update(persistent, this.state.session, e.type);
+        const projects = this.state.persistent.user.projects;
+        if (projects && projects[id] && projects[id].versions && projects[id].versions[version] && projects[id].versions[version].files)
+          return projects[id].versions[version].files;
+        return await AppData.getFiles(user, id, version);
       }
     }
 
