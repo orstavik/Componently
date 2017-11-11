@@ -18,7 +18,9 @@
           initial: {
             type: Object,
             value: () => ({
-              session: {},
+              session: {
+                subscriptions: {}
+              },
               persistent: {
                 user: null,
                 projects: []
@@ -66,6 +68,8 @@
         window.addEventListener('controller-select-project', this._selectProject.bind(this));
         window.addEventListener('controller-select-version', this._selectVersion.bind(this));
         window.addEventListener('controller-add-file', this._addFile.bind(this));
+        window.addEventListener('controller-user-changed', this._userChanged.bind(this));
+        window.addEventListener('controller-new-projects', this._projectsUpdate.bind(this));
       }
 
       _snap(action) {
@@ -110,7 +114,7 @@
         const session = Tools.mergeDeepWithNullToDelete(this.state.session, this.initial.session, this._frozen);
         this._update(persistent, session, 'state-init');
         await this._checkUser(e);
-        this._getCurrentProjectVersion(e);
+//        this._getCurrentProjectVersion(e);
       }
 
       async _getCurrentProjectVersion(e) {
@@ -174,15 +178,39 @@
               user = AppState.makeUser(user);
               const persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
               this._update(persistent, this.state.session, e.type);
-              await this._getProjects(e);
             } else {
               let persistent = Tools.setIn(this.state.persistent, ['user'], null, this._frozen);
               persistent = Tools.setIn(persistent, ['projects'], [], this._frozen);
               this._update(persistent, this.state.session, e.type);
             }
             resolve();
+            this.$emit("controller-user-changed");
           })
         });
+      }
+
+      _userChanged(e) {
+        const user = this.state.persistent.user;
+        const projectSubscription = this.state.session.subscriptions.project;
+
+        //same user being registered again, no need to change the subscription
+        if (user && projectSubscription && user.name === projectSubscription.name)
+          return;
+
+        //now, we can safely unsubscribe projectSubscription if it is already there.
+        if (projectSubscription)
+          projectSubscription.unsubscribe();
+
+        let unsub = null;
+        if (user){
+          let cb = ids => this.$emit("controller-new-projects", ids);
+          let unsub = {
+            name: user.name,
+            unsubscribe: AppData.listenToProjects(user.name, cb)
+          };
+        }
+        const session = Tools.setIn(this.state.session, ['subscription', 'project'], unsub, this._frozen);
+        this._update(this.state.persistent, session, e.type);
       }
 
       _signIn(e) {
@@ -191,7 +219,7 @@
             let user = AppState.makeUser(result.user);
             const persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
             this._update(persistent, this.state.session, e.type);
-            this._getProjects(e);
+            this.$emit("controller-user-changed");
           });
       }
 
@@ -201,6 +229,7 @@
             let persistent = Tools.setIn(this.state.persistent, ['user'], null, this._frozen);
             persistent = Tools.setIn(persistent, ['projects'], [], this._frozen);
             this._update(persistent, this.state.session, e.type);
+            this.$emit("controller-user-changed");
           })
       }
 
@@ -209,6 +238,12 @@
           return;
         const projects = await AppData.getProjects(this.state.persistent.user);
         const persistent = Tools.setIn(this.state.persistent, ['projects'], projects, this._frozen);
+        this._update(persistent, this.state.session, e.type);
+      }
+
+      _projectsUpdate(e) {
+        let projectIds = e.detail.payload;
+        const persistent = Tools.mergeDeepWithNullToDelete(this.state.persistent, {projects: projectIds}, this._frozen);
         this._update(persistent, this.state.session, e.type);
       }
 
@@ -223,8 +258,8 @@
         const id = e.detail.payload;
         const user = this.state.persistent.user;
         await AppData.addProject(user.name, id);
-        this._getProjects(e);
         //todo update state directly by adding the project that was deleted from the state itself.
+        //todo, maybe mark the object as newly created, green
       }
 
       async _selectProject(e) {
@@ -244,8 +279,8 @@
         const id = e.detail.payload;
         const user = this.state.persistent.user;
         await AppData.removeProject(user, id);
-        //await this._getProjects(e);
         //todo update state directly by removing the project that was deleted from the state itself.
+        //todo, maybe mark the object as newly deleted, orange
       }
 
       async _addFile(e) {
@@ -254,8 +289,7 @@
         const version = e.detail.payload.version;
         const filename = e.detail.payload.filename;
         await AppData.addFile(user.name, id, version, filename);
-        //this._getProjects(e);
-        //todo update state directly by adding the file that was deleted from the state itself.
+        //todo, maybe mark the object as newly created, green
       }
 
       async _getFiles(id, version) {

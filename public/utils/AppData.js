@@ -43,6 +43,10 @@ class AppData {
     return AppData.getCollectionIds(`users/${user.name}/projects`);
   }
 
+  static async listenToProjects(username, cb) {
+    return AppData.listenCollectionIds(`users/${username}/projects`, cb);
+  }
+
   static async removeProject(user, id) {
     const db = firebase.firestore();
     const deleteDoc = db.doc(`users/${user.name}/projects/${id}`).delete();
@@ -86,6 +90,16 @@ class AppData {
     for (let doc of querySnap.docs)
       collection[doc.id] = doc.data();
     return collection;
+  }
+
+  static listenCollectionIds(query, cb) {
+    const db = firebase.firestore();
+    return db.collection(query).onSnapshot(snap =>{
+      let res = {};
+      for (let doc of snap.docs)
+        res[doc.id] = doc.data();
+      cb(res);
+    });
   }
 
   static async deleteCollection(db, collectionRef, batchSize) {
