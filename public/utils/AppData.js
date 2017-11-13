@@ -43,7 +43,7 @@ class AppData {
     return AppData.getCollectionIds(`users/${user.name}/projects`);
   }
 
-  static async listenToProjects(username, cb) {
+  static listenToProjects(username, cb) {
     return AppData.listenCollectionIds(`users/${username}/projects`, cb);
   }
 
@@ -62,6 +62,10 @@ class AppData {
    */
   static async getVersions(user, projectId) {
     return AppData.getCollectionIds(`users/${user.name}/projects/${projectId}/versions`);
+  }
+
+  static async listenToVersions(username, projectId, cb) {
+    return AppData.listenCollectionIds(`users/${username}/projects/${projectId}/versions`, cb);
   }
 
   /**
