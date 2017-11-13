@@ -1,7 +1,7 @@
 class AppData {
 
   /**
-   * USER
+   * APP SPECIFIC
    */
   static async getCurrentUserData(username) {
     const db = firebase.firestore();
@@ -29,18 +29,12 @@ class AppData {
       console.log(e);
     }
   }
-  /**
-   * PROJECT
-   */
+
   static async addProject(username, id) {
     const db = firebase.firestore();
     await db.doc(`users/${username}/projects/${id}`).set({
       name: id
     });
-  }
-
-  static async getProjects(user) {
-    return AppData.getCollectionIds(`users/${user.name}/projects`);
   }
 
   static listenToProjects(username, cb) {
@@ -56,21 +50,10 @@ class AppData {
     await deleteCollections;
   }
 
-
-  /**
-   * VERSIONS
-   */
-  static async getVersions(user, projectId) {
-    return AppData.getCollectionIds(`users/${user.name}/projects/${projectId}/versions`);
-  }
-
   static listenToVersions(username, projectId, cb) {
     return AppData.listenCollectionIds(`users/${username}/projects/${projectId}/versions`, cb);
   }
 
-  /**
-   * FILES
-   */
   static async addFile(username, id, version, filename) {
     const db = firebase.firestore();
     await db.doc(`users/${username}/projects/${id}/versions/${version}/files/${filename}`).set({
@@ -82,7 +65,6 @@ class AppData {
   static async getFiles(username, projectId, version) {
     return AppData.getCollectionIds(`users/${username}/projects/${projectId}/versions/${version}/files`);
   }
-
 
   /**
    * GENERIC METHODS

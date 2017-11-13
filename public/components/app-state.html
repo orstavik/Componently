@@ -260,14 +260,6 @@
         this._update(this.state.persistent, session, action);
       }
 
-      async _getProjects(e) {
-        if (this.state.persistent.projects)
-          return;
-        const projects = await AppData.getProjects(this.state.persistent.user);
-        const persistent = Tools.setIn(this.state.persistent, ['projects'], projects, this._frozen);
-        this._update(persistent, this.state.session, e.type);
-      }
-
       _newProjects(e) {
         let username = e.detail.payload.username;
         let projectIds = e.detail.payload.ids;
