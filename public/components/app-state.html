@@ -23,7 +23,7 @@
               },
               persistent: {
                 user: null,
-                projects: []
+//                projects: []
               }
             })
           },
@@ -47,17 +47,13 @@
         }
       }
 
-      getLatestVersion(ownerName, projectId) {
-        if (!ownerName ||
-          !projectId ||
-          !this.state.persistent.owners ||
-          !this.state.persistent.owners[ownerName] ||
-          !this.state.persistent.owners[ownerName].projects ||
-          !this.state.persistent.owners[ownerName].projects[projectId] ||
-          !this.state.persistent.owners[ownerName].projects[projectId].versions) {
+      getLatestVersion(username, project) {
+        if (!username ||
+          !project ||
+          !Tools.testPath(this.state.persistent, ["users", username, "projects", project, "versions"])) {
           return -1;
         }
-        let versions = this.state.persistent.owners[ownerName].projects[projectId].versions;
+        let versions = this.state.persistent.users[username].projects[project].versions;
         return Object.keys(versions).map(n => Number(n)).sort().reverse()[0];
       }
 
@@ -174,21 +170,21 @@
       }
 
       _userChanged(e) {
-        if (this.state.persistent.user === null) {
-          const persistent = Tools.setIn(this.state.persistent, ['projects'], {}, this._frozen);
-          this._update(persistent, this.state.session, e.type);
-        }
+        //remove private projects from the state
         let username = this.state.persistent.user ? this.state.persistent.user.name : null;
         this._updateProjectsListener(username, e.type);
       }
 
       async _currentProjectChanged(e) {
         const currentProject = this.state.persistent.currentProject;
-        let ownerName = currentProject ? currentProject.owner : null;
-        let projectId = currentProject ? currentProject.project : null;
-        this._updateVersionsListener(ownerName, projectId, e.type);        //update versions listener
+        if (!currentProject)
+          return this.$navigate("/home");
 
-        let version = currentProject ? currentProject.version : null;
+        let ownerName = currentProject.owner ;
+        let projectId = currentProject.project ;
+        let version = currentProject.version ;
+        this._updateVersionsListener(ownerName, projectId, e.type);
+
         if (!version) {
           let latest = this.getLatestVersion(ownerName, projectId);
           if (latest !== -1)
@@ -196,8 +192,8 @@
           return;
         }
 
-        let files = await this._getFiles(ownerName, projectId, version);  //update versions listener
-        let persistent = Tools.setIn(this.state.persistent, [ownerName, 'projects', projectId, 'versions', version, 'files'], files, this._frozen);
+        let files = await this._getFiles(ownerName, projectId, version);
+        let persistent = Tools.setIn(this.state.persistent, ["users", ownerName, 'projects', projectId, 'versions', version, 'files'], files, this._frozen);
         this._update(persistent, this.state.session, e.type);
       }
 
@@ -238,7 +234,7 @@
 
         let unsub = null;
         if (username) {
-          const cb = ids => this.$emit("controller-new-projects", ids);
+          const cb = ids => this.$emit("controller-new-projects", {username: username, ids: ids});
           unsub = {
             username: username,
             unsubscribe: AppData.listenToProjects(username, cb)
@@ -276,8 +272,9 @@
       }
 
       _newProjects(e) {
-        let projectIds = e.detail.payload;
-        const persistent = Tools.filterFirestore(this.state.persistent, ["projects"], projectIds, this._frozen);
+        let username = e.detail.payload.username;
+        let projectIds = e.detail.payload.ids;
+        const persistent = Tools.filterFirestore(this.state.persistent, ["users", username, "projects"], projectIds, this._frozen);
         this._update(persistent, this.state.session, e.type);
       }
 
@@ -285,7 +282,7 @@
         let project = e.detail.payload.project;
         let owner = e.detail.payload.owner;
         let versionIds = e.detail.payload.versions;
-        const persistent = Tools.filterFirestore(this.state.persistent, ["owners", owner, "projects", project, "versions"], versionIds, this._frozen);
+        const persistent = Tools.filterFirestore(this.state.persistent, ["users", owner, "projects", project, "versions"], versionIds, this._frozen);
         this._update(persistent, this.state.session, e.type);
         this.$emit("controller-version-changed");
       }
@@ -335,12 +332,10 @@
         //todo, maybe mark the object as newly created, green
       }
 
-      async _getFiles(owner, id, version) {
-        const user = owner;
-        const projects = this.state.persistent.user.projects;
-        if (projects && projects[id] && projects[id].versions && projects[id].versions[version] && projects[id].versions[version].files)
-          return projects[id].versions[version].files;
-        return await AppData.getFiles(user, id, version);
+      async _getFiles(username, id, version) {
+        if (Tools.testPath(this.state.persistent, ["users", username, "projects", id, "versions", version, "files"]))
+          return this.state.persistent.users[username].projects[id].versions[version].files;
+        return await AppData.getFiles(username, id, version);
       }
     }
 

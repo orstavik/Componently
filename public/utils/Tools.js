@@ -3,9 +3,17 @@
  */
 class Tools {
 
+  static testPath(root, path){
+    for (let key of path) {
+      if (!root[key])
+        return false;
+      root = root[key];
+    }
+    return true;
+  }
+
   //todo use the filter method recursively to add, delete, update doc data in the objects as well.
   static filterFirestore(origin, path, filter, _frozen) {
-    debugger;
     let res = Object.assign({}, origin);
     const start = res;
     for (let key of path) {

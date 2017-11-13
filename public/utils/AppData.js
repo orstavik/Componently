@@ -64,7 +64,7 @@ class AppData {
     return AppData.getCollectionIds(`users/${user.name}/projects/${projectId}/versions`);
   }
 
-  static async listenToVersions(username, projectId, cb) {
+  static listenToVersions(username, projectId, cb) {
     return AppData.listenCollectionIds(`users/${username}/projects/${projectId}/versions`, cb);
   }
 
@@ -79,8 +79,8 @@ class AppData {
     });
   }
 
-  static async getFiles(user, projectId, version) {
-    return AppData.getCollectionIds(`users/${user.name}/projects/${projectId}/versions/${version}/files`);
+  static async getFiles(username, projectId, version) {
+    return AppData.getCollectionIds(`users/${username}/projects/${projectId}/versions/${version}/files`);
   }
 
 
