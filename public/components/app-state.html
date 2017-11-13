@@ -70,7 +70,6 @@
         window.addEventListener('controller-select-project', this._selectProject.bind(this));
         window.addEventListener('controller-select-version', this._selectVersion.bind(this));
         window.addEventListener('controller-add-file', this._addFile.bind(this));
-        window.addEventListener('controller-user-changed', this._userChanged.bind(this));
         window.addEventListener('controller-current-project-changed', this._currentProjectChanged.bind(this));
         window.addEventListener('controller-new-projects', this._newProjects.bind(this));
         window.addEventListener('controller-new-versions', this._newVersions.bind(this));
@@ -164,7 +163,7 @@
               user = AppState.makeUser(user);
             let persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
             this._update(persistent, this.state.session, e.type);
-            this.$emit("controller-user-changed");
+            this._updateProjectsListener(user ? user.name : null, e.type);
             resolve();
           })
         });
@@ -176,7 +175,7 @@
             let user = AppState.makeUser(result.user);
             const persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
             this._update(persistent, this.state.session, e.type);
-            this.$emit("controller-user-changed");
+            this._updateProjectsListener(user.name, e.type);
           });
       }
 
@@ -185,13 +184,8 @@
           .then(() => {
             let persistent = Tools.setIn(this.state.persistent, ['user'], null, this._frozen);
             this._update(persistent, this.state.session, e.type);
-            this.$emit("controller-user-changed");
+            this._updateProjectsListener(null, e.type);
           })
-      }
-
-      _userChanged(e) {
-        let username = this.state.persistent.user ? this.state.persistent.user.name : null;
-        this._updateProjectsListener(username, e.type);
       }
 
       _updateProjectsListener(username, action) {
@@ -287,7 +281,7 @@
         let versionIds = e.detail.payload.versions;
         const persistent = Tools.filterFirestore(this.state.persistent, ["users", owner, "projects", project, "versions"], versionIds, this._frozen);
         this._update(persistent, this.state.session, e.type);
-        this.$emit("controller-version-changed");
+        this.$emit("controller-current-project-changed");
       }
 
       async _addProject(e) {

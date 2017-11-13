@@ -18,7 +18,7 @@
     <app-pages page="[[state.session.route.segments.0]]">
       <home-page page="home"
                  user="[[state.persistent.user]]"
-                 projects="[[state.persistent.projects]]">
+                 projects="[[_userProjects]]">
       </home-page>
       <editor-page page="editor"
                    current-project="[[state.persistent.currentProject]]"
@@ -45,6 +45,10 @@
           _currentFiles: {
             type: Array,
             computed: "_retrieveFiles(state.persistent.currentProject, state.persistent.users)"
+          },
+          _userProjects: {
+            type: Array,
+            computed: "_retrieveUserProjects(state.persistent.user.name, state.persistent.users)"
           }
         }
       }
@@ -73,6 +77,12 @@
         for (let file in files)
           res.push(files[file]);
         return res;
+      }
+
+      _retrieveUserProjects(username, users) {
+        if (!username || !users)
+          return [];
+        return users[username].projects;
       }
     }
 
