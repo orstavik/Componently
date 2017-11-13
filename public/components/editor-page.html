@@ -36,6 +36,7 @@
     </div>
     <input type="text" id="newFileName" style="width: 120px;" placeholder="file">
     <button on-tap="_addFile">+</button>
+    <button on-tap="_openPreview">Preview</button>
 
   </template>
   <script>
@@ -91,6 +92,14 @@
       _getExt(name) {
         if (name)
           return name.split('.').pop();
+      }
+
+      _openPreview() {
+        const preview = window.open('', 'Preview', 'width=600,height=600');
+        const body = preview.document.querySelector('body');
+        const editor = this.shadowRoot.querySelector('code-editor[mode=html]').editor;
+        body.innerHTML = editor.getValue();
+        preview.document.title = 'Preview';
       }
     }
 
