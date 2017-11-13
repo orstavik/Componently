@@ -22,8 +22,7 @@
                 subscriptions: {}
               },
               persistent: {
-                user: null,
-//                projects: []
+                user: null
               }
             })
           },
@@ -123,26 +122,22 @@
 
       async _changeRoute(e) {
         const route = e.detail.payload;
-        //the route is the same project and the same version as before, should do nothing
+
         const urlPage = route.segments[0];
-        let urlOwnerName = decodeURI(route.segments[1]);
-        const urlProjectId = route.segments[2];
-        const urlVersion = route.segments[3];
-        const user = this.state.persistent.user;
+        let currentProject = {
+          owner: decodeURI(route.segments[1]),
+          project: route.segments[2],
+          version: route.segments[3]
+        };
 
         //if (asking for the same route as before)
         //  just return;??
 
         //"editor"
         if (urlPage === "editor") {
-          if (!urlProjectId)                    //no selected project. Go home!!
+          if (!route.segments[2])                    //no selected project. Go home!!
             return this.$navigate("/home");
 
-          let currentProject = {
-            owner: urlOwnerName,
-            project: urlProjectId,
-            version: urlVersion
-          };
           const persistent = Tools.setIn(this.state.persistent, ['currentProject'], currentProject, this._frozen);
           const session = Tools.setIn(this.state.session, ['route'], route, this._frozen);
           //check that the files are there and then load them if they are not..
@@ -170,7 +165,6 @@
       }
 
       _userChanged(e) {
-        //remove private projects from the state
         let username = this.state.persistent.user ? this.state.persistent.user.name : null;
         this._updateProjectsListener(username, e.type);
       }
@@ -285,13 +279,6 @@
         const persistent = Tools.filterFirestore(this.state.persistent, ["users", owner, "projects", project, "versions"], versionIds, this._frozen);
         this._update(persistent, this.state.session, e.type);
         this.$emit("controller-version-changed");
-      }
-
-      async _getVersions(id) {
-        const projects = this.state.persistent.projects;
-        if (projects[id] && projects[id].versions)
-          return projects[id].versions;
-        return await AppData.getVersions(this.state.persistent.user, id);
       }
 
       async _addProject(e) {
