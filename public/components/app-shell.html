@@ -21,9 +21,7 @@
                  projects="[[state.persistent.projects]]">
       </home-page>
       <editor-page page="editor"
-                   user-name="[[state.persistent.user.name]]"
-                   project-id="[[state.persistent.user.currentProject]]"
-                   version="[[state.persistent.user.currentVersion]]"
+                   current-project="[[state.persistent.currentProject]]"
                    versions="[[_currentVersions]]"
                    files="[[_currentFiles]]">
       </editor-page>
@@ -42,28 +40,38 @@
           state: Object,
           _currentVersions: {
             type: Array,
-            computed: "_retrieveVersions(state.persistent.user.currentProject)"
+            computed: "_retrieveVersions(state.persistent.currentProject, state.persistent.users)"
           },
           _currentFiles: {
             type: Array,
-            computed: "_retrieveFiles(state.persistent.user.currentProject, state.persistent.user.currentVersion)"
+            computed: "_retrieveFiles(state.persistent.currentProject, state.persistent.users)"
           }
         }
       }
 
-      _retrieveVersions(projectID) {
-        if (projectID && this.state.persistent.projects[projectID].versions)
-          return Object.keys(this.state.persistent.projects[projectID].versions);
+      _retrieveVersions(currentProject, users) {
+        if (!currentProject || !users)
+          return [];
+        let owner = currentProject.owner;
+        let project = currentProject.project;
+        let version = currentProject.version;
+        if (!Tools.testPath(users, [owner, "projects", project, "versions"]))
+          return [];
+        return Object.keys(users[owner].projects[project].versions);
       }
 
-      _retrieveFiles(projectID, versionNumber) {
-        if (!projectID || !versionNumber)
-          return;
-        const project = this.state.persistent.projects[projectID];
-        const version = project.versions[versionNumber];
+      _retrieveFiles(currentProject, users) {
+        if (!currentProject || !users)
+          return [];
+        let owner = currentProject.owner;
+        let project = currentProject.project;
+        let version = currentProject.version;
+        if (!Tools.testPath(users, [owner, "projects", project, "versions", version, "files"]))
+          return [];
+        const files = users[owner].projects[project].versions[version].files;
         const res = [];
-        for (let file in version.files)
-          res.push(version.files[file]);
+        for (let file in files)
+          res.push(files[file]);
         return res;
       }
     }

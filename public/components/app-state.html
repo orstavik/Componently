@@ -309,10 +309,10 @@
       }
 
       async _selectVersion(e) {
-        const id = e.detail.payload.id;
+        const project = e.detail.payload.project;
         const version = e.detail.payload.version;
-        const username = this.state.persistent.user.name;
-        this.$navigate(`/editor/${username}/${id}/${version}`);
+        const owner = e.detail.payload.owner;
+        this.$navigate(`/editor/${owner}/${project}/${version}`);
       }
 
       async _removeProject(e) {

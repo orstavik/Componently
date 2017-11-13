@@ -24,7 +24,7 @@
       <div>
         Version: <select on-change="_changeVersion">
         <template is="dom-repeat" items="[[versions]]">
-          <option value="[[item]]" selected="[[_isSelectedVersion(item, version)]]">[[item]]</option>
+          <option value="[[item]]" selected="[[_isSelectedVersion(item, currentProject.version)]]">[[item]]</option>
         </template>
       </select>
       </div>
@@ -46,9 +46,7 @@
 
       static get properties() {
         return {
-          projects: Object,
-          projectId: String,
-          version: Number,
+          currentProject: Object,
           versions: {
             type: Array,
             value: () => [],
@@ -56,30 +54,23 @@
           files: {
             type: Array,
             value: () => [],
-//            value: () => [{
-//                name: 'index.html',
-//                value: '<!-- HTML -->'
-//              }, {
-//                name: 'index.css',
-//                value: '/* CSS */'
-//              }, {
-//                name: 'index.js',
-//                value: '// JS'
-//              }, {
-//                name: 'index.json',
-//                value: '// JSON'
-//            }]
           }
         }
       }
 
-      _isSelectedVersion(item, version){
+      _isSelectedVersion(item, version) {
         return item === version;
       }
 
       _changeVersion(e) {
-        if (e.target.value)
-          this.$emit('controller-select-version', {id: this.projectId, version: e.target.value});
+        if (e.target.value) {
+          const versionElect = {
+            owner: this.currentProject.owner,
+            project: this.currentProject.project,
+            version: e.target.value
+          };
+          this.$emit('controller-select-version', versionElect);
+        }
       }
 
       _addFile(e) {
@@ -102,6 +93,7 @@
           return name.split('.').pop();
       }
     }
+
     customElements.define(EditorPage.is, EditorPage);
   </script>
 </dom-module>
