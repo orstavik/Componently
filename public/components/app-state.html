@@ -22,8 +22,7 @@
                 subscriptions: {}
               },
               persistent: {
-                user: null,
-//                projects: []
+                user: null
               }
             })
           },
@@ -71,7 +70,6 @@
         window.addEventListener('controller-select-project', this._selectProject.bind(this));
         window.addEventListener('controller-select-version', this._selectVersion.bind(this));
         window.addEventListener('controller-add-file', this._addFile.bind(this));
-        window.addEventListener('controller-user-changed', this._userChanged.bind(this));
         window.addEventListener('controller-current-project-changed', this._currentProjectChanged.bind(this));
         window.addEventListener('controller-new-projects', this._newProjects.bind(this));
         window.addEventListener('controller-new-versions', this._newVersions.bind(this));
@@ -106,6 +104,9 @@
         return JSON.parse(localStorage.getItem('state'));
       }
 
+      /**
+       * INIT AND ROUTE
+       */
       async _init(e) {
         let persistent = this.state.persistent;
         if (!persistent) {
@@ -123,26 +124,22 @@
 
       async _changeRoute(e) {
         const route = e.detail.payload;
-        //the route is the same project and the same version as before, should do nothing
+
         const urlPage = route.segments[0];
-        let urlOwnerName = decodeURI(route.segments[1]);
-        const urlProjectId = route.segments[2];
-        const urlVersion = route.segments[3];
-        const user = this.state.persistent.user;
+        let currentProject = {
+          owner: decodeURI(route.segments[1]),
+          project: route.segments[2],
+          version: route.segments[3]
+        };
 
         //if (asking for the same route as before)
         //  just return;??
 
         //"editor"
         if (urlPage === "editor") {
-          if (!urlProjectId)                    //no selected project. Go home!!
+          if (!route.segments[2])                    //no selected project. Go home!!
             return this.$navigate("/home");
 
-          let currentProject = {
-            owner: urlOwnerName,
-            project: urlProjectId,
-            version: urlVersion
-          };
           const persistent = Tools.setIn(this.state.persistent, ['currentProject'], currentProject, this._frozen);
           const session = Tools.setIn(this.state.session, ['route'], route, this._frozen);
           //check that the files are there and then load them if they are not..
@@ -156,6 +153,9 @@
         }
       }
 
+      /**
+       * USER AND LISTENING FOR logged in USERS PROJECTS
+       */
       _checkUser(e) {
         return new Promise((resolve, reject) => {
           firebase.auth().onAuthStateChanged(async (user) => {
@@ -163,26 +163,63 @@
               user = AppState.makeUser(user);
             let persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
             this._update(persistent, this.state.session, e.type);
-            this.$emit("controller-user-changed");
+            this._updateProjectsListener(user ? user.name : null, e.type);
             resolve();
           })
         });
       }
 
-      _userChanged(e) {
-        //remove private projects from the state
-        let username = this.state.persistent.user ? this.state.persistent.user.name : null;
-        this._updateProjectsListener(username, e.type);
+      _signIn(e) {
+        firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())
+          .then((result) => {
+            let user = AppState.makeUser(result.user);
+            const persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
+            this._update(persistent, this.state.session, e.type);
+            this._updateProjectsListener(user.name, e.type);
+          });
       }
 
+      _signOut(e) {
+        firebase.auth().signOut()
+          .then(() => {
+            let persistent = Tools.setIn(this.state.persistent, ['user'], null, this._frozen);
+            this._update(persistent, this.state.session, e.type);
+            this._updateProjectsListener(null, e.type);
+          })
+      }
+
+      _updateProjectsListener(username, action) {
+        const existingSub = this.state.session.subscriptions.projects;
+        if (existingSub === null && username === null)        //the same, null
+          return;
+        if (existingSub && existingSub.username === username) //the same, not null
+          return;
+        if (existingSub)
+          existingSub.unsubscribe();
+
+        let unsub = null;
+        if (username) {
+          const cb = ids => this.$emit("controller-new-projects", {username: username, ids: ids});
+          unsub = {
+            username: username,
+            unsubscribe: AppData.listenToProjects(username, cb)
+          };
+        }
+        const session = Tools.setIn(this.state.session, ['subscriptions', 'projects'], unsub, this._frozen);
+        this._update(this.state.persistent, session, action);
+      }
+
+      /**
+       * CURRENT PROJECT AND LISTENERS FOR VERSION
+       */
       async _currentProjectChanged(e) {
         const currentProject = this.state.persistent.currentProject;
         if (!currentProject)
           return this.$navigate("/home");
 
-        let ownerName = currentProject.owner ;
-        let projectId = currentProject.project ;
-        let version = currentProject.version ;
+        let ownerName = currentProject.owner;
+        let projectId = currentProject.project;
+        let version = currentProject.version;
         this._updateVersionsListener(ownerName, projectId, e.type);
 
         if (!version) {
@@ -223,54 +260,6 @@
         this._update(this.state.persistent, session, action);
       }
 
-      _updateProjectsListener(username, action) {
-        const existingSub = this.state.session.subscriptions.projects;
-        if (existingSub === null && username === null)        //the same, null
-          return;
-        if (existingSub && existingSub.username === username) //the same, not null
-          return;
-        if (existingSub)
-          existingSub.unsubscribe();
-
-        let unsub = null;
-        if (username) {
-          const cb = ids => this.$emit("controller-new-projects", {username: username, ids: ids});
-          unsub = {
-            username: username,
-            unsubscribe: AppData.listenToProjects(username, cb)
-          };
-        }
-        const session = Tools.setIn(this.state.session, ['subscriptions', 'projects'], unsub, this._frozen);
-        this._update(this.state.persistent, session, action);
-      }
-
-      _signIn(e) {
-        firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())
-          .then((result) => {
-            let user = AppState.makeUser(result.user);
-            const persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
-            this._update(persistent, this.state.session, e.type);
-            this.$emit("controller-user-changed");
-          });
-      }
-
-      _signOut(e) {
-        firebase.auth().signOut()
-          .then(() => {
-            let persistent = Tools.setIn(this.state.persistent, ['user'], null, this._frozen);
-            this._update(persistent, this.state.session, e.type);
-            this.$emit("controller-user-changed");
-          })
-      }
-
-      async _getProjects(e) {
-        if (this.state.persistent.projects)
-          return;
-        const projects = await AppData.getProjects(this.state.persistent.user);
-        const persistent = Tools.setIn(this.state.persistent, ['projects'], projects, this._frozen);
-        this._update(persistent, this.state.session, e.type);
-      }
-
       _newProjects(e) {
         let username = e.detail.payload.username;
         let projectIds = e.detail.payload.ids;
@@ -284,14 +273,7 @@
         let versionIds = e.detail.payload.versions;
         const persistent = Tools.filterFirestore(this.state.persistent, ["users", owner, "projects", project, "versions"], versionIds, this._frozen);
         this._update(persistent, this.state.session, e.type);
-        this.$emit("controller-version-changed");
-      }
-
-      async _getVersions(id) {
-        const projects = this.state.persistent.projects;
-        if (projects[id] && projects[id].versions)
-          return projects[id].versions;
-        return await AppData.getVersions(this.state.persistent.user, id);
+        this.$emit("controller-current-project-changed");
       }
 
       async _addProject(e) {
