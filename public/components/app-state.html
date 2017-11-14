@@ -69,7 +69,9 @@
         window.addEventListener('controller-remove-project', this._removeProject.bind(this));
         window.addEventListener('controller-select-project', this._selectProject.bind(this));
         window.addEventListener('controller-select-version', this._selectVersion.bind(this));
+        window.addEventListener('controller-save-new-version', this._saveNewVersion.bind(this));
         window.addEventListener('controller-add-file', this._addFile.bind(this));
+        window.addEventListener('controller-file-edited', this._fileEdited.bind(this));
         window.addEventListener('controller-current-project-changed', this._currentProjectChanged.bind(this));
         window.addEventListener('controller-new-projects', this._newProjects.bind(this));
         window.addEventListener('controller-new-versions', this._newVersions.bind(this));
@@ -214,6 +216,8 @@
        */
       async _currentProjectChanged(e) {
         const currentProject = this.state.persistent.currentProject;
+        if (this.state.persistent.user)
+          AppData.setCurrentProject(this.state.persistent.user.name, this.state.persistent.currentProject);
         if (!currentProject)
           return this.$navigate("/home");
 
@@ -228,9 +232,14 @@
             this.$navigate(`/editor/${ownerName}/${projectId}/${latest}`);
           return;
         }
-
+        let persistent = this.state.persistent;
+        if (Tools.testPath(this.state.persistent, ["users", ownerName, "projects", projectId, "versions", version, "comment"])) {
+          let comment = this.state.persistent.users[ownerName].projects [projectId].versions[version].comment;
+          persistent = Tools.setIn(persistent, ['currentProject', 'versionComment'], comment, this._frozen);
+        }
         let files = await this._getFiles(ownerName, projectId, version);
-        let persistent = Tools.setIn(this.state.persistent, ["users", ownerName, 'projects', projectId, 'versions', version, 'files'], files, this._frozen);
+        persistent = Tools.setIn(persistent, ["users", ownerName, 'projects', projectId, 'versions', version, 'files'], files, this._frozen);
+        persistent = Tools.setIn(persistent, ['currentProject', 'files'], files, this._frozen);
         this._update(persistent, this.state.session, e.type);
       }
 
@@ -305,13 +314,32 @@
         //todo, maybe mark the object as newly deleted, orange
       }
 
-      async _addFile(e) {
-        const user = this.state.persistent.user;
-        const id = e.detail.payload.id;
-        const version = e.detail.payload.version;
+      async _saveNewVersion(e) {
+        let cp = this.state.persistent.currentProject;
+        let comment = e.detail.payload;
+        let nextVersion = await AppData.addVersion(cp.owner, cp.project, cp.version, cp.files, comment); //todo,this await is a little bad, we should lock the currentProject object here
+        let persistent = Tools.setIn(this.state.persistent, ["currentProject", "version"], nextVersion);
+        persistent = Tools.setIn(persistent, ["currentProject", "changed"], null);
+        this._update(persistent, this.state.session, e.type);
+        this.$navigate(`/editor/${cp.owner}/${cp.project}/${nextVersion}`);
+      }
+
+      _fileEdited(e) {
+        const filename = e.detail.payload.name;
+        const value = e.detail.payload.value;
+        let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename, "value"], value);
+        persistent = Tools.setIn(persistent, ["currentProject", "changed"], new Date().getTime());
+        this._update(persistent, this.state.session, e.type);
+      }
+
+      _addFile(e) {
         const filename = e.detail.payload.filename;
-        await AppData.addFile(user.name, id, version, filename);
-        //todo, maybe mark the object as newly created, green
+        let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename], {
+          name: filename,
+          value: "new file value"
+        });
+        persistent = Tools.setIn(persistent, ["currentProject", "changed"], new Date().getTime());
+        this._update(persistent, this.state.session, e.type)
       }
 
       async _getFiles(username, id, version) {

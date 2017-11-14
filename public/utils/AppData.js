@@ -8,24 +8,14 @@ class AppData {
     return db.doc(`users/${username}`).get();
   }
 
-  static async setCurrentProject(username, projectId){
+  static async setCurrentProject(username, currentProject) {
     const db = firebase.firestore();
+    currentProject = Tools.removeUndefinedFields(currentProject);
     try {
       await db.doc(`users/${username}`).update({
-        currentProject: projectId
+        currentProject: currentProject
       });
-    } catch (e){
-      console.log(e);
-    }
-  }
-
-  static async setCurrentVersion(username, versionNum){
-    const db = firebase.firestore();
-    try {
-      await db.doc(`users/${username}`).update({
-        currentVersion: Number(versionNum)
-      });
-    } catch (e){
+    } catch (e) {
       console.log(e);
     }
   }
@@ -46,6 +36,7 @@ class AppData {
     const deleteDoc = db.doc(`users/${user.name}/projects/${id}`).delete();
     const deleteCollections = AppData.deleteCollection(db, db.collection(
       `users/${user.name}/projects/${id}/versions`));
+    //todo do we need to remove all the /versions/version/files too?
     await deleteDoc;
     await deleteCollections;
   }
@@ -54,12 +45,28 @@ class AppData {
     return AppData.listenCollectionIds(`users/${username}/projects/${projectId}/versions`, cb);
   }
 
-  static async addFile(username, id, version, filename) {
+  //todo, a little unsafe, get the next version number inside a transaction in AppData
+  static async addVersion(username, project, version, files, comment) {
     const db = firebase.firestore();
-    await db.doc(`users/${username}/projects/${id}/versions/${version}/files/${filename}`).set({
-      name: id,
-      value: "new file value"
-    });
+
+    let versionsRef = db.collection(`users/${username}/projects/${project}/versions/`)
+                        .orderBy("name", "desc")
+                        .limit(1);
+    let latestVersions = await versionsRef.get();
+    if (latestVersions.empty)
+      throw new Error("wtf?!");
+    version = latestVersions.docs[0].data().name + 1;
+
+    const batch = db.batch();
+    const newVersionRef = db.doc(`users/${username}/projects/${project}/versions/${version}`);
+    batch.set(newVersionRef, {name: version, comment: comment});
+    for (let key in files) {
+      let file = files[key];
+      let fileRef = db.doc(`users/${username}/projects/${project}/versions/${version}/files/${file.name}`);
+      batch.set(fileRef, file);
+    }
+    await batch.commit();
+    return version;
   }
 
   static async getFiles(username, projectId, version) {
@@ -80,7 +87,7 @@ class AppData {
 
   static listenCollectionIds(query, cb) {
     const db = firebase.firestore();
-    return db.collection(query).onSnapshot(snap =>{
+    return db.collection(query).onSnapshot(snap => {
       let res = {};
       for (let doc of snap.docs)
         res[doc.id] = doc.data();
