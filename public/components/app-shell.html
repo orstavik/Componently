@@ -41,10 +41,6 @@
             type: Array,
             computed: "_retrieveVersions(state.persistent.currentProject, state.persistent.users)"
           },
-          _currentFiles: {
-            type: Array,
-            computed: "_retrieveFiles(state.persistent.currentProject, state.persistent.users)"
-          },
           _userProjects: {
             type: Array,
             computed: "_retrieveUserProjects(state.persistent.user.name, state.persistent.users)"
