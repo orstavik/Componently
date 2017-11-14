@@ -41,7 +41,7 @@
     <input type="text" id="newFileName" style="width: 120px;" placeholder="file">
     <button on-tap="_addFile">+</button>
     
-    <code-preview id="preview" files="[[localFiles]]"></code-preview>
+    <code-preview id="preview" files="[[currentProject.files]]"></code-preview>
 
   </template>
   <script>
@@ -57,14 +57,6 @@
             type: Array,
             value: () => [],
           },
-          files: {
-            type: Object,
-            value: () => ({})
-          },
-          localFiles: {
-            type: Object,
-            computed: '_copyFiles(files)'
-          },
           filesArray: {
             type: Array,
             computed: "_toArray(currentProject.files)",
@@ -72,9 +64,10 @@
         }
       }
 
-      connectedCallback() {
-        super.connectedCallback();
-        this.addEventListener('editor-value-change', (e) => this._updateFiles(e))
+      static get observers() {
+        return [
+          '_updateFiles(currentProject)'
+        ]
       }
 
       _copyFiles(files) {
@@ -112,10 +105,7 @@
         this.$.newFileName.value = '';
       }
 
-      _updateFiles(e) {
-        const name = e.path[0].name;
-        const value = e.detail.payload.getValue();
-        this.localFiles[name].value = value;
+      _updateFiles(cp) {
         this.$.preview.update();
       }
 

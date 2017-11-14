@@ -27,6 +27,15 @@
           dependencies: {
             type: Object,
             value: () => ({})
+          },
+          NODETYPES: {
+            type: Object,
+            value: () => ({
+              html: 'div',
+              css: 'style',
+              js: 'script',
+              json: 'script'
+            })
           }
         }
       }
@@ -50,45 +59,27 @@
       bundle() {
         const head = this.preview.document.querySelector('head');
         const body = this.preview.document.querySelector('body');
-        const htmlFiles = CodePreview.filterType(this.files, 'html');
-        const cssFiles = CodePreview.filterType(this.files, 'css');
-        const jsFiles = CodePreview.filterType(this.files, 'js');
-        const jsonFiles = CodePreview.filterType(this.files, 'json');
-        for (let file of htmlFiles) {
-          let divTag = document.createElement('div');
-          divTag.id = file.name;
-          divTag.innerHTML = file.value;
-          body.appendChild(divTag);
+        this._bundleFiles('html');
+        this._bundleFiles('css');
+        this._bundleFiles('js');
+        this._bundleFiles('json');
+      }
+
+      _bundleFiles(type) {
+        const head = this.preview.document.querySelector('head');
+        const body = this.preview.document.querySelector('body');
+        const writeMethod = (type === 'html') ? 'innerHTML' : 'textContent';
+        const nodeType = this.NODETYPES[type];
+        const files = CodePreview.filterType(this.files, type);
+        for (let file of files) {
+          let tag = document.createElement(nodeType);
+          tag.id = file.name;
+          if (type === 'json')
+            scriptTag.type = 'application/json';
+          tag[writeMethod] = file.value;
+          (type === 'html') ? body.appendChild(tag) : head.appendChild(tag)
           this.dependencies[file.name] = {
-            node: divTag
-          }
-        }
-        for (let file of cssFiles) {
-          let styleTag = document.createElement('style');
-          styleTag.id = file.name;
-          styleTag.textContent = file.value;
-          head.appendChild(styleTag);
-          this.dependencies[file.name] = {
-            node: styleTag
-          }
-        }
-        for (let file of jsFiles) {
-          let scriptTag = document.createElement('script');
-          scriptTag.id = file.name;
-          scriptTag.textContent = file.value;
-          head.appendChild(scriptTag);
-          this.dependencies[file.name] = {
-            node: scriptTag
-          }
-        }
-        for (let file of jsonFiles) {
-          let scriptTag = document.createElement('script');
-          scriptTag.type = 'application/json';
-          scriptTag.id = file.name;
-          scriptTag.textContent = file.value;
-          head.appendChild(scriptTag);
-          this.dependencies[file.name] = {
-            node: scriptTag
+            node: tag
           }
         }
       }
