@@ -46,25 +46,28 @@ class AppData {
   }
 
   //todo, a little unsafe, get the next version number inside a transaction in AppData
-  static async addVersion(username, project, version, files) {
+  static async addVersion(username, project, version, files, comment) {
     const db = firebase.firestore();
 
-    debugger;
     let versionsRef = db.collection(`users/${username}/projects/${project}/versions/`)
                         .orderBy("name", "desc")
                         .limit(1);
     let latestVersions = await versionsRef.get();
-    if (!latestVersions.empty)
-      version = latestVersions.docs[0].data().name + 1;
-    else
-      version += 1;
+    if (latestVersions.empty)
+      throw new Error("wtf?!");
+    version = latestVersions.docs[0].data().name + 1;
+
     const batch = db.batch();
-    for (let file of files) {
+    debugger;
+    const newVersionRef = db.doc(`users/${username}/projects/${project}/versions/${version}`);
+    batch.set(newVersionRef, {name: version, comment: comment});
+    for (let key in files) {
+      let file = files[key];
       debugger;
-      const path = `users/${username}/projects/${project}/versions/${version}/files/${file.name}`;
-      batch.set(path, file);
+      let fileRef = db.doc(`users/${username}/projects/${project}/versions/${version}/files/${file.name}`);
+      batch.set(fileRef, file);
     }
-    batch.commit();
+    await batch.commit();
     return version;
   }
 

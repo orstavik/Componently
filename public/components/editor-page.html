@@ -23,6 +23,7 @@
       <b>[[projectId]]</b>
       <div>
         <button on-tap="_openPreview">Preview</button>
+        <input hidden="[[!currentProject.changed]]" type="text" id="versionComment" style="width: 120px;" placeholder="version comment">
         <button hidden="[[!currentProject.changed]]" on-tap="_saveChanges">Save</button>
         Version: <select on-change="_changeVersion">
         <template is="dom-repeat" items="[[versions]]">
@@ -93,6 +94,13 @@
       _getExt(name) {
         if (name)
           return name.split('.').pop();
+      }
+
+      _saveChanges(){
+        let comment = this.$.versionComment.value;
+        this.$emit('controller-save-new-version', comment);
+        this.$.versionComment.value = '';
+
       }
 
       _openPreview() {

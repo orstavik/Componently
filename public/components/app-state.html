@@ -311,12 +311,11 @@
       }
 
       async _saveNewVersion(e){
-        debugger;
         let cp = this.state.persistent.currentProject;
-        let nextVersion = await AppData.addVersion(cp.owner, cp.project, version, cp.files);
-        //todo this await is a little bad
-        //todo, we should lock the currentProject object here
+        let comment = e.detail.payload;
+        let nextVersion = await AppData.addVersion(cp.owner, cp.project, cp.version, cp.files, comment); //todo,this await is a little bad, we should lock the currentProject object here
         let persistent = Tools.setIn(this.state.persistent, ["currentProject", "version"], nextVersion);
+        persistent = Tools.setIn(persistent, ["currentProject", "changed"], null);
         this._update(persistent, this.state.session, e.type)
       }
 
