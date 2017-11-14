@@ -71,6 +71,7 @@
         window.addEventListener('controller-select-version', this._selectVersion.bind(this));
         window.addEventListener('controller-save-new-version', this._saveNewVersion.bind(this));
         window.addEventListener('controller-add-file', this._addFile.bind(this));
+        window.addEventListener('controller-file-edited', this._fileEdited.bind(this));
         window.addEventListener('controller-current-project-changed', this._currentProjectChanged.bind(this));
         window.addEventListener('controller-new-projects', this._newProjects.bind(this));
         window.addEventListener('controller-new-versions', this._newVersions.bind(this));
@@ -309,15 +310,25 @@
         //todo, maybe mark the object as newly deleted, orange
       }
 
-      _saveNewVersion(e){
+      async _saveNewVersion(e){
         debugger;
         let cp = this.state.persistent.currentProject;
-        let nextVersion = AppData.addVersion(cp.owner, cp.project, version, cp.files);
+        let nextVersion = await AppData.addVersion(cp.owner, cp.project, version, cp.files);
+        //todo this await is a little bad
+        //todo, we should lock the currentProject object here
         let persistent = Tools.setIn(this.state.persistent, ["currentProject", "version"], nextVersion);
         this._update(persistent, this.state.session, e.type)
       }
 
-      async _addFile(e) {
+      _fileEdited(e){
+        const filename = e.detail.payload.filename;
+        const value = e.detail.payload.value;
+        let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename, "value"], value);
+        persistent = Tools.setIn(persistent, ["currentProject", "changed"], new Date().getTime());
+        this._update(persistent, this.state.session, e.type)
+      }
+
+      _addFile(e) {
         debugger;
         const filename = e.detail.payload.filename;
         let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename], {name: filename, value:"new file value"});
