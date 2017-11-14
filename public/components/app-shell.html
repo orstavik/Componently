@@ -22,8 +22,7 @@
       </home-page>
       <editor-page page="editor"
                    current-project="[[state.persistent.currentProject]]"
-                   versions="[[_currentVersions]]"
-                   files="[[_currentFiles]]">
+                   versions="[[_currentVersions]]">
       </editor-page>
       <notfound-page page="notfound"></notfound-page>
     </app-pages>
@@ -58,31 +57,13 @@
           return [];
         let owner = currentProject.owner;
         let project = currentProject.project;
-        let version = currentProject.version;
         if (!Tools.testPath(users, [owner, "projects", project, "versions"]))
           return [];
         return Object.keys(users[owner].projects[project].versions);
       }
 
-      _retrieveFiles(currentProject, users) {
-        if (!currentProject || !users)
-          return [];
-        let owner = currentProject.owner;
-        let project = currentProject.project;
-        let version = currentProject.version;
-        if (!Tools.testPath(users, [owner, "projects", project, "versions", version, "files"]))
-          return [];
-        const files = users[owner].projects[project].versions[version].files;
-        const res = [];
-        for (let file in files)
-          res.push(files[file]);
-        return res;
-      }
-
       _retrieveUserProjects(username, users) {
-        if (!username || !users)
-          return [];
-        return users[username].projects;
+        return !username || !users ? [] : users[username].projects;
       }
     }
 

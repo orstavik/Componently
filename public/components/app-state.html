@@ -214,6 +214,8 @@
        */
       async _currentProjectChanged(e) {
         const currentProject = this.state.persistent.currentProject;
+        if (this.state.persistent.user)
+          AppData.setCurrentProject(this.state.persistent.user.name, this.state.persistent.currentProject);
         if (!currentProject)
           return this.$navigate("/home");
 
@@ -231,6 +233,7 @@
 
         let files = await this._getFiles(ownerName, projectId, version);
         let persistent = Tools.setIn(this.state.persistent, ["users", ownerName, 'projects', projectId, 'versions', version, 'files'], files, this._frozen);
+        persistent = Tools.setIn(persistent, ['currentProject', 'files'], files, this._frozen);
         this._update(persistent, this.state.session, e.type);
       }
 

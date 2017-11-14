@@ -54,7 +54,7 @@
           },
           files: {
             type: Array,
-            value: () => [],
+            computed: "_toArray(currentProject.files)",
           }
         }
       }
@@ -100,6 +100,10 @@
         const editor = this.shadowRoot.querySelector('code-editor[mode=html]').editor;
         body.innerHTML = editor.getValue();
         preview.document.title = 'Preview';
+      }
+
+      _toArray(files){
+        return !files ? [] : Object.keys(files).map(key => files[key]);
       }
     }
 

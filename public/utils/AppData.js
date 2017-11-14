@@ -8,22 +8,12 @@ class AppData {
     return db.doc(`users/${username}`).get();
   }
 
-  static async setCurrentProject(username, projectId){
+  static async setCurrentProject(username, currentProject){
     const db = firebase.firestore();
+    currentProject = Tools.removeUndefinedFields(currentProject);
     try {
       await db.doc(`users/${username}`).update({
-        currentProject: projectId
-      });
-    } catch (e){
-      console.log(e);
-    }
-  }
-
-  static async setCurrentVersion(username, versionNum){
-    const db = firebase.firestore();
-    try {
-      await db.doc(`users/${username}`).update({
-        currentVersion: Number(versionNum)
+        currentProject: currentProject
       });
     } catch (e){
       console.log(e);
@@ -46,6 +36,7 @@ class AppData {
     const deleteDoc = db.doc(`users/${user.name}/projects/${id}`).delete();
     const deleteCollections = AppData.deleteCollection(db, db.collection(
       `users/${user.name}/projects/${id}/versions`));
+    //todo do we need to remove all the /versions/version/files too?
     await deleteDoc;
     await deleteCollections;
   }

@@ -12,6 +12,15 @@ class Tools {
     return true;
   }
 
+  static removeUndefinedFields(obj){
+    let res = Object.assign({}, obj);
+    for (let key in res) {
+      if (res[key] === undefined)
+        delete res[key];
+    }
+    return res;
+  }
+
   //todo use the filter method recursively to add, delete, update doc data in the objects as well.
   static filterFirestore(origin, path, filter, _frozen) {
     let res = Object.assign({}, origin);
