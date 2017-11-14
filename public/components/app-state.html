@@ -69,6 +69,7 @@
         window.addEventListener('controller-remove-project', this._removeProject.bind(this));
         window.addEventListener('controller-select-project', this._selectProject.bind(this));
         window.addEventListener('controller-select-version', this._selectVersion.bind(this));
+        window.addEventListener('controller-save-new-version', this._saveNewVersion.bind(this));
         window.addEventListener('controller-add-file', this._addFile.bind(this));
         window.addEventListener('controller-current-project-changed', this._currentProjectChanged.bind(this));
         window.addEventListener('controller-new-projects', this._newProjects.bind(this));
@@ -308,13 +309,20 @@
         //todo, maybe mark the object as newly deleted, orange
       }
 
+      _saveNewVersion(e){
+        debugger;
+        let cp = this.state.persistent.currentProject;
+        let nextVersion = AppData.addVersion(cp.owner, cp.project, version, cp.files);
+        let persistent = Tools.setIn(this.state.persistent, ["currentProject", "version"], nextVersion);
+        this._update(persistent, this.state.session, e.type)
+      }
+
       async _addFile(e) {
-        const user = this.state.persistent.user;
-        const id = e.detail.payload.id;
-        const version = e.detail.payload.version;
+        debugger;
         const filename = e.detail.payload.filename;
-        await AppData.addFile(user.name, id, version, filename);
-        //todo, maybe mark the object as newly created, green
+        let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename], {name: filename, value:"new file value"});
+        persistent = Tools.setIn(persistent, ["currentProject", "changed"], new Date().getTime());
+        this._update(persistent, this.state.session, e.type)
       }
 
       async _getFiles(username, id, version) {
