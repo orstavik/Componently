@@ -232,9 +232,13 @@
             this.$navigate(`/editor/${ownerName}/${projectId}/${latest}`);
           return;
         }
-
+        let persistent = this.state.persistent;
+        if (Tools.testPath(this.state.persistent, ["users", ownerName, "projects", projectId, "versions", version, "comment"])) {
+          let comment = this.state.persistent.users[ownerName].projects [projectId].versions[version].comment;
+          persistent = Tools.setIn(persistent, ['currentProject', 'versionComment'], comment, this._frozen);
+        }
         let files = await this._getFiles(ownerName, projectId, version);
-        let persistent = Tools.setIn(this.state.persistent, ["users", ownerName, 'projects', projectId, 'versions', version, 'files'], files, this._frozen);
+        persistent = Tools.setIn(persistent, ["users", ownerName, 'projects', projectId, 'versions', version, 'files'], files, this._frozen);
         persistent = Tools.setIn(persistent, ['currentProject', 'files'], files, this._frozen);
         this._update(persistent, this.state.session, e.type);
       }
@@ -310,7 +314,7 @@
         //todo, maybe mark the object as newly deleted, orange
       }
 
-      async _saveNewVersion(e){
+      async _saveNewVersion(e) {
         let cp = this.state.persistent.currentProject;
         let comment = e.detail.payload;
         let nextVersion = await AppData.addVersion(cp.owner, cp.project, cp.version, cp.files, comment); //todo,this await is a little bad, we should lock the currentProject object here
@@ -320,7 +324,7 @@
         this.$navigate(`/editor/${cp.owner}/${cp.project}/${nextVersion}`);
       }
 
-      _fileEdited(e){
+      _fileEdited(e) {
         const filename = e.detail.payload.name;
         const value = e.detail.payload.value;
         let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename, "value"], value);
@@ -330,7 +334,10 @@
 
       _addFile(e) {
         const filename = e.detail.payload.filename;
-        let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename], {name: filename, value:"new file value"});
+        let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename], {
+          name: filename,
+          value: "new file value"
+        });
         persistent = Tools.setIn(persistent, ["currentProject", "changed"], new Date().getTime());
         this._update(persistent, this.state.session, e.type)
       }
