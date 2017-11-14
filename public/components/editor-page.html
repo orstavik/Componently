@@ -1,4 +1,5 @@
 <link rel="import" href="code-editor.html">
+<link rel="import" href="code-preview.html">
 
 <dom-module id="editor-page">
   <template>
@@ -30,13 +31,14 @@
       </div>
     </div>
     <div id="editors">
-      <template is="dom-repeat" items="[[files]]">
-        <code-editor mode="[[_getExt(item.name)]]" value="[[item.value]]"></code-editor>
+      <template is="dom-repeat" items="[[filesArray]]">
+        <code-editor name="[[item.name]]" mode="[[_getExt(item.name)]]" value="[[item.value]]"></code-editor>
       </template>
     </div>
     <input type="text" id="newFileName" style="width: 120px;" placeholder="file">
     <button on-tap="_addFile">+</button>
     <button on-tap="_openPreview">Preview</button>
+    <code-preview id="preview" files="[[localFiles]]"></code-preview>
 
   </template>
   <script>
@@ -53,10 +55,35 @@
             value: () => [],
           },
           files: {
+            type: Object,
+            value: () => ({})
+          },
+          localFiles: {
+            type: Object,
+            computed: '_copyFiles(files)'
+          },
+          filesArray: {
             type: Array,
-            value: () => [],
+            computed: '_makeFilesArray(files)'
           }
         }
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        this.addEventListener('editor-value-change', (e) => this._updateFiles(e))
+      }
+
+      _copyFiles(files) {
+        return Tools.deepClone(files);
+      }
+
+      _makeFilesArray(files) {
+        let arr = [];
+        for (let key in files) {
+          arr.push(Object.assign({}, files[key]));
+        }
+        return arr;
       }
 
       _isSelectedVersion(item, version) {
@@ -82,6 +109,13 @@
         this.$.newFileName.value = '';
       }
 
+      _updateFiles(e) {
+        const name = e.path[0].name;
+        const value = e.detail.payload.getValue();
+        this.localFiles[name].value = value;
+        this.$.preview.update();
+      }
+
       static validateFileName(name) {
         if (!name)
           return false;
@@ -95,11 +129,7 @@
       }
 
       _openPreview() {
-        const preview = window.open('', 'Preview', 'width=600,height=600');
-        const body = preview.document.querySelector('body');
-        const editor = this.shadowRoot.querySelector('code-editor[mode=html]').editor;
-        body.innerHTML = editor.getValue();
-        preview.document.title = 'Preview';
+        this.$.preview.open();
       }
     }
 

@@ -43,7 +43,7 @@
             computed: "_retrieveVersions(state.persistent.currentProject, state.persistent.users)"
           },
           _currentFiles: {
-            type: Array,
+            type: Object,
             computed: "_retrieveFiles(state.persistent.currentProject, state.persistent.users)"
           },
           _userProjects: {
@@ -73,10 +73,7 @@
         if (!Tools.testPath(users, [owner, "projects", project, "versions", version, "files"]))
           return [];
         const files = users[owner].projects[project].versions[version].files;
-        const res = [];
-        for (let file in files)
-          res.push(files[file]);
-        return res;
+        return files;
       }
 
       _retrieveUserProjects(username, users) {

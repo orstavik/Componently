@@ -1,0 +1,107 @@
+<dom-module id="code-preview">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+
+    
+
+  </template>
+  <script>
+    class CodePreview extends Polymer.Element {
+      static get is() {
+        return 'code-preview';
+      }
+
+      static get properties() {
+        return {
+          files: {
+            type: Object,
+            value: () => ({})
+          },
+          preview: {
+            type: Object
+          },
+          dependencies: {
+            type: Object,
+            value: () => ({})
+          }
+        }
+      }
+      
+      open() {
+        this.preview = window.open('', 'Preview', 'width=600,height=600');
+        this.preview.document.title = 'Preview';
+        this.bundle();
+      }
+
+      update() {
+        if (!this.preview)
+          return;
+        for (let filename in this.dependencies) {
+          let dep = this.dependencies[filename];
+          let updateMethod = dep.node.tagName === 'DIV' ? 'innerHTML' : 'textContent';
+          dep.node[updateMethod] = this.files[filename].value;
+        }
+      }
+
+      bundle() {
+        const head = this.preview.document.querySelector('head');
+        const body = this.preview.document.querySelector('body');
+        const htmlFiles = CodePreview.filterType(this.files, 'html');
+        const cssFiles = CodePreview.filterType(this.files, 'css');
+        const jsFiles = CodePreview.filterType(this.files, 'js');
+        const jsonFiles = CodePreview.filterType(this.files, 'json');
+        for (let file of htmlFiles) {
+          let divTag = document.createElement('div');
+          divTag.id = file.name;
+          divTag.innerHTML = file.value;
+          body.appendChild(divTag);
+          this.dependencies[file.name] = {
+            node: divTag
+          }
+        }
+        for (let file of cssFiles) {
+          let styleTag = document.createElement('style');
+          styleTag.id = file.name;
+          styleTag.textContent = file.value;
+          head.appendChild(styleTag);
+          this.dependencies[file.name] = {
+            node: styleTag
+          }
+        }
+        for (let file of jsFiles) {
+          let scriptTag = document.createElement('script');
+          scriptTag.id = file.name;
+          scriptTag.textContent = file.value;
+          head.appendChild(scriptTag);
+          this.dependencies[file.name] = {
+            node: scriptTag
+          }
+        }
+        for (let file of jsonFiles) {
+          let scriptTag = document.createElement('script');
+          scriptTag.type = 'application/json';
+          scriptTag.id = file.name;
+          scriptTag.textContent = file.value;
+          head.appendChild(scriptTag);
+          this.dependencies[file.name] = {
+            node: scriptTag
+          }
+        }
+      }
+
+      static filterType(obj, type) {
+        let res = [];
+        for (let key in obj) {
+          if (obj[key].name.endsWith(type))
+            res.push(obj[key])
+        }
+        return res;
+      }
+    }
+    customElements.define(CodePreview.is, CodePreview);
+  </script>
+</dom-module>
