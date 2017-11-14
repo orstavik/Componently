@@ -325,7 +325,7 @@
         const value = e.detail.payload.value;
         let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename, "value"], value);
         persistent = Tools.setIn(persistent, ["currentProject", "changed"], new Date().getTime());
-        this._update(persistent, this.state.session, e.type)
+        this._update(persistent, this.state.session, e.type);
       }
 
       _addFile(e) {
