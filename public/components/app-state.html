@@ -316,7 +316,8 @@
         let nextVersion = await AppData.addVersion(cp.owner, cp.project, cp.version, cp.files, comment); //todo,this await is a little bad, we should lock the currentProject object here
         let persistent = Tools.setIn(this.state.persistent, ["currentProject", "version"], nextVersion);
         persistent = Tools.setIn(persistent, ["currentProject", "changed"], null);
-        this._update(persistent, this.state.session, e.type)
+        this._update(persistent, this.state.session, e.type);
+        this.$navigate(`/editor/${cp.owner}/${cp.project}/${nextVersion}`);
       }
 
       _fileEdited(e){
@@ -328,7 +329,6 @@
       }
 
       _addFile(e) {
-        debugger;
         const filename = e.detail.payload.filename;
         let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename], {name: filename, value:"new file value"});
         persistent = Tools.setIn(persistent, ["currentProject", "changed"], new Date().getTime());

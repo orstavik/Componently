@@ -27,7 +27,7 @@
         <button hidden="[[!currentProject.changed]]" on-tap="_saveChanges">Save</button>
         Version: <select on-change="_changeVersion">
         <template is="dom-repeat" items="[[versions]]">
-          <option value="[[item]]" selected="[[_isSelectedVersion(item, currentProject.version)]]">[[item]]</option>
+          <option value="[[item]]" selected="[[_isSelectedVersion(item, currentProject)]]">[[item]]</option>
         </template>
       </select>
       </div>
@@ -61,8 +61,8 @@
         }
       }
 
-      _isSelectedVersion(item, version) {
-        return item === version;
+      _isSelectedVersion(item, cp) {
+        return Number(item) === Number(cp.version);
       }
 
       _changeVersion(e) {
@@ -70,7 +70,7 @@
           const versionElect = {
             owner: this.currentProject.owner,
             project: this.currentProject.project,
-            version: e.target.value
+            version: Number(e.target.value)
           };
           this.$emit('controller-select-version', versionElect);
         }

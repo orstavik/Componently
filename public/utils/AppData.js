@@ -58,12 +58,10 @@ class AppData {
     version = latestVersions.docs[0].data().name + 1;
 
     const batch = db.batch();
-    debugger;
     const newVersionRef = db.doc(`users/${username}/projects/${project}/versions/${version}`);
     batch.set(newVersionRef, {name: version, comment: comment});
     for (let key in files) {
       let file = files[key];
-      debugger;
       let fileRef = db.doc(`users/${username}/projects/${project}/versions/${version}/files/${file.name}`);
       batch.set(fileRef, file);
     }
