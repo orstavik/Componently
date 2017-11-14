@@ -321,7 +321,7 @@
       }
 
       _fileEdited(e){
-        const filename = e.detail.payload.filename;
+        const filename = e.detail.payload.name;
         const value = e.detail.payload.value;
         let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename, "value"], value);
         persistent = Tools.setIn(persistent, ["currentProject", "changed"], new Date().getTime());

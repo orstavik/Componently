@@ -20,16 +20,18 @@
     </style>
   </template>
   <script>
-    class CodeEditor extends Polymer.Element {
+    class CodeEditor extends IntertextMixin(Polymer.Element) {
       static get is() {
         return 'code-editor';
       }
 
       static get properties() {
         return {
+          name: {
+            type: String
+          },
           mode: {
-            type: String,
-            reflectToAttribute: true
+            type: String
           },
           value: String,
           theme: {
@@ -66,13 +68,17 @@
           lineNumbers: true,
           lineWrapping: true
         });
+        this.editor.on('change', (e) => {
+          this.$emit('controller-file-edited', {name: this.name, value: e.getValue()});
+        });
       }
 
       _updateEditor() {
-        if (this.editor)
-          this.editor.setValue(this.value)
+        if (this.editor && this.value !== this.editor.getValue())
+          console.log("we have a different text in editor and state!!");
       }
     }
+
     customElements.define(CodeEditor.is, CodeEditor);
   </script>
 </dom-module>
