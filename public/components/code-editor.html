@@ -14,10 +14,19 @@
         box-sizing: border-box;
         border: 1px grey solid;
       }
+      #title {
+        padding: 4px;
+        text-align: center;
+        background: black;
+        color: lightgray;
+      }
       .CodeMirror {
-        height: 100%;
+        height: 90vh;
       }
     </style>
+
+    <div id="title">[[name]]</div>
+
   </template>
   <script>
     class CodeEditor extends IntertextMixin(Polymer.Element) {

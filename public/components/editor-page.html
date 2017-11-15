@@ -15,7 +15,6 @@
       #editors {
         display: flex;
         width: 100vw;
-        height: 500px;
         position: relative;
       }
     </style>
@@ -23,7 +22,7 @@
     <div id="header">
       <b>[[projectId]]</b>
       <div>
-        <button on-tap="_openPreview">Preview</button>
+        <button on-tap="_openPreview">Open</button>
         <input hidden="[[!currentProject.changed]]" type="text" id="versionComment" style="width: 120px;" placeholder="version comment">
         <button hidden="[[!currentProject.changed]]" on-tap="_saveChanges">Save</button>
         Version: <select on-change="_changeVersion">
@@ -106,7 +105,8 @@
       }
 
       _updateFiles(cp) {
-        this.$.preview.update();
+        if (this.$.preview.preview)
+          this.$.preview.update();
       }
 
       static validateFileName(name) {

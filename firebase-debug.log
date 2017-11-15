@@ -34,3 +34,39 @@
 [info] i  hosting: Serving hosting files from: public
 [info] +  hosting: Local server: http://localhost:5000
 
+[debug] [2017-11-15T09:57:45.671Z] ----------------------------------------------------------------------
+[debug] [2017-11-15T09:57:45.673Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\fales\AppData\Roaming\npm\node_modules\firebase-tools\bin\firebase serve
+[debug] [2017-11-15T09:57:45.674Z] CLI Version:   3.15.0
+[debug] [2017-11-15T09:57:45.674Z] Platform:      win32
+[debug] [2017-11-15T09:57:45.674Z] Node Version:  v9.2.0
+[debug] [2017-11-15T09:57:45.674Z] Time:          Wed Nov 15 2017 11:57:45 GMT+0200 (FLE Standard Time)
+[debug] [2017-11-15T09:57:45.674Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2017-11-15T09:57:45.688Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2017-11-15T09:57:45.688Z] > authorizing via signed-in user
+[debug] [2017-11-15T09:57:45.690Z] > refreshing access token with scopes: ["email","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","openid"]
+[debug] [2017-11-15T09:57:45.690Z] >>> HTTP REQUEST POST https://www.googleapis.com/oauth2/v3/token { refresh_token: '1/fjNPIQqp1nmgKwUCTG-Z3WKcKX-ekpZFckRQb_UxP4oaRF1WQZASTJG1UUHY4xrM',
+  client_id: '563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com',
+  client_secret: 'j9iVZfS8kkCEFUPaAeJV0sAi',
+  grant_type: 'refresh_token',
+  scope: 'email https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/cloudplatformprojects.readonly https://www.googleapis.com/auth/firebase openid' } 
+ Wed Nov 15 2017 11:57:45 GMT+0200 (FLE Standard Time)
+[debug] [2017-11-15T09:57:45.908Z] <<< HTTP RESPONSE 200
+[debug] [2017-11-15T09:57:45.914Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/projects/summer-on-firebase  
+ Wed Nov 15 2017 11:57:45 GMT+0200 (FLE Standard Time)
+[debug] [2017-11-15T09:57:46.791Z] <<< HTTP RESPONSE 200
+[debug] [2017-11-15T09:57:46.792Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/database/summer-on-firebase/tokens  
+ Wed Nov 15 2017 11:57:46 GMT+0200 (FLE Standard Time)
+[debug] [2017-11-15T09:57:47.900Z] <<< HTTP RESPONSE 200
+[info] 
+[info] === Serving from 'E:\Programming\Intertext\Componently'...
+[info] 
+[debug] [2017-11-15T09:57:47.903Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/summer-on-firebase  
+ Wed Nov 15 2017 11:57:47 GMT+0200 (FLE Standard Time)
+[debug] [2017-11-15T09:57:48.825Z] <<< HTTP RESPONSE 200
+[debug] [2017-11-15T09:57:48.825Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/90680327967/clients/_:getWebAppConfig  
+ Wed Nov 15 2017 11:57:48 GMT+0200 (FLE Standard Time)
+[debug] [2017-11-15T09:57:49.534Z] <<< HTTP RESPONSE 200
+[info] i  hosting: Serving hosting files from: public
+[info] +  hosting: Local server: http://localhost:5000
+

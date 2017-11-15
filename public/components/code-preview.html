@@ -1,12 +1,10 @@
 <dom-module id="code-preview">
   <template>
     <style>
-      :host {
+       :host {
         display: block;
       }
     </style>
-
-    
 
   </template>
   <script>
@@ -24,73 +22,104 @@
           preview: {
             type: Object
           },
-          dependencies: {
-            type: Object,
-            value: () => ({})
-          },
-          NODETYPES: {
+          TYPES: {
             type: Object,
             value: () => ({
-              html: 'div',
-              css: 'style',
-              js: 'script',
-              json: 'script'
+              html: 'text/html',
+              css: 'text/css',
+              js: 'application/javascript',
+              json: 'application/json'
             })
           }
         }
       }
-      
+
       open() {
-        this.preview = window.open('', 'Preview', 'width=600,height=600');
-        this.preview.document.title = 'Preview';
-        this.bundle();
+        const url = this._makePreview('index.html');
+        this.preview = window.open(url, 'Preview');
+
+        window.onbeforeunload = (e) => {
+          e.preventDefault;
+          if (this.preview)
+            this.preview.close();
+        };
       }
 
       update() {
-        if (!this.preview)
-          return;
-        for (let filename in this.dependencies) {
-          let dep = this.dependencies[filename];
-          let updateMethod = dep.node.tagName === 'DIV' ? 'innerHTML' : 'textContent';
-          dep.node[updateMethod] = this.files[filename].value;
-        }
+        const url = this._makePreview('index.html');
+        this.preview.history.pushState({}, null, url);
+        this.preview.location.reload();
       }
 
-      bundle() {
-        const head = this.preview.document.querySelector('head');
-        const body = this.preview.document.querySelector('body');
-        this._bundleFiles('html');
-        this._bundleFiles('css');
-        this._bundleFiles('js');
-        this._bundleFiles('json');
+      _makePreview(entry) {
+        let index = this.files[entry].value;
+        let indexDoc = CodePreview.parseHTML(index);
+        const deps = this._findDeps(indexDoc, entry);
+        indexDoc = this._computeLinks(indexDoc, deps);
+        index = indexDoc.documentElement.innerHTML;
+        return CodePreview.makeURL(index, 'text/html');
       }
 
-      _bundleFiles(type) {
-        const head = this.preview.document.querySelector('head');
-        const body = this.preview.document.querySelector('body');
-        const writeMethod = (type === 'html') ? 'innerHTML' : 'textContent';
-        const nodeType = this.NODETYPES[type];
-        const files = CodePreview.filterType(this.files, type);
-        for (let file of files) {
-          let tag = document.createElement(nodeType);
-          tag.id = file.name;
-          if (type === 'json')
-            scriptTag.type = 'application/json';
-          tag[writeMethod] = file.value;
-          (type === 'html') ? body.appendChild(tag) : head.appendChild(tag)
-          this.dependencies[file.name] = {
-            node: tag
+      _findDeps(doc, entry) {
+        let res = {};
+        for (let key in this.files) {
+          if (key === entry)
+            continue;
+          let file = this.files[key];
+          const ext = file.name.split('.').pop();
+          let query = CodePreview.makeQuery(file.name, ext);
+          let node = doc.querySelector(query);
+          res[key] = {
+            name: key,
+            type: this.TYPES[ext],
+            node: node,
+            value: this.files[key].value
           }
         }
+        return res;
       }
 
-      static filterType(obj, type) {
-        let res = [];
-        for (let key in obj) {
-          if (obj[key].name.endsWith(type))
-            res.push(obj[key])
+      _computeLinks(doc, deps) {
+        for (let key in deps) {
+          let dep = deps[key];
+          if (!dep.node)
+            continue;
+          let value = CodePreview.addSourceURL(dep.value, dep.name, dep.type);
+          let url = CodePreview.makeURL(value, dep.type);
+          let attr = dep.type.startsWith('text/') ? 'href' : 'src';
+          dep.node.setAttribute(attr, url);
         }
-        return res;
+        return doc;
+      }
+
+      static parseHTML(str) {
+        const parser = new DOMParser();
+        return parser.parseFromString(str, 'text/html');
+      }
+
+      static makeQuery(name, ext) {
+        if (ext === 'html' || ext === 'css')
+          return `link[href="${name}"]`;
+        else if (ext === 'js' || ext === 'json')
+          return `script[src="${name}"]`;
+      }
+
+      static addSourceURL(str, name, type) {
+        switch (type) {
+          case 'text/css':
+            return str + ` /*# sourceURL=${name} */`;
+          case 'application/javascript':
+            return str + ` //# sourceURL=${name}`;
+          default:
+            return str;
+        }
+      }
+
+      static makeURL(str, type) {
+        const blob = new Blob([str], {
+          type: type
+        });
+        return URL.createObjectURL(blob);
       }
     }
     customElements.define(CodePreview.is, CodePreview);
