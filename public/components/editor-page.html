@@ -26,7 +26,8 @@
         <input type="text" id="newFileName" style="width: 120px;" placeholder="file">
         <button on-tap="_addFile">+</button>
         <button on-tap="_openPreview">Preview</button>
-        <input hidden="[[!currentProject.changed]]" type="text" id="versionComment" style="width: 120px;" placeholder="version comment">
+        <input hidden="[[!currentProject.changed]]" type="text" id="versionComment" style="width: 120px;"
+               placeholder="version comment">
         <button hidden="[[!currentProject.changed]]" on-tap="_saveChanges">Save</button>
         Version: <select on-change="_changeVersion">
         <template is="dom-repeat" items="[[versions]]">
@@ -40,8 +41,9 @@
         <code-editor name="[[item.name]]" mode="[[_getExt(item.name)]]" value="[[item.value]]"></code-editor>
       </template>
     </resizable-boxes>
-    
-    <code-preview id="preview" files="[[currentProject.files]]"></code-preview>
+    <code-preview id="preview"
+                  path="[[_makePreviewPath(currentProject.owner, currentProject.project)]]"
+                  files="[[currentProject.files]]"></code-preview>
 
   </template>
   <script>
@@ -133,7 +135,11 @@
         this.$.preview.open();
       }
 
-      _toArray(files){
+      _makePreviewPath(owner, project) {
+        return "preview/" + owner + "/" + project;
+      }
+
+      _toArray(files) {
         return !files ? [] : Object.keys(files).map(key => files[key]);
       }
     }
