@@ -9,23 +9,31 @@
   <template>
     <style include="codemirror material">
       :host {
-        display: inline-block;
-        width: 25%;
+        display: inline-flex;
+        flex-direction: column;
         box-sizing: border-box;
-        border: 1px grey solid;
       }
       #title {
+        position: relative;
         padding: 4px;
         text-align: center;
         background: black;
         color: lightgray;
       }
-      .CodeMirror {
-        height: 90vh;
+      #hide {
+        position: absolute;
+        font-weight: bold;
+        font-family: Arial;
+        color: red;
+        right: 6px;
+        cursor: pointer;
       }
     </style>
 
-    <div id="title">[[name]]</div>
+    <div id="title">
+      [[name]]
+      <span id="hide" on-click="_removeFile">X</span>
+    </div>
 
   </template>
   <script>
@@ -80,11 +88,22 @@
         this.editor.on('change', (e) => {
           this.$emit('controller-file-edited', {name: this.name, value: e.getValue()});
         });
+        window.addEventListener('resize', (e) => {
+          this.$throttle(() => this._refreshEditor(), 1000/30);
+        })
+      }
+
+      _refreshEditor() {
+        this.editor.refresh()
       }
 
       _updateEditor() {
         if (this.editor && this.value !== this.editor.getValue())
           console.log("we have a different text in editor and state!!");
+      }
+
+      _removeFile() {
+        this.$emit('controller-remove-file', this.name)
       }
     }
 

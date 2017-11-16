@@ -71,6 +71,7 @@
         window.addEventListener('controller-select-version', this._selectVersion.bind(this));
         window.addEventListener('controller-save-new-version', this._saveNewVersion.bind(this));
         window.addEventListener('controller-add-file', this._addFile.bind(this));
+        window.addEventListener('controller-remove-file', this._removeFile.bind(this));
         window.addEventListener('controller-file-edited', this._fileEdited.bind(this));
         window.addEventListener('controller-current-project-changed', this._currentProjectChanged.bind(this));
         window.addEventListener('controller-new-projects', this._newProjects.bind(this));
@@ -334,12 +335,30 @@
 
       _addFile(e) {
         const filename = e.detail.payload.filename;
+        const username = this.state.persistent.user.name;
+        const ext = filename.split('.').pop();
+        let value;
+        if (ext === 'html')
+          value = `<!-- created at ${new Date()} by ${username} -->`
+        else if (ext === 'css')
+          value = `/* created at ${new Date()} by ${username} */`
+        else if (ext === 'js')
+          value = `// created at ${new Date()} by ${username}`
         let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename], {
           name: filename,
-          value: "new file value"
+          value: value
         });
         persistent = Tools.setIn(persistent, ["currentProject", "changed"], new Date().getTime());
-        this._update(persistent, this.state.session, e.type)
+        this._update(persistent, this.state.session, e.type);
+      }
+
+      _removeFile(e) {
+        const filename = e.detail.payload;
+        const files = Object.assign({}, this.state.persistent.currentProject.files);
+        delete files[filename];
+        let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files"], files, this._frozen);
+        persistent = Tools.setIn(persistent, ["currentProject", "changed"], new Date().getTime());
+        this._update(persistent, this.state.session, e.type);
       }
 
       async _getFiles(username, id, version) {

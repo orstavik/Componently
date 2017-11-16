@@ -1,0 +1,108 @@
+<dom-module id="resizable-boxes">
+  <template>
+    <style>
+      :host {
+        --separator-width: 6px;
+      }
+      ::slotted(.separator) {
+        display: inline-block;
+        flex-basis: var(--separator-width);
+        background-color: grey;
+        cursor: pointer;
+      }
+    </style>
+
+    <slot id="slot"></slot>
+
+  </template>
+  <script>
+    class ResizableBoxes extends Polymer.GestureEventListeners(IntertextMixin(Polymer.Element)) {
+      static get is() {
+        return 'resizable-boxes';
+      }
+
+      static get properties() {
+        return {
+          _boxes: {
+            type: Array,
+            value: () => [],
+            observer: '_boxesChange'
+          }
+        }
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+        setTimeout(() => {
+          this.set('_boxes', this._detectBoxes());
+        }, 0);
+        this.$.slot.addEventListener('slotchange', (e) => {
+          this.set('_boxes', this._detectBoxes());
+        });
+      }
+
+      _boxesChange() {
+        this._balanceWidth();
+        this._makeSeparators();
+      }
+
+      _detectBoxes() {
+        return this.$.slot.assignedNodes().filter((node) => {
+          return node.nodeType === 1 && ['dom-repeat','template'].indexOf(node.localName) === -1 && !node.classList.contains('separator')
+        });
+      }
+
+      _balanceWidth() {
+        const width = this.getBoundingClientRect().width;
+        const n = this._boxes.length;
+        let sepWidth = getComputedStyle(this).getPropertyValue('--separator-width');
+        sepWidth = Number(sepWidth.match(/\d+/)[0]);
+        const boxWidth = (width - (n-1)*sepWidth)/n;
+        for (let box of this._boxes) {
+          box.style.flexBasis = boxWidth+'px';
+        }
+      }
+
+      _makeSeparators() {
+        if (this._boxes.length > 1) {
+          const divTemplate = document.createElement('div');
+          divTemplate.classList.add('separator');
+          for (let i = 1; i < this._boxes.length; i++) {
+            let box = this._boxes[i];
+            if (!box.previousElementSibling.classList.contains('separator')) {
+              let div = divTemplate.cloneNode();
+              Polymer.Gestures.addListener(div, 'track', (e) => {
+                this._separatorDraged(e);
+              });
+              this.insertBefore(div, box);
+            }
+          }
+        }
+        const lastBox = this._boxes[this._boxes.length-1];
+        if (lastBox && lastBox.nextElementSibling.classList.contains('separator'))
+          lastBox.nextElementSibling.remove()
+      }
+
+      _separatorDraged(e) {
+        const ddx = e.detail.ddx !== undefined ? e.detail.ddx : e.detail.dx;
+        const ddy = e.detail.ddy !== undefined ? e.detail.ddy : e.detail.dy;
+
+        const prevBox = e.srcElement.previousElementSibling;
+        let prevBoxWidth = prevBox.getBoundingClientRect().width;
+        const nextBox = e.srcElement.nextElementSibling;
+        let nextBoxWidth = nextBox.getBoundingClientRect().width;
+        if (prevBoxWidth < 200)
+          prevBoxWidth = 200;
+        else
+          prevBoxWidth += ddx;
+        if (nextBoxWidth < 200)
+          nextBoxWidth = 200;
+        else
+          nextBoxWidth -= ddx;
+        prevBox.style.flexBasis = prevBoxWidth+'px';
+        nextBox.style.flexBasis = nextBoxWidth+'px';
+      }
+    }
+    customElements.define(ResizableBoxes.is, ResizableBoxes);
+  </script>
+</dom-module>

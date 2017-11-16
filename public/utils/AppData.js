@@ -22,9 +22,17 @@ class AppData {
 
   static async addProject(username, id) {
     const db = firebase.firestore();
-    await db.doc(`users/${username}/projects/${id}`).set({
-      name: id
+    const batch = db.batch();
+    let ref = db.doc(`users/${username}/projects/${id}`);
+    batch.set(ref, {name: id});
+    ref = db.doc(`users/${username}/projects/${id}/versions/0`);
+    batch.set(ref, {name: 0});
+    ref = db.doc(`users/${username}/projects/${id}/versions/0/files/index.html`);
+    batch.set(ref, {
+      name: 'index.html',
+      value: `<!-- created at ${new Date()} by ${username} -->`
     });
+    await batch.commit();
   }
 
   static listenToProjects(username, cb) {

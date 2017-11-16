@@ -28,4 +28,13 @@ const IntertextMixin = (superClass) => class extends superClass {
     history.pushState({}, null, path);
     window.dispatchEvent(new CustomEvent('location-changed'));
   }
+
+  $throttle(callback, ms) {
+    this._throttleTimeout = this._throttleTimeout || null;
+    if (!this._throttleTimeout)
+      this._throttleTimeout = setTimeout(() => {
+        this._throttleTimeout = null;
+        callback();
+      }, ms);
+  }
 }

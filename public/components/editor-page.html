@@ -1,5 +1,6 @@
 <link rel="import" href="code-editor.html">
 <link rel="import" href="code-preview.html">
+<link rel="import" href="resizable-boxes.html">
 
 <dom-module id="editor-page">
   <template>
@@ -20,9 +21,11 @@
     </style>
 
     <div id="header">
-      <b>[[projectId]]</b>
+      <b>[[currentProject.project]]</b>
       <div>
-        <button on-tap="_openPreview">Open</button>
+        <input type="text" id="newFileName" style="width: 120px;" placeholder="file">
+        <button on-tap="_addFile">+</button>
+        <button on-tap="_openPreview">Preview</button>
         <input hidden="[[!currentProject.changed]]" type="text" id="versionComment" style="width: 120px;" placeholder="version comment">
         <button hidden="[[!currentProject.changed]]" on-tap="_saveChanges">Save</button>
         Version: <select on-change="_changeVersion">
@@ -32,13 +35,11 @@
       </select>
       </div>
     </div>
-    <div id="editors">
+    <resizable-boxes id="editors">
       <template is="dom-repeat" items="[[filesArray]]">
         <code-editor name="[[item.name]]" mode="[[_getExt(item.name)]]" value="[[item.value]]"></code-editor>
       </template>
-    </div>
-    <input type="text" id="newFileName" style="width: 120px;" placeholder="file">
-    <button on-tap="_addFile">+</button>
+    </resizable-boxes>
     
     <code-preview id="preview" files="[[currentProject.files]]"></code-preview>
 
