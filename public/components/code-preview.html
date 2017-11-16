@@ -20,7 +20,10 @@
             value: () => ({})
           },
           preview: {
-            type: Object
+            type: String
+          },
+          path: {
+            type: String
           },
           TYPES: {
             type: Object,
@@ -35,20 +38,13 @@
       }
 
       open() {
-        const url = this._makePreview('index.html');
-        this.preview = window.open(url, 'Preview');
-
-        window.onbeforeunload = (e) => {
-          e.preventDefault;
-          if (this.preview)
-            this.preview.close();
-        };
+        this.preview = this._makePreview('index.html');
+        window.open(this.preview, 'Preview', "noopener");  //todo open in new tab, in background / no focus
       }
 
       update() {
-        const url = this._makePreview('index.html');
-        this.preview.history.pushState({}, null, url);
-        this.preview.location.reload();
+        this.preview = this._makePreview('index.html');
+        localStorage.setItem(this.path, this.preview);
       }
 
       _makePreview(entry) {
@@ -56,8 +52,22 @@
         let indexDoc = CodePreview.parseHTML(index);
         const deps = this._findDeps(indexDoc, entry);
         indexDoc = this._computeLinks(indexDoc, deps);
+        indexDoc = this._addScript(indexDoc);
         index = indexDoc.documentElement.innerHTML;
         return CodePreview.makeURL(index, 'text/html');
+      }
+
+      _addScript(doc) {
+        let s = document.createElement("script");
+        s.innerHTML = `
+        window.addEventListener('storage',function(e) {
+          if (e.key !== '${this.path}')
+            return;
+          window.history.pushState({}, null, e.newValue);
+          window.location.reload();
+        });`;
+        doc.head.appendChild(s);
+        return doc;
       }
 
       _findDeps(doc, entry) {
