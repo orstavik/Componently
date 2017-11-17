@@ -1,144 +1,72 @@
-[debug] [2017-11-14T09:04:11.195Z] ----------------------------------------------------------------------
-[debug] [2017-11-14T09:04:11.197Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\fales\AppData\Roaming\npm\node_modules\firebase-tools\bin\firebase serve
-[debug] [2017-11-14T09:04:11.197Z] CLI Version:   3.15.0
-[debug] [2017-11-14T09:04:11.197Z] Platform:      win32
-[debug] [2017-11-14T09:04:11.197Z] Node Version:  v8.7.0
-[debug] [2017-11-14T09:04:11.198Z] Time:          Tue Nov 14 2017 11:04:11 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-14T09:04:11.198Z] ----------------------------------------------------------------------
+[debug] [2017-11-16T15:31:33.209Z] ----------------------------------------------------------------------
+[debug] [2017-11-16T15:31:33.211Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\fales\AppData\Roaming\npm\node_modules\firebase-tools\bin\firebase serve
+[debug] [2017-11-16T15:31:33.211Z] CLI Version:   3.15.0
+[debug] [2017-11-16T15:31:33.211Z] Platform:      win32
+[debug] [2017-11-16T15:31:33.211Z] Node Version:  v9.2.0
+[debug] [2017-11-16T15:31:33.212Z] Time:          Thu Nov 16 2017 17:31:33 GMT+0200 (FLE Standard Time)
+[debug] [2017-11-16T15:31:33.212Z] ----------------------------------------------------------------------
 [debug] 
-[debug] [2017-11-14T09:04:11.213Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2017-11-14T09:04:11.214Z] > authorizing via signed-in user
-[debug] [2017-11-14T09:04:11.215Z] > refreshing access token with scopes: ["email","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","openid"]
-[debug] [2017-11-14T09:04:11.215Z] >>> HTTP REQUEST POST https://www.googleapis.com/oauth2/v3/token { refresh_token: '1/fjNPIQqp1nmgKwUCTG-Z3WKcKX-ekpZFckRQb_UxP4oaRF1WQZASTJG1UUHY4xrM',
+[debug] [2017-11-16T15:31:33.227Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2017-11-16T15:31:33.227Z] > authorizing via signed-in user
+[debug] [2017-11-16T15:31:33.229Z] > refreshing access token with scopes: ["email","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","openid"]
+[debug] [2017-11-16T15:31:33.229Z] >>> HTTP REQUEST POST https://www.googleapis.com/oauth2/v3/token { refresh_token: '1/fjNPIQqp1nmgKwUCTG-Z3WKcKX-ekpZFckRQb_UxP4oaRF1WQZASTJG1UUHY4xrM',
   client_id: '563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com',
   client_secret: 'j9iVZfS8kkCEFUPaAeJV0sAi',
   grant_type: 'refresh_token',
   scope: 'email https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/cloudplatformprojects.readonly https://www.googleapis.com/auth/firebase openid' } 
- Tue Nov 14 2017 11:04:11 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-14T09:04:11.464Z] <<< HTTP RESPONSE 200
-[debug] [2017-11-14T09:04:11.469Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/projects/summer-on-firebase  
- Tue Nov 14 2017 11:04:11 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-14T09:04:12.348Z] <<< HTTP RESPONSE 200
-[debug] [2017-11-14T09:04:12.350Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/database/summer-on-firebase/tokens  
- Tue Nov 14 2017 11:04:12 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-14T09:04:13.055Z] <<< HTTP RESPONSE 200
+ Thu Nov 16 2017 17:31:33 GMT+0200 (FLE Standard Time)
+[debug] [2017-11-16T15:31:33.506Z] <<< HTTP RESPONSE 200
+[debug] [2017-11-16T15:31:33.512Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/projects/summer-on-firebase  
+ Thu Nov 16 2017 17:31:33 GMT+0200 (FLE Standard Time)
+[debug] [2017-11-16T15:31:34.258Z] <<< HTTP RESPONSE 200
+[debug] [2017-11-16T15:31:34.260Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/database/summer-on-firebase/tokens  
+ Thu Nov 16 2017 17:31:34 GMT+0200 (FLE Standard Time)
+[debug] [2017-11-16T15:31:34.965Z] <<< HTTP RESPONSE 200
 [info] 
 [info] === Serving from 'E:\Programming\Intertext\Componently'...
 [info] 
-[debug] [2017-11-14T09:04:13.057Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/summer-on-firebase  
- Tue Nov 14 2017 11:04:13 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-14T09:04:14.059Z] <<< HTTP RESPONSE 200
-[debug] [2017-11-14T09:04:14.059Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/90680327967/clients/_:getWebAppConfig  
- Tue Nov 14 2017 11:04:14 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-14T09:04:14.618Z] <<< HTTP RESPONSE 200
+[debug] [2017-11-16T15:31:34.967Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/summer-on-firebase  
+ Thu Nov 16 2017 17:31:34 GMT+0200 (FLE Standard Time)
+[debug] [2017-11-16T15:31:35.907Z] <<< HTTP RESPONSE 200
+[debug] [2017-11-16T15:31:35.907Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/90680327967/clients/_:getWebAppConfig  
+ Thu Nov 16 2017 17:31:35 GMT+0200 (FLE Standard Time)
+[debug] [2017-11-16T15:31:36.468Z] <<< HTTP RESPONSE 200
 [info] i  hosting: Serving hosting files from: public
 [info] +  hosting: Local server: http://localhost:5000
 
-[debug] [2017-11-15T09:57:45.671Z] ----------------------------------------------------------------------
-[debug] [2017-11-15T09:57:45.673Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\fales\AppData\Roaming\npm\node_modules\firebase-tools\bin\firebase serve
-[debug] [2017-11-15T09:57:45.674Z] CLI Version:   3.15.0
-[debug] [2017-11-15T09:57:45.674Z] Platform:      win32
-[debug] [2017-11-15T09:57:45.674Z] Node Version:  v9.2.0
-[debug] [2017-11-15T09:57:45.674Z] Time:          Wed Nov 15 2017 11:57:45 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-15T09:57:45.674Z] ----------------------------------------------------------------------
+[debug] [2017-11-17T08:52:16.680Z] ----------------------------------------------------------------------
+[debug] [2017-11-17T08:52:16.684Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\fales\AppData\Roaming\npm\node_modules\firebase-tools\bin\firebase serve
+[debug] [2017-11-17T08:52:16.684Z] CLI Version:   3.15.0
+[debug] [2017-11-17T08:52:16.684Z] Platform:      win32
+[debug] [2017-11-17T08:52:16.684Z] Node Version:  v9.2.0
+[debug] [2017-11-17T08:52:16.684Z] Time:          Fri Nov 17 2017 10:52:16 GMT+0200 (FLE Standard Time)
+[debug] [2017-11-17T08:52:16.684Z] ----------------------------------------------------------------------
 [debug] 
-[debug] [2017-11-15T09:57:45.688Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2017-11-15T09:57:45.688Z] > authorizing via signed-in user
-[debug] [2017-11-15T09:57:45.690Z] > refreshing access token with scopes: ["email","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","openid"]
-[debug] [2017-11-15T09:57:45.690Z] >>> HTTP REQUEST POST https://www.googleapis.com/oauth2/v3/token { refresh_token: '1/fjNPIQqp1nmgKwUCTG-Z3WKcKX-ekpZFckRQb_UxP4oaRF1WQZASTJG1UUHY4xrM',
+[debug] [2017-11-17T08:52:16.704Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2017-11-17T08:52:16.704Z] > authorizing via signed-in user
+[debug] [2017-11-17T08:52:16.706Z] > refreshing access token with scopes: ["email","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","openid"]
+[debug] [2017-11-17T08:52:16.706Z] >>> HTTP REQUEST POST https://www.googleapis.com/oauth2/v3/token { refresh_token: '1/fjNPIQqp1nmgKwUCTG-Z3WKcKX-ekpZFckRQb_UxP4oaRF1WQZASTJG1UUHY4xrM',
   client_id: '563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com',
   client_secret: 'j9iVZfS8kkCEFUPaAeJV0sAi',
   grant_type: 'refresh_token',
   scope: 'email https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/cloudplatformprojects.readonly https://www.googleapis.com/auth/firebase openid' } 
- Wed Nov 15 2017 11:57:45 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-15T09:57:45.908Z] <<< HTTP RESPONSE 200
-[debug] [2017-11-15T09:57:45.914Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/projects/summer-on-firebase  
- Wed Nov 15 2017 11:57:45 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-15T09:57:46.791Z] <<< HTTP RESPONSE 200
-[debug] [2017-11-15T09:57:46.792Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/database/summer-on-firebase/tokens  
- Wed Nov 15 2017 11:57:46 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-15T09:57:47.900Z] <<< HTTP RESPONSE 200
+ Fri Nov 17 2017 10:52:16 GMT+0200 (FLE Standard Time)
+[debug] [2017-11-17T08:52:17.049Z] <<< HTTP RESPONSE 200
+[debug] [2017-11-17T08:52:17.055Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/projects/summer-on-firebase  
+ Fri Nov 17 2017 10:52:17 GMT+0200 (FLE Standard Time)
+[debug] [2017-11-17T08:52:17.932Z] <<< HTTP RESPONSE 200
+[debug] [2017-11-17T08:52:17.934Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/database/summer-on-firebase/tokens  
+ Fri Nov 17 2017 10:52:17 GMT+0200 (FLE Standard Time)
+[debug] [2017-11-17T08:52:18.646Z] <<< HTTP RESPONSE 200
 [info] 
 [info] === Serving from 'E:\Programming\Intertext\Componently'...
 [info] 
-[debug] [2017-11-15T09:57:47.903Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/summer-on-firebase  
- Wed Nov 15 2017 11:57:47 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-15T09:57:48.825Z] <<< HTTP RESPONSE 200
-[debug] [2017-11-15T09:57:48.825Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/90680327967/clients/_:getWebAppConfig  
- Wed Nov 15 2017 11:57:48 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-15T09:57:49.534Z] <<< HTTP RESPONSE 200
-[info] i  hosting: Serving hosting files from: public
-[info] +  hosting: Local server: http://localhost:5000
-
-[debug] [2017-11-15T14:13:12.514Z] ----------------------------------------------------------------------
-[debug] [2017-11-15T14:13:12.516Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\fales\AppData\Roaming\npm\node_modules\firebase-tools\bin\firebase serve
-[debug] [2017-11-15T14:13:12.516Z] CLI Version:   3.15.0
-[debug] [2017-11-15T14:13:12.516Z] Platform:      win32
-[debug] [2017-11-15T14:13:12.516Z] Node Version:  v9.2.0
-[debug] [2017-11-15T14:13:12.517Z] Time:          Wed Nov 15 2017 16:13:12 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-15T14:13:12.517Z] ----------------------------------------------------------------------
-[debug] 
-[debug] [2017-11-15T14:13:12.528Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2017-11-15T14:13:12.528Z] > authorizing via signed-in user
-[debug] [2017-11-15T14:13:12.530Z] > refreshing access token with scopes: ["email","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","openid"]
-[debug] [2017-11-15T14:13:12.530Z] >>> HTTP REQUEST POST https://www.googleapis.com/oauth2/v3/token { refresh_token: '1/fjNPIQqp1nmgKwUCTG-Z3WKcKX-ekpZFckRQb_UxP4oaRF1WQZASTJG1UUHY4xrM',
-  client_id: '563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com',
-  client_secret: 'j9iVZfS8kkCEFUPaAeJV0sAi',
-  grant_type: 'refresh_token',
-  scope: 'email https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/cloudplatformprojects.readonly https://www.googleapis.com/auth/firebase openid' } 
- Wed Nov 15 2017 16:13:12 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-15T14:13:12.784Z] <<< HTTP RESPONSE 200
-[debug] [2017-11-15T14:13:12.789Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/projects/summer-on-firebase  
- Wed Nov 15 2017 16:13:12 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-15T14:13:13.728Z] <<< HTTP RESPONSE 200
-[debug] [2017-11-15T14:13:13.730Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/database/summer-on-firebase/tokens  
- Wed Nov 15 2017 16:13:13 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-15T14:13:14.438Z] <<< HTTP RESPONSE 200
-[info] 
-[info] === Serving from 'E:\Programming\Intertext\Componently'...
-[info] 
-[debug] [2017-11-15T14:13:14.440Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/summer-on-firebase  
- Wed Nov 15 2017 16:13:14 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-15T14:13:15.376Z] <<< HTTP RESPONSE 200
-[debug] [2017-11-15T14:13:15.376Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/90680327967/clients/_:getWebAppConfig  
- Wed Nov 15 2017 16:13:15 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-15T14:13:15.957Z] <<< HTTP RESPONSE 200
-[info] i  hosting: Serving hosting files from: public
-[info] +  hosting: Local server: http://localhost:5000
-
-[debug] [2017-11-16T08:08:47.632Z] ----------------------------------------------------------------------
-[debug] [2017-11-16T08:08:47.635Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\fales\AppData\Roaming\npm\node_modules\firebase-tools\bin\firebase serve
-[debug] [2017-11-16T08:08:47.635Z] CLI Version:   3.15.0
-[debug] [2017-11-16T08:08:47.635Z] Platform:      win32
-[debug] [2017-11-16T08:08:47.635Z] Node Version:  v9.2.0
-[debug] [2017-11-16T08:08:47.635Z] Time:          Thu Nov 16 2017 10:08:47 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-16T08:08:47.635Z] ----------------------------------------------------------------------
-[debug] 
-[debug] [2017-11-16T08:08:47.655Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
-[debug] [2017-11-16T08:08:47.656Z] > authorizing via signed-in user
-[debug] [2017-11-16T08:08:47.657Z] > refreshing access token with scopes: ["email","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","openid"]
-[debug] [2017-11-16T08:08:47.658Z] >>> HTTP REQUEST POST https://www.googleapis.com/oauth2/v3/token { refresh_token: '1/fjNPIQqp1nmgKwUCTG-Z3WKcKX-ekpZFckRQb_UxP4oaRF1WQZASTJG1UUHY4xrM',
-  client_id: '563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com',
-  client_secret: 'j9iVZfS8kkCEFUPaAeJV0sAi',
-  grant_type: 'refresh_token',
-  scope: 'email https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/cloudplatformprojects.readonly https://www.googleapis.com/auth/firebase openid' } 
- Thu Nov 16 2017 10:08:47 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-16T08:08:47.879Z] <<< HTTP RESPONSE 200
-[debug] [2017-11-16T08:08:47.883Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/projects/summer-on-firebase  
- Thu Nov 16 2017 10:08:47 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-16T08:08:48.806Z] <<< HTTP RESPONSE 200
-[debug] [2017-11-16T08:08:48.808Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/database/summer-on-firebase/tokens  
- Thu Nov 16 2017 10:08:48 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-16T08:08:49.544Z] <<< HTTP RESPONSE 200
-[info] 
-[info] === Serving from 'E:\Programming\Intertext\Componently'...
-[info] 
-[debug] [2017-11-16T08:08:49.546Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/summer-on-firebase  
- Thu Nov 16 2017 10:08:49 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-16T08:08:50.469Z] <<< HTTP RESPONSE 200
-[debug] [2017-11-16T08:08:50.469Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/90680327967/clients/_:getWebAppConfig  
- Thu Nov 16 2017 10:08:50 GMT+0200 (FLE Standard Time)
-[debug] [2017-11-16T08:08:51.020Z] <<< HTTP RESPONSE 200
+[debug] [2017-11-17T08:52:18.649Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/summer-on-firebase  
+ Fri Nov 17 2017 10:52:18 GMT+0200 (FLE Standard Time)
+[debug] [2017-11-17T08:52:19.638Z] <<< HTTP RESPONSE 200
+[debug] [2017-11-17T08:52:19.638Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/90680327967/clients/_:getWebAppConfig  
+ Fri Nov 17 2017 10:52:19 GMT+0200 (FLE Standard Time)
+[debug] [2017-11-17T08:52:20.235Z] <<< HTTP RESPONSE 200
 [info] i  hosting: Serving hosting files from: public
 [info] +  hosting: Local server: http://localhost:5000
 

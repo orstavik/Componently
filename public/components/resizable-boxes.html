@@ -2,7 +2,10 @@
   <template>
     <style>
       :host {
-        --separator-width: 6px;
+        display: block;
+      }
+      #grid {
+        display: grid;
       }
       ::slotted(.separator) {
         display: inline-block;
@@ -12,7 +15,9 @@
       }
     </style>
 
-    <slot id="slot"></slot>
+    <div id="grid">
+      <slot id="slot"></slot>
+    </div>
 
   </template>
   <script>
@@ -27,6 +32,10 @@
             type: Array,
             value: () => [],
             observer: '_boxesChange'
+          },
+          _gridColumns: {
+            type: Array,
+            value: () => []
           }
         }
       }
@@ -42,7 +51,7 @@
       }
 
       _boxesChange() {
-        this._balanceWidth();
+        this._makeGridColumns();
         this._makeSeparators();
       }
 
@@ -52,15 +61,11 @@
         });
       }
 
-      _balanceWidth() {
-        const width = this.getBoundingClientRect().width;
-        const n = this._boxes.length;
-        let sepWidth = getComputedStyle(this).getPropertyValue('--separator-width');
-        sepWidth = Number(sepWidth.match(/\d+/)[0]);
-        const boxWidth = (width - (n-1)*sepWidth)/n;
-        for (let box of this._boxes) {
-          box.style.flexBasis = boxWidth+'px';
-        }
+      _makeGridColumns() {
+        if (!this._boxes.length)
+          return;
+        this._gridColumns = this._boxes.map((node, i) => this._gridColumns[i] || 1);
+        this._applyStyle();
       }
 
       _makeSeparators() {
@@ -86,21 +91,38 @@
       _separatorDraged(e) {
         const ddx = e.detail.ddx !== undefined ? e.detail.ddx : e.detail.dx;
         const ddy = e.detail.ddy !== undefined ? e.detail.ddy : e.detail.dy;
-
+        const width = this.getBoundingClientRect().width;
+        const n = this._gridColumns.length;
+        const fr = (width-((n-1)*6))/n;
+        const px = ddx/fr;
+        const py = ddy/fr;
         const prevBox = e.srcElement.previousElementSibling;
-        let prevBoxWidth = prevBox.getBoundingClientRect().width;
         const nextBox = e.srcElement.nextElementSibling;
-        let nextBoxWidth = nextBox.getBoundingClientRect().width;
-        if (prevBoxWidth < 200)
-          prevBoxWidth = 200;
-        else
-          prevBoxWidth += ddx;
-        if (nextBoxWidth < 200)
-          nextBoxWidth = 200;
-        else
-          nextBoxWidth -= ddx;
-        prevBox.style.flexBasis = prevBoxWidth+'px';
-        nextBox.style.flexBasis = nextBoxWidth+'px';
+        const prevIndex = this._boxes.indexOf(prevBox);
+        const nextIndex = this._boxes.indexOf(nextBox);
+        const frSum = this._gridColumns[prevIndex] + this._gridColumns[nextIndex];
+        this._gridColumns[prevIndex] += px;
+        this._gridColumns[nextIndex] -= px;
+        if (this._gridColumns[prevIndex] < 120/fr) {
+          this._gridColumns[prevIndex] = 120/fr;
+          this._gridColumns[nextIndex] = frSum - 120/fr;
+        }
+        if (this._gridColumns[nextIndex] < 120/fr) {
+          this._gridColumns[nextIndex] = 120/fr;
+          this._gridColumns[prevIndex] = frSum - 120/fr;
+        }
+        console.log(this._gridColumns.join(', '));
+        this._applyStyle();
+      }
+
+      _applyStyle() {
+        let gridColumns = '';
+        for (let i = 0; i < this._gridColumns.length; i++) {
+          gridColumns += `minmax(120px, ${this._gridColumns[i]}fr)`;
+          if (i < this._boxes.length-1)
+            gridColumns += ' 6px ';
+        }
+        this.$.grid.style.gridTemplateColumns = gridColumns;
       }
     }
     customElements.define(ResizableBoxes.is, ResizableBoxes);
