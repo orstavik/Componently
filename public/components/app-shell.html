@@ -14,7 +14,6 @@
     <app-state state="{{state}}"></app-state>
     <app-router default-url="home"></app-router>
 
-    <a href="/home">home</a>
     <app-pages page="[[state.session.route.segments.0]]">
       <home-page page="home"
                  user="[[state.persistent.user]]"

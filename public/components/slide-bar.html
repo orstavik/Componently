@@ -1,0 +1,58 @@
+<dom-module id="slide-bar">
+  <template>
+    <style>
+      :host {
+        display: block;
+        --height: 60px;
+        z-index: 1;
+      }
+      :host #container {
+        height: 0px;
+        transition: 0.4s;
+        overflow: hidden;
+      }
+      :host([opened]) #container {
+        height: var(--height);
+      }
+      #trigger {
+        display: block;
+        position: fixed;
+        top: 0;
+        width: 100vw;
+        height: 6px;
+      }
+    </style>
+
+    <div id="trigger" on-mouseenter="_slideIn"></div>
+    <div id="container" on-mouseleave="_slideOut">
+      <slot></slot>
+    </div>
+
+  </template>
+  <script>
+    class SlideBar extends Polymer.Element {
+      static get is() {
+        return 'slide-bar';
+      }
+
+      static get properties() {
+        return {
+          opened: {
+            type: Boolean,
+            value: false,
+            reflectToAttribute: true
+          }
+        }
+      }
+
+      _slideIn() {
+        this.opened = true;
+      }
+
+      _slideOut() {
+        this.opened = false;
+      }
+    }
+    customElements.define(SlideBar.is, SlideBar);
+  </script>
+</dom-module>

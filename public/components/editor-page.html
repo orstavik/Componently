@@ -1,39 +1,70 @@
 <link rel="import" href="code-editor.html">
 <link rel="import" href="code-preview.html">
 <link rel="import" href="resizable-boxes.html">
+<link rel="import" href="slide-bar.html">
 
 <dom-module id="editor-page">
   <template>
     <style>
       :host {
-        display: block;
+        display: flex;
+        height: 100vh;
+        flex-direction: column;
       }
       #header {
         display: flex;
         flex-direction: row;
+        align-items: center;
         justify-content: space-between;
+        width: 100vw;
+        height: 60px;
+        background-color: grey;
+      }
+      #homeLink {
+        color: white;
+        font-size: 30px;
+        font-weight: bold;
+        font-family: Arial;
+        margin: 0 20px;
+        text-decoration: none;
+      }
+      #title {
+        color: white;
+        position: absolute;
+        
       }
       #editors {
         display: block;
+        flex: 1;
+        position: relative;
+      }
+      slide-bar {
+        --height: 60px;
       }
     </style>
 
-    <div id="header">
-      <b>[[currentProject.project]]</b>
-      <div>
-        <input type="text" id="newFileName" style="width: 120px;" placeholder="file">
-        <button on-tap="_addFile">+</button>
-        <button on-tap="_openPreview">Preview</button>
-        <input hidden="[[!currentProject.changed]]" type="text" id="versionComment" style="width: 120px;"
-               placeholder="version comment">
-        <button hidden="[[!currentProject.changed]]" on-tap="_saveChanges">Save</button>
-        Version: <select on-change="_changeVersion">
-        <template is="dom-repeat" items="[[versions]]">
-          <option value="[[item]]" selected="[[_isSelectedVersion(item, currentProject)]]">[[item]]</option>
-        </template>
-      </select>
+    <slide-bar>
+      <div id="header">
+        <div>
+          <a id="homeLink" href="/home">&#60;</a>
+        </div>
+        <h2 id="title">[[currentProject.project]]</h2>
+        <div>
+          <input type="text" id="newFileName" style="width: 120px;" placeholder="file">
+          <button on-tap="_addFile">+</button>
+          <button on-tap="_openPreview">Preview</button>
+          <input hidden="[[!currentProject.changed]]" type="text" id="versionComment" style="width: 120px;"
+                  placeholder="version comment">
+          <button hidden="[[!currentProject.changed]]" on-tap="_saveChanges">Save</button>
+          Version:
+          <select on-change="_changeVersion">
+          <template is="dom-repeat" items="[[versions]]">
+            <option value="[[item]]" selected="[[_isSelectedVersion(item, currentProject)]]">[[item]]</option>
+          </template>
+        </select>
+        </div>
       </div>
-    </div>
+    </slide-bar>
     <resizable-boxes id="editors">
       <template is="dom-repeat" items="[[filesArray]]">
         <code-editor name="[[item.name]]" mode="[[_getExt(item.name)]]" value="[[item.value]]"></code-editor>

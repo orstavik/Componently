@@ -1,0 +1,65 @@
+<dom-module id="css-animation">
+  <template>
+
+    <slot></slot>
+
+  </template>
+
+  <script>
+    class CssAnimation extends IntertextMixin(Polymer.Element) {
+      static get is() {
+        return 'css-animation';
+      }
+      static get properties() {
+        return {
+          name: {
+            type: String,
+            value: 'animation'
+          },
+          appear: {
+            type: Boolean,
+            value: false
+          },
+          active: {
+            type: Boolean,
+            reflectToAttribute: true,
+            value: false
+          }
+        }
+      }
+
+      connectedCallback() {
+        super.connectedCallback();
+
+        if (this.appear)
+          this.animate('appear');
+      }
+
+      toggle() {
+        this.active ? this.leave() : this.enter();
+      }
+      
+      enter() {
+        return this.animate('enter').then(() => {
+          this.active = true;
+        });;
+      }
+      
+      leave() {
+        this.active = false;
+        return this.animate('leave');
+      }
+      
+      animate(name) {
+        this.$emit('animation-before-' + name);
+        this.classList.add(this.name + '-' + name + '-active');
+        return this.$once('animationend').then((e) => {
+          this.classList.remove(this.name + '-' + name + '-active');
+          this.$emit('animation-after-' + name);
+        });
+      }
+    }
+
+    window.customElements.define(CssAnimation.is, CssAnimation);
+  </script>
+</dom-module>

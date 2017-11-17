@@ -2,16 +2,21 @@
   <template>
     <style>
       :host {
-        display: block;
+        display: flex;
+        position: relative;
       }
       #grid {
         display: grid;
+        height: 100%;
+      }
+      #grid.unselectable ::slotted(*) {
+        user-select: none;
       }
       ::slotted(.separator) {
         display: inline-block;
         flex-basis: var(--separator-width);
         background-color: grey;
-        cursor: pointer;
+        cursor: col-resize;
       }
     </style>
 
@@ -62,8 +67,6 @@
       }
 
       _makeGridColumns() {
-        if (!this._boxes.length)
-          return;
         this._gridColumns = this._boxes.map((node, i) => this._gridColumns[i] || 1);
         this._applyStyle();
       }
@@ -82,6 +85,8 @@
               this.insertBefore(div, box);
             }
           }
+        } else {
+          this.querySelectorAll('.separator').forEach((sep) => sep.remove());
         }
         const lastBox = this._boxes[this._boxes.length-1];
         if (lastBox && lastBox.nextElementSibling.classList.contains('separator'))
@@ -89,6 +94,11 @@
       }
 
       _separatorDraged(e) {
+        if (e.detail.state === 'start')
+          this.$.grid.classList.add('unselectable');
+        if (e.detail.state === 'end')
+          this.$.grid.classList.remove('unselectable');
+        console.log(e.detail.state);
         const ddx = e.detail.ddx !== undefined ? e.detail.ddx : e.detail.dx;
         const ddy = e.detail.ddy !== undefined ? e.detail.ddy : e.detail.dy;
         const width = this.getBoundingClientRect().width;
@@ -111,8 +121,8 @@
           this._gridColumns[nextIndex] = 120/fr;
           this._gridColumns[prevIndex] = frSum - 120/fr;
         }
-        console.log(this._gridColumns.join(', '));
         this._applyStyle();
+        this._refreshEditors();
       }
 
       _applyStyle() {
@@ -123,6 +133,11 @@
             gridColumns += ' 6px ';
         }
         this.$.grid.style.gridTemplateColumns = gridColumns;
+      }
+
+      _refreshEditors() {
+        for (let box of this._boxes)
+          box.editor.refresh();
       }
     }
     customElements.define(ResizableBoxes.is, ResizableBoxes);
