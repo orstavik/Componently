@@ -20,6 +20,9 @@
     "iron-location": "^2.0.2",
     "iron-pages": "^2.0.0",
     "lazy-imports": "^2.0.0",
-    "codemirror": "^5.31.0"
+    "codemirror": "^5.31.0",
+    "iron-icon": "^2.0.1",
+    "iron-icons": "^2.0.1",
+    "iron-iconset-svg": "^2.1.0"
   }
 }
