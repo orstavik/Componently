@@ -39,7 +39,7 @@
 
       open() {
         this.preview = this._makePreview('index.html');
-        window.open(this.preview, 'Preview', "noopener");  //todo open in new tab, in background / no focus
+        window.open(this.preview, 'Preview', "noopener,menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes");  //todo open in new tab, in background / no focus
       }
 
       update() {
