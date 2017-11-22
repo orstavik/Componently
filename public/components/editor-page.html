@@ -94,12 +94,6 @@
         }
       }
 
-      static get observers() {
-        return [
-          '_updateFiles(currentProject)'
-        ]
-      }
-
       _copyFiles(files) {
         return Tools.deepClone(files);
       }
@@ -133,11 +127,6 @@
           return alert("wrong filename!! " + name);
         this.$emit('controller-add-file', {filename: name, id: this.projectId, version: this.version});
         this.$.newFileName.value = '';
-      }
-
-      _updateFiles(cp) {
-        if (this.$.preview.preview)
-          this.$.preview.update();
       }
 
       static validateFileName(name) {
