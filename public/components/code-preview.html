@@ -19,11 +19,19 @@
             type: Object,
             value: () => ({})
           },
+          entry: {
+            type: String,
+            value: "index.html"
+          },
           preview: {
             type: String
           },
           path: {
             type: String
+          },
+          pathSniffer: {
+            type: String,
+            computed: "_makePathSniffer(path)"     //this is the link to the autoupdate blob file
           },
           TYPES: {
             type: Object,
@@ -38,12 +46,12 @@
       }
 
       open() {
-        this.preview = this._makePreview('index.html');
+        this.preview = this._makePreview(this.entry);
         window.open(this.preview, 'Preview', "noopener,menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes");  //todo open in new tab, in background / no focus
       }
 
       update() {
-        this.preview = this._makePreview('index.html');
+        this.preview = this._makePreview(this.entry);
         localStorage.setItem(this.path, this.preview);
       }
 
@@ -52,22 +60,23 @@
         let indexDoc = CodePreview.parseHTML(index);
         const deps = this._findDeps(indexDoc, entry);
         indexDoc = this._computeLinks(indexDoc, deps);
-        indexDoc = this._addScript(indexDoc);
+        let s = indexDoc.createElement("script");
+        s.src = this.pathSniffer;
+        indexDoc.head.append(s);
         index = indexDoc.documentElement.innerHTML;
         return CodePreview.makeURL(index, 'text/html');
       }
 
-      _addScript(doc) {
-        let s = document.createElement("script");
-        s.innerHTML = `
-        window.addEventListener('storage',function(e) {
-          if (e.key !== '${this.path}')
-            return;
-          window.history.pushState({}, null, e.newValue);
-          window.location.reload();
-        });`;
-        doc.head.appendChild(s);
-        return doc;
+      _makePathSniffer(path) {
+        let script =
+`window.addEventListener('storage',function(e) {
+  if (e.key !== '${path}')
+    return;
+  window.history.pushState({}, null, e.newValue);
+  window.location.reload();
+});
+//# sourceURL=__2js__previewAutoUpdater.js`;
+        return CodePreview.makeURL(script, this.TYPES["js"]);
       }
 
       _findDeps(doc, entry) {
