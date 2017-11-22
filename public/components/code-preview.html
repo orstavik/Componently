@@ -1,7 +1,7 @@
 <dom-module id="code-preview">
   <template>
     <style>
-       :host {
+      :host {
         display: block;
       }
     </style>
@@ -34,15 +34,6 @@
           pathSniffer: {
             type: String,
             computed: "_makePathSniffer(path)"     //this is the link to the autoupdate blob file
-          },
-          TYPES: {
-            type: Object,
-            value: () => ({
-              html: 'text/html',
-              css: 'text/css',
-              js: 'application/javascript',
-              json: 'application/json'
-            })
           }
         }
       }
@@ -60,8 +51,8 @@
           return null;
         let index = files[entry].value;
         let indexDoc = CodePreview.parseHTML(index);
-        const deps = this._findDeps(indexDoc, entry);
-        indexDoc = this._computeLinks(indexDoc, deps);
+        const deps = CodePreview._findDeps(indexDoc, entry, files);
+        indexDoc = CodePreview._computeLinks(indexDoc, deps);
         let s = indexDoc.createElement("script");
         s.src = pathSniffer;
         indexDoc.head.append(s);
@@ -71,36 +62,36 @@
 
       _makePathSniffer(path) {
         let script =
-`window.addEventListener('storage',function(e) {
+          `window.addEventListener('storage',function(e) {
   if (e.key !== '${path}')
     return;
   window.history.pushState({}, null, e.newValue);
   window.location.reload();
 });
 //# sourceURL=__2js__previewAutoUpdater.js`;
-        return CodePreview.makeURL(script, this.TYPES["js"]);
+        return CodePreview.makeURL(script, CodePreview.getType("js"));
       }
 
-      _findDeps(doc, entry) {
+      static _findDeps(doc, entry, files) {
         let res = {};
-        for (let key in this.files) {
+        for (let key in files) {
           if (key === entry)
             continue;
-          let file = this.files[key];
+          let file = files[key];
           const ext = file.name.split('.').pop();
           let query = CodePreview.makeQuery(file.name, ext);
           let node = doc.querySelector(query);
           res[key] = {
             name: key,
-            type: this.TYPES[ext],
+            type: CodePreview.getType(ext),
             node: node,
-            value: this.files[key].value
+            value: files[key].value
           }
         }
         return res;
       }
 
-      _computeLinks(doc, deps) {
+      static _computeLinks(doc, deps) {
         for (let key in deps) {
           let dep = deps[key];
           if (!dep.node)
@@ -142,7 +133,18 @@
         });
         return URL.createObjectURL(blob);
       }
+
+      static getType(ext){
+        let types = {
+          html: 'text/html',
+          css: 'text/css',
+          js: 'application/javascript',
+          json: 'application/json'
+        };
+        return types[ext];
+      }
     }
+
     customElements.define(CodePreview.is, CodePreview);
   </script>
 </dom-module>
