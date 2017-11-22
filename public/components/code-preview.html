@@ -16,8 +16,7 @@
       static get properties() {
         return {
           files: {
-            type: Object,
-            value: () => ({})
+            type: Object
           },
           entry: {
             type: String,
@@ -26,7 +25,7 @@
           preview: {
             type: String,
             computed: "_makePreview(entry, files, pathSniffer)",
-            observer: "_newPreviewMade"
+            observer: "_previewObserver"
           },
           path: {
             type: String
@@ -42,22 +41,8 @@
         window.open(this.preview, 'Preview', "noopener,menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes");  //todo open in new tab, in background / no focus
       }
 
-      _newPreviewMade() {
+      _previewObserver() {
         localStorage.setItem(this.path, this.preview);
-      }
-
-      _makePreview(entry, files, pathSniffer) {
-        if (!entry || !files || !pathSniffer)
-          return null;
-        let index = files[entry].value;
-        let indexDoc = CodePreview.parseHTML(index);
-        const deps = CodePreview._findDeps(indexDoc, entry, files);
-        indexDoc = CodePreview._computeLinks(indexDoc, deps);
-        let s = indexDoc.createElement("script");
-        s.src = pathSniffer;
-        indexDoc.head.append(s);
-        index = indexDoc.documentElement.innerHTML;
-        return CodePreview.makeURL(index, 'text/html');
       }
 
       _makePathSniffer(path) {
@@ -70,6 +55,20 @@
 });
 //# sourceURL=__2js__previewAutoUpdater.js`;
         return CodePreview.makeURL(script, CodePreview.getType("js"));
+      }
+
+      _makePreview(entry, files, pathSniffer) {
+        if (!entry || !files || !pathSniffer)
+          return null;
+        let index = files[entry].value;
+        let indexDoc = new DOMParser().parseFromString(index, 'text/html');
+        const deps = CodePreview._findDeps(indexDoc, entry, files);
+        indexDoc = CodePreview._computeLinks(indexDoc, deps);
+        let s = indexDoc.createElement("script");
+        s.src = pathSniffer;
+        indexDoc.head.append(s);
+        index = indexDoc.documentElement.innerHTML;
+        return CodePreview.makeURL(index, 'text/html');
       }
 
       static _findDeps(doc, entry, files) {
@@ -96,7 +95,7 @@
           let dep = deps[key];
           if (!dep.node)
             continue;
-          let value = CodePreview.addSourceURL(dep.value, dep.name, dep.type);
+          let value = dep.value + CodePreview.addSourceURL(dep.type, dep.name);
           let url = CodePreview.makeURL(value, dep.type);
           let attr = dep.type.startsWith('text/') ? 'href' : 'src';
           dep.node.setAttribute(attr, url);
@@ -104,27 +103,19 @@
         return doc;
       }
 
-      static parseHTML(str) {
-        const parser = new DOMParser();
-        return parser.parseFromString(str, 'text/html');
-      }
-
       static makeQuery(name, ext) {
         if (ext === 'html' || ext === 'css')
           return `link[href="${name}"]`;
-        else if (ext === 'js' || ext === 'json')
+        if (ext === 'js' || ext === 'json')
           return `script[src="${name}"]`;
       }
 
-      static addSourceURL(str, name, type) {
-        switch (type) {
-          case 'text/css':
-            return str + ` /*# sourceURL=${name} */`;
-          case 'application/javascript':
-            return str + ` //# sourceURL=${name}`;
-          default:
-            return str;
-        }
+      static addSourceURL(type, name) {
+        if (type === 'text/css')
+          return ` /*# sourceURL=${name} */`;
+        if (type === 'application/javascript')
+          return ` //# sourceURL=${name}`;
+        return "";
       }
 
       static makeURL(str, type) {
@@ -134,7 +125,7 @@
         return URL.createObjectURL(blob);
       }
 
-      static getType(ext){
+      static getType(ext) {
         let types = {
           html: 'text/html',
           css: 'text/css',
