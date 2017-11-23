@@ -2,22 +2,12 @@
 
 var cacheVersion = 1;
 var currentCache = {
-  offline: 'offline-cache' + cacheVersion
+  preview: 'preview' + cacheVersion
 };
-const offlineUrl = 'offline-page.html';
-
-console.log("ivar sw");
-
+//inspired by:
+// http://deanhume.com/home/blogpost/create-a-really--really-simple-offline-page-using-service-workers/10135
 this.addEventListener('install', event => {
-  console.log("ivar installing");
-  event.waitUntil(
-    caches.open(currentCache.offline).then(function (cache) {
-      return cache.addAll([
-        './img/offline.svg',
-        offlineUrl
-      ]);
-    })
-  );
+  console.log("sw for code.2js.no installed. This makes the preview better");
 });
 
 this.addEventListener('fetch', async event => {
@@ -30,41 +20,7 @@ this.addEventListener('fetch', async event => {
     let cacheKey = pathname + "/" + filename;
     if (url.search === "?autoload")
       cacheKey += url.search;
-    event.respondWith(caches.match(cacheKey)
-      .then(function (response) {
-        return response || fetch(event.request);
-      })
-    );
-    // event.respondWith(
-    //   caches.open("preview").then(function (previewCache) {
-    //     debugger;
-    //     previewCache.match(cacheKey).then(function (cachedResponse) {
-    //       return cachedResponse || fetch(event.request);
-    //     });
-    //   })
-    // );
-    // event.respondWith(
-    //   caches.open("preview").then(function (previewCache) {
-    //     previewCache.match(cacheKey).then(function (response) {
-    //       return response || fetch(event.request);
-    //     })
-    //   })
-    // );
-  }
-
-  // request.mode = navigate isn't supported in all browsers
-  // so include a check for Accept: text/html header.
-  else if (event.request.mode === 'navigate' || (event.request.method === 'GET' && event.request.headers.get('accept').includes('text/html'))) {
-    event.respondWith(
-      fetch(event.request.url).catch(error => {
-        // Return the offline page
-        return caches.match(offlineUrl);
-      })
-    );
-  }
-  else {
-    // Respond with everything else if we can
-    event.respondWith(caches.match(event.request)
+    event.respondWith(caches.match(cacheKey)            //todo should try to match directly from currentCache.preview, and not all caches
       .then(function (response) {
         return response || fetch(event.request);
       })

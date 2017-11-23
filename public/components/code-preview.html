@@ -2,7 +2,7 @@
   <template>
     <style>
       :host {
-        display: block;
+        display: none;
       }
     </style>
 
@@ -15,117 +15,40 @@
 
       static get properties() {
         return {
-          files: {
-            type: Object
-          },
-          entry: {
-            type: String,
-            value: "index.html"
-          },
-          preview: {
-            type: String,
-            computed: "_makePreview(entry, files, pathSniffer)",
-            observer: "_previewObserver"
-          },
-          path: {
-            type: String
-          },
-          pathSniffer: {
-            type: String,
-            computed: "_makePathSniffer(path)"     //this is the link to the autoupdate blob file
+          project: {
+            type: Object,
+            observer: "_updatePreviewCache"
           }
         }
       }
 
-      open() {
-        window.open(this.preview, 'Preview', "noopener,menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes");  //todo open in new tab, in background / no focus
-      }
-
-      _previewObserver() {
-        localStorage.setItem(this.path, this.preview);
-      }
-
-      _makePathSniffer(path) {
-        let script =
-          `window.addEventListener('storage',function(e) {
-  if (e.key !== '${path}')
-    return;
-  window.history.pushState({}, null, e.newValue);
-  window.location.reload();
-});
-//# sourceURL=__2js__previewAutoUpdater.js`;
-        return CodePreview.makeURL(script, CodePreview.getType("js"));
-      }
-
-      _makePreview(entry, files, pathSniffer) {
-        if (!entry || !files || !pathSniffer)
-          return null;
-        let index = files[entry].value;
-        let indexDoc = new DOMParser().parseFromString(index, 'text/html');
-        const deps = CodePreview._findDeps(indexDoc, entry, files);
-        indexDoc = CodePreview._computeLinks(indexDoc, deps);
-        let s = indexDoc.createElement("script");
-        s.src = pathSniffer;
-        indexDoc.head.append(s);
-        index = indexDoc.documentElement.innerHTML;
-        return CodePreview.makeURL(index, 'text/html');
-      }
-
-      static _findDeps(doc, entry, files) {
-        let res = {};
-        for (let key in files) {
-          if (key === entry)
-            continue;
-          let file = files[key];
-          const ext = file.name.split('.').pop();
-          let query = CodePreview.makeQuery(file.name, ext);
-          let node = doc.querySelector(query);
-          res[key] = {
-            name: key,
-            type: CodePreview.getType(ext),
-            node: node,
-            value: files[key].value
+      async _updatePreviewCache(project) {
+        if (!project || !project.files || !project.owner || !project.project)
+          return;
+        let path = "/" + project.owner + "/" + project.project + "/";
+        let cache = await caches.open("preview");
+        for (let filename in project.files) {
+          let file = project.files[filename];
+          let filetype = CodePreview.getType(filename);
+          let myResponse = CodePreview._makeCacheableResponse(file.value, filetype);
+          cache.put(path + filename, myResponse);
+          if (filetype === "text/html"){
+            let autoUpdater = `<script>window.addEventListener('storage',function(e) { if(e.key === '${path}') {window.location.reload();} });</scr` + `ipt>`;
+            let reloadResponse = CodePreview._makeCacheableResponse(file.value + autoUpdater, filetype);
+            cache.put(path + filename + "?autoload", reloadResponse);
           }
         }
-        return res;
+        localStorage.setItem(path, new Date().getTime());
       }
 
-      static _computeLinks(doc, deps) {
-        for (let key in deps) {
-          let dep = deps[key];
-          if (!dep.node)
-            continue;
-          let value = dep.value + CodePreview.addSourceURL(dep.type, dep.name);
-          let url = CodePreview.makeURL(value, dep.type);
-          let attr = dep.type.startsWith('text/') ? 'href' : 'src';
-          dep.node.setAttribute(attr, url);
-        }
-        return doc;
+      static _makeCacheableResponse(content, filetype) {
+        let myBlob = new Blob([content], {type: filetype});
+        let init = {"status": 200, "statusText": "SuperSmashingGreat!"};
+        return new Response(myBlob, init);
       }
 
-      static makeQuery(name, ext) {
-        if (ext === 'html' || ext === 'css')
-          return `link[href="${name}"]`;
-        if (ext === 'js' || ext === 'json')
-          return `script[src="${name}"]`;
-      }
-
-      static addSourceURL(type, name) {
-        if (type === 'text/css')
-          return ` /*# sourceURL=${name} */`;
-        if (type === 'application/javascript')
-          return ` //# sourceURL=${name}`;
-        return "";
-      }
-
-      static makeURL(str, type) {
-        const blob = new Blob([str], {
-          type: type
-        });
-        return URL.createObjectURL(blob);
-      }
-
-      static getType(ext) {
+      static getType(filename) {
+        let ext = filename.split(".").pop();
         let types = {
           html: 'text/html',
           css: 'text/css',
@@ -133,6 +56,11 @@
           json: 'application/json'
         };
         return types[ext];
+      }
+
+      openPreview(entry, autoload) {
+        let path = "/preview/" + this.project.owner + "/" + this.project.project + "/" + entry + (autoload ? "?autoload": "");
+        window.open(path, 'Preview', "noopener,menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes");
       }
     }
 
