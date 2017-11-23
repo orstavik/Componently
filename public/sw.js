@@ -2,7 +2,9 @@
 
 var cacheVersion = 1;
 var currentCache = {
-  preview: 'preview' + cacheVersion
+  preview: 'preview'
+  //todo careful here, dont do as below. The "preview" name is also used to reference the cache instance in code-preview.html.
+  //preview: 'preview' + cacheVersion
 };
 //inspired by:
 // http://deanhume.com/home/blogpost/create-a-really--really-simple-offline-page-using-service-workers/10135
@@ -20,10 +22,13 @@ this.addEventListener('fetch', async event => {
     let cacheKey = pathname + "/" + filename;
     if (url.search === "?autoload")
       cacheKey += url.search;
-    event.respondWith(caches.match(cacheKey)            //todo should try to match directly from currentCache.preview, and not all caches
-      .then(function (response) {
-        return response || fetch(event.request);
-      })
-    );
+    event.respondWith(caches.open(currentCache.preview)
+      .then(function (prevCache) {
+          return prevCache.match(cacheKey)
+            .then(function (response) {
+              return response || fetch(event.request);
+            })
+        }
+      ));
   }
 });
