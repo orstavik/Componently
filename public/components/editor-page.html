@@ -53,14 +53,14 @@
           <button on-tap="_addFile">+</button>
           <button on-tap="_openPreview">Preview</button>
           <input hidden="[[!currentProject.changed]]" type="text" id="versionComment" style="width: 120px;"
-                  placeholder="version comment">
+                 placeholder="version comment">
           <button hidden="[[!currentProject.changed]]" on-tap="_saveChanges">Save</button>
           Version:
           <select on-change="_changeVersion">
-          <template is="dom-repeat" items="[[versions]]">
-            <option value="[[item]]" selected="[[_isSelectedVersion(item, currentProject)]]">[[item]]</option>
-          </template>
-        </select>
+            <template is="dom-repeat" items="[[versions]]">
+              <option value="[[item]]" selected="[[_isSelectedVersion(item, currentProject)]]">[[item]]</option>
+            </template>
+          </select>
         </div>
       </div>
     </slide-bar>
@@ -69,9 +69,6 @@
         <code-editor name="[[item.name]]" mode="[[_getExt(item.name)]]" value="[[item.value]]"></code-editor>
       </template>
     </resizable-boxes>
-    <code-preview id="preview"
-                  path="[[_makePreviewPath(currentProject.owner, currentProject.project)]]"
-                  files="[[currentProject.files]]"></code-preview>
 
   </template>
   <script>
@@ -90,8 +87,52 @@
           filesArray: {
             type: Array,
             computed: "_toArray(currentProject.files)",
+          },
+          previewEntrypoint: {
+            type: String,
+            value: "index.html"
           }
         }
+      }
+
+      static get observers() {
+        return ["_updatePreviewCache(currentProject)"];
+      }
+
+      async _updatePreviewCache(cp) {
+        if (!cp || !cp.files || !cp.owner || !cp.project)
+          return;
+        let path = "/" + cp.owner + "/" + cp.project + "/";
+        let cache = await caches.open("preview");
+        for (let filename in cp.files) {
+          let file = cp.files[filename];
+          let filetype = EditorPage.getType(filename);
+          let myResponse = EditorPage._makeCacheableResponse(file.value, filetype);
+          cache.put(path + filename, myResponse);
+          if (filetype === "text/html"){
+            let autoUpdater = `<script>window.addEventListener('storage',function(e) { if(e.key === '${path}') {window.location.reload();} });</scr` + `ipt>`;
+            let reloadResponse = EditorPage._makeCacheableResponse(file.value + autoUpdater, filetype);
+            cache.put(path + filename + "?autoload", reloadResponse);
+          }
+        }
+        localStorage.setItem(path, new Date().getTime());
+      }
+
+      static _makeCacheableResponse(content, filetype) {
+        let myBlob = new Blob([content], {type: filetype});
+        let init = {"status": 200, "statusText": "SuperSmashingGreat!"};
+        return new Response(myBlob, init);
+      }
+
+      static getType(filename) {
+        let ext = filename.split(".").pop();
+        let types = {
+          html: 'text/html',
+          css: 'text/css',
+          js: 'application/javascript',
+          json: 'application/json'
+        };
+        return types[ext];
       }
 
       _copyFiles(files) {
@@ -141,7 +182,7 @@
           return name.split('.').pop();
       }
 
-      _saveChanges(){
+      _saveChanges() {
         let comment = this.$.versionComment.value;
         this.$emit('controller-save-new-version', comment);
         this.$.versionComment.value = '';
@@ -149,7 +190,8 @@
       }
 
       _openPreview() {
-        this.$.preview.open();
+        let path = "/preview/" + this.currentProject.owner + "/" + this.currentProject.project + "/" + this.previewEntrypoint;
+        window.open(path + "?autoload", 'Preview', "noopener,menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes");
       }
 
       _makePreviewPath(owner, project) {
