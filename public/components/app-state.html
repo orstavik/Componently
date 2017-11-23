@@ -53,7 +53,7 @@
           return -1;
         }
         let versions = this.state.persistent.users[username].projects[project].versions;
-        return Object.keys(versions).map(n => Number(n)).sort().reverse()[0];
+        return Object.keys(versions).map(n => Number(n)).sort((a, b) => b - a)[0];
       }
 
       connectedCallback() {
@@ -340,17 +340,20 @@
         let value;
         if (ext === 'html')
           value = `<!-- created at ${new Date()} by ${username} -->`
-        else if (ext === 'css')
-          value = `/* created at ${new Date()} by ${username} */`
-        else if (ext === 'js')
-          value = `// created at ${new Date()} by ${username}`
+
+              else if (ext === 'css')
+                value =
+        `/* created at ${new Date()} by ${username} */`
+
+              else if (ext === 'js')
+                value = `// created at ${new Date()} by ${username}`
         let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename], {
-          name: filename,
-          value: value
+        name: filename,
+        value: value
         });
         persistent = Tools.setIn(persistent, ["currentProject", "changed"], new Date().getTime());
         this._update(persistent, this.state.session, e.type);
-      }
+        }
 
       _removeFile(e) {
         const filename = e.detail.payload;
