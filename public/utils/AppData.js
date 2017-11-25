@@ -3,9 +3,10 @@ class AppData {
   /**
    * APP SPECIFIC
    */
-  static async getCurrentUserData(username) {
+  static async getCurrentUserData(uid) {
     const db = firebase.firestore();
-    return db.doc(`users/${username}`).get();
+    const coll = await db.collection("users").where("uids." + uid, "==", true).get();
+    return coll.docs[0];
   }
 
   static async setCurrentProject(username, currentProject) {
