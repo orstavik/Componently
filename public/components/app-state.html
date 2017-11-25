@@ -173,22 +173,11 @@
       }
 
       _signIn(e) {
-        firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())
-          .then((result) => {
-            let user = AppState.makeUser(result.user);
-            const persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
-            this._update(persistent, this.state.session, e.type);
-            this._updateProjectsListener(user.name, e.type);
-          });
+        firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
       }
 
       _signOut(e) {
-        firebase.auth().signOut()
-          .then(() => {
-            let persistent = Tools.setIn(this.state.persistent, ['user'], null, this._frozen);
-            this._update(persistent, this.state.session, e.type);
-            this._updateProjectsListener(null, e.type);
-          })
+        firebase.auth().signOut();
       }
 
       _updateProjectsListener(username, action) {
@@ -339,21 +328,18 @@
         const ext = filename.split('.').pop();
         let value;
         if (ext === 'html')
-          value = `<!-- created at ${new Date()} by ${username} -->`
-
-              else if (ext === 'css')
-                value =
-        `/* created at ${new Date()} by ${username} */`
-
-              else if (ext === 'js')
-                value = `// created at ${new Date()} by ${username}`
+          value = "<!-- created at " + new Date() + " by " + username + "-->"; //annoying bug in webstorm crashes on these backtick quotes
+        else if (ext === 'css')
+          value = `/* created at ${new Date()} by ${username} */`;
+        else if (ext === 'js')
+          value = `// created at ${new Date()} by ${username}`;
         let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename], {
-        name: filename,
-        value: value
+          name: filename,
+          value: value
         });
         persistent = Tools.setIn(persistent, ["currentProject", "changed"], new Date().getTime());
         this._update(persistent, this.state.session, e.type);
-        }
+      }
 
       _removeFile(e) {
         const filename = e.detail.payload;
