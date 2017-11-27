@@ -70,7 +70,7 @@
         window.addEventListener('controller-remove-project', this._removeProject.bind(this));
         window.addEventListener('controller-select-project', this._selectProject.bind(this));
         window.addEventListener('controller-select-version', this._selectVersion.bind(this));
-        window.addEventListener('controller-save-new-version', this._saveNewVersion.bind(this));
+//        window.addEventListener('controller-save-new-version', this._saveNewVersion.bind(this));
         window.addEventListener('controller-add-file', this._addFile.bind(this));
         window.addEventListener('controller-remove-file', this._removeFile.bind(this));
         window.addEventListener('controller-file-edited', this._fileEdited.bind(this));
@@ -125,11 +125,14 @@
         let currentProject = {
           owner: decodeURI(route.segments[1]),
           project: route.segments[2],
-          version: route.segments[3]
+          version: Number(route.segments[3])
         };
-
-        //if (asking for the same route as before)
-        //  just return;??
+        if (this.state.persistent.currentProject &&
+          currentProject.owner === this.state.persistent.currentProject.owner &&
+          currentProject.project === this.state.persistent.currentProject.project &&
+          currentProject.version === this.state.persistent.currentProject.version &&
+          this.state.persistent.currentProject.files )
+          return;
 
         //"editor"
         if (urlPage === "editor") {
@@ -137,6 +140,7 @@
             return this.$navigate("/home");
 
           const persistent = Tools.setIn(this.state.persistent, ['currentProject'], currentProject, this._frozen);
+          //todo update the files to use the files we already have
           const session = Tools.setIn(this.state.session, ['route'], route, this._frozen);
           //check that the files are there and then load them if they are not..
           this._update(persistent, session, e.type);
@@ -218,8 +222,15 @@
           let comment = this.state.persistent.users[ownerName].projects [projectId].versions[version].comment;
           persistent = Tools.setIn(persistent, ['currentProject', 'versionComment'], comment, this._frozen);
         }
+        if (this.state.persistent.currentProject &&
+          ownerName === this.state.persistent.currentProject.owner &&
+          projectId === this.state.persistent.currentProject.project &&
+          version === this.state.persistent.currentProject.version &&
+          this.state.persistent.currentProject.files )
+          return;
+        
         let files = await this._getFiles(ownerName, projectId, version);
-        persistent = Tools.setIn(persistent, ["users", ownerName, 'projects', projectId, 'versions', version, 'files'], files, this._frozen);
+        persistent = Tools.setIn(persistent, ['users', ownerName, 'projects', projectId, 'versions', version, 'files'], files, this._frozen);
         persistent = Tools.setIn(persistent, ['currentProject', 'files'], files, this._frozen);
         this._update(persistent, this.state.session, e.type);
       }
@@ -252,8 +263,8 @@
 
       _newProjects(e) {
         let username = e.detail.payload.username;
-        let projectIds = e.detail.payload.ids;
-        const persistent = Tools.filterFirestore(this.state.persistent, ["users", username, "projects"], projectIds, this._frozen);
+        let projects = e.detail.payload.ids;
+        const persistent = Tools.filterFirestore(this.state.persistent, ["users", username, "projects"], projects, this._frozen);
         this._update(persistent, this.state.session, e.type);
       }
 
@@ -295,13 +306,15 @@
         //todo, maybe mark the object as newly deleted, orange
       }
 
-      async _saveNewVersion(e) {
+      async _saveNewVersion() {
         let cp = this.state.persistent.currentProject;
-        let comment = e.detail.payload;
-        let nextVersion = await AppData.addVersion(cp.owner, cp.project, cp.version, cp.files, comment); //todo,this await is a little bad, we should lock the currentProject object here
-        let persistent = Tools.setIn(this.state.persistent, ["currentProject", "version"], nextVersion);
+//        let comment = e.detail.payload;
+        //todo,this await is a little bad, we should lock the currentProject object here
+        let nextVersion = await AppData.addVersion(cp.owner, cp.project, cp.files, "autosaved");
+        let persistent = Tools.filterFirestore(this.state.persistent, ["users", cp.owner, "projects", cp.project, "versions", nextVersion], cp.files, this._frozen);
+        persistent = Tools.setIn(this.state.persistent, ["currentProject", "version"], nextVersion);
         persistent = Tools.setIn(persistent, ["currentProject", "changed"], null);
-        this._update(persistent, this.state.session, e.type);
+        this._update(persistent, this.state.session, "autosave -> _saveNewVersion");
         this.$navigate(`/editor/${cp.owner}/${cp.project}/${nextVersion}`);
       }
 
@@ -311,6 +324,7 @@
         let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename, "value"], value);
         persistent = Tools.setIn(persistent, ["currentProject", "changed"], new Date().getTime());
         this._update(persistent, this.state.session, e.type);
+        this.$debounce(this._saveNewVersion.bind(this), 3000);
       }
 
       _addFile(e) {

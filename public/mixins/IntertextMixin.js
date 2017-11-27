@@ -37,4 +37,11 @@ const IntertextMixin = (superClass) => class extends superClass {
         callback();
       }, ms);
   }
-}
+
+  $debounce(callback, ms) {
+    this._polymerDebouncer = Polymer.Debouncer.debounce(
+      this._polymerDebouncer, // initially undefined
+      Polymer.Async.timeOut.after(ms),
+      callback);
+  }
+};

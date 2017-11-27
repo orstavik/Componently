@@ -127,12 +127,12 @@
           return name.split('.').pop();
       }
 
-      _saveChanges() {
-        let comment = this.$.versionComment.value;
-        this.$emit('controller-save-new-version', comment);
-        this.$.versionComment.value = '';
-      }
-
+//      _saveChanges() {               //todo this should be reshaped into a comment version
+//        let comment = this.$.versionComment.value;
+//        this.$emit('controller-save-new-version', comment);
+//        this.$.versionComment.value = '';
+//      }
+//
       _openPreview() {
         //todo here we can choose to have different html pages and autoload
         this.$.preview.openPreview("index.html", true);
