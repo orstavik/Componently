@@ -17,7 +17,7 @@
           },
           initial: {
             type: Object,
-            value: () => ({
+            value: () => Tools.deepFreeze({
               session: {
                 subscriptions: {}
               },
@@ -37,9 +37,10 @@
         }
       }
 
-      static makeUser(user) {
+      static makeUser(nick, user) {
         return {
-          name: user.displayName,
+          name: nick,
+          displayName: user.displayName,
           email: user.email,
           photo: user.photoURL,
           uid: user.uid
@@ -53,7 +54,7 @@
           return -1;
         }
         let versions = this.state.persistent.users[username].projects[project].versions;
-        return Object.keys(versions).map(n => Number(n)).sort().reverse()[0];
+        return Object.keys(versions).map(n => Number(n)).sort((a, b) => b - a)[0];
       }
 
       connectedCallback() {
@@ -62,7 +63,7 @@
         this._init({type: "state-init"});
         window.addEventListener('state-change-route', this._changeRoute.bind(this));          //select-project
 
-        window.addEventListener('controller-check-user', this._checkUser.bind(this));
+        window.addEventListener('controller-auth-changed', this._authChanged.bind(this));
         window.addEventListener('controller-sign-in', this._signIn.bind(this));
         window.addEventListener('controller-sign-out', this._signOut.bind(this));
         window.addEventListener('controller-add-project', this._addProject.bind(this));
@@ -104,25 +105,17 @@
       }
 
       _getStored() {
-        return JSON.parse(localStorage.getItem('state'));
+        return Tools.deepFreeze(JSON.parse(localStorage.getItem('state')));
       }
 
       /**
        * INIT AND ROUTE
        */
       async _init(e) {
-        let persistent = this.state.persistent;
-        if (!persistent) {
-          const stored = this._getStored();
-          if (stored) {
-            persistent = Tools.deepFreeze(Object.assign(stored));
-          } else {
-            persistent = Tools.deepFreeze(Object.assign(this.initial.persistent))
-          }
-        }
+        let persistent = this.state.persistent || this._getStored() || this.initial.persistent;
         const session = Tools.mergeDeepWithNullToDelete(this.state.session, this.initial.session, this._frozen);
         this._update(persistent, session, 'state-init');
-        await this._checkUser(e);
+        firebase.auth().onAuthStateChanged((user) => this.$emit("controller-auth-changed", user));
       }
 
       async _changeRoute(e) {
@@ -159,36 +152,23 @@
       /**
        * USER AND LISTENING FOR logged in USERS PROJECTS
        */
-      _checkUser(e) {
-        return new Promise((resolve, reject) => {
-          firebase.auth().onAuthStateChanged(async (user) => {
-            if (user)
-              user = AppState.makeUser(user);
-            let persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
-            this._update(persistent, this.state.session, e.type);
-            this._updateProjectsListener(user ? user.name : null, e.type);
-            resolve();
-          })
-        });
+      async _authChanged(e) {
+        let user = e.detail.payload;
+        if (user) {
+          let userData = await AppData.getCurrentUserData(user.uid);  //wait for the nickname to load
+          user = AppState.makeUser(userData.id, user);
+        }
+        let persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
+        this._update(persistent, this.state.session, e.type);
+        this._updateProjectsListener(user ? user.name : null, e.type);
       }
 
       _signIn(e) {
-        firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider())
-          .then((result) => {
-            let user = AppState.makeUser(result.user);
-            const persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
-            this._update(persistent, this.state.session, e.type);
-            this._updateProjectsListener(user.name, e.type);
-          });
+        firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
       }
 
       _signOut(e) {
-        firebase.auth().signOut()
-          .then(() => {
-            let persistent = Tools.setIn(this.state.persistent, ['user'], null, this._frozen);
-            this._update(persistent, this.state.session, e.type);
-            this._updateProjectsListener(null, e.type);
-          })
+        firebase.auth().signOut();
       }
 
       _updateProjectsListener(username, action) {
@@ -339,11 +319,11 @@
         const ext = filename.split('.').pop();
         let value;
         if (ext === 'html')
-          value = `<!-- created at ${new Date()} by ${username} -->`
+          value = "<!-- created at " + new Date() + " by " + username + "-->"; //annoying bug in webstorm crashes on these backtick quotes
         else if (ext === 'css')
-          value = `/* created at ${new Date()} by ${username} */`
+          value = `/* created at ${new Date()} by ${username} */`;
         else if (ext === 'js')
-          value = `// created at ${new Date()} by ${username}`
+          value = `// created at ${new Date()} by ${username}`;
         let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename], {
           name: filename,
           value: value

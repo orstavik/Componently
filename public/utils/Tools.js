@@ -42,6 +42,7 @@ class Tools {
   }
 
   static deepFreeze(o) {
+    if (!o) return o;
     Object.freeze(o);
     Object.getOwnPropertyNames(o).forEach((prop) => {
       if (o.hasOwnProperty(prop) &&

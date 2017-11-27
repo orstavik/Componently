@@ -53,14 +53,14 @@
           <button on-tap="_addFile">+</button>
           <button on-tap="_openPreview">Preview</button>
           <input hidden="[[!currentProject.changed]]" type="text" id="versionComment" style="width: 120px;"
-                  placeholder="version comment">
+                 placeholder="version comment">
           <button hidden="[[!currentProject.changed]]" on-tap="_saveChanges">Save</button>
           Version:
           <select on-change="_changeVersion">
-          <template is="dom-repeat" items="[[versions]]">
-            <option value="[[item]]" selected="[[_isSelectedVersion(item, currentProject)]]">[[item]]</option>
-          </template>
-        </select>
+            <template is="dom-repeat" items="[[versions]]">
+              <option value="[[item]]" selected="[[_isSelectedVersion(item, currentProject)]]">[[item]]</option>
+            </template>
+          </select>
         </div>
       </div>
     </slide-bar>
@@ -69,9 +69,7 @@
         <code-editor name="[[item.name]]" mode="[[_getExt(item.name)]]" value="[[item.value]]"></code-editor>
       </template>
     </resizable-boxes>
-    <code-preview id="preview"
-                  path="[[_makePreviewPath(currentProject.owner, currentProject.project)]]"
-                  files="[[currentProject.files]]"></code-preview>
+    <code-preview id="preview" project="[[currentProject]]"></code-preview>
 
   </template>
   <script>
@@ -92,24 +90,6 @@
             computed: "_toArray(currentProject.files)",
           }
         }
-      }
-
-      static get observers() {
-        return [
-          '_updateFiles(currentProject)'
-        ]
-      }
-
-      _copyFiles(files) {
-        return Tools.deepClone(files);
-      }
-
-      _makeFilesArray(files) {
-        let arr = [];
-        for (let key in files) {
-          arr.push(Object.assign({}, files[key]));
-        }
-        return arr;
       }
 
       _isSelectedVersion(item, cp) {
@@ -135,11 +115,6 @@
         this.$.newFileName.value = '';
       }
 
-      _updateFiles(cp) {
-        if (this.$.preview.preview)
-          this.$.preview.update();
-      }
-
       static validateFileName(name) {
         if (!name)
           return false;
@@ -152,19 +127,15 @@
           return name.split('.').pop();
       }
 
-      _saveChanges(){
+      _saveChanges() {
         let comment = this.$.versionComment.value;
         this.$emit('controller-save-new-version', comment);
         this.$.versionComment.value = '';
-
       }
 
       _openPreview() {
-        this.$.preview.open();
-      }
-
-      _makePreviewPath(owner, project) {
-        return "preview/" + owner + "/" + project;
+        //todo here we can choose to have different html pages and autoload
+        this.$.preview.openPreview("index.html", true);
       }
 
       _toArray(files) {

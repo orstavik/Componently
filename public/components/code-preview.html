@@ -1,8 +1,8 @@
 <dom-module id="code-preview">
   <template>
     <style>
-       :host {
-        display: block;
+      :host {
+        display: none;
       }
     </style>
 
@@ -15,123 +15,55 @@
 
       static get properties() {
         return {
-          files: {
+          project: {
             type: Object,
-            value: () => ({})
-          },
-          preview: {
-            type: String
-          },
-          path: {
-            type: String
-          },
-          TYPES: {
-            type: Object,
-            value: () => ({
-              html: 'text/html',
-              css: 'text/css',
-              js: 'application/javascript',
-              json: 'application/json'
-            })
+            observer: "_updatePreviewCache"
           }
         }
       }
 
-      open() {
-        this.preview = this._makePreview('index.html');
-        window.open(this.preview, 'Preview', "noopener");  //todo open in new tab, in background / no focus
-      }
-
-      update() {
-        this.preview = this._makePreview('index.html');
-        localStorage.setItem(this.path, this.preview);
-      }
-
-      _makePreview(entry) {
-        let index = this.files[entry].value;
-        let indexDoc = CodePreview.parseHTML(index);
-        const deps = this._findDeps(indexDoc, entry);
-        indexDoc = this._computeLinks(indexDoc, deps);
-        indexDoc = this._addScript(indexDoc);
-        index = indexDoc.documentElement.innerHTML;
-        return CodePreview.makeURL(index, 'text/html');
-      }
-
-      _addScript(doc) {
-        let s = document.createElement("script");
-        s.innerHTML = `
-        window.addEventListener('storage',function(e) {
-          if (e.key !== '${this.path}')
-            return;
-          window.history.pushState({}, null, e.newValue);
-          window.location.reload();
-        });`;
-        doc.head.appendChild(s);
-        return doc;
-      }
-
-      _findDeps(doc, entry) {
-        let res = {};
-        for (let key in this.files) {
-          if (key === entry)
-            continue;
-          let file = this.files[key];
-          const ext = file.name.split('.').pop();
-          let query = CodePreview.makeQuery(file.name, ext);
-          let node = doc.querySelector(query);
-          res[key] = {
-            name: key,
-            type: this.TYPES[ext],
-            node: node,
-            value: this.files[key].value
+      async _updatePreviewCache(project) {
+        if (!project || !project.files || !project.owner || !project.project)
+          return;
+        let path = "/" + project.owner + "/" + project.project + "/";
+        let cache = await caches.open("preview");
+        for (let filename in project.files) {
+          let file = project.files[filename];
+          let filetype = CodePreview.getType(filename);
+          let myResponse = CodePreview._makeCacheableResponse(file.value, filetype);
+          cache.put(path + filename, myResponse);
+          if (filetype === "text/html"){
+            let autoUpdater = `<script>window.addEventListener('storage',function(e) { if(e.key === '${path}') {window.location.reload();} });</scr` + `ipt>`;
+            let reloadResponse = CodePreview._makeCacheableResponse(file.value + autoUpdater, filetype);
+            cache.put(path + filename + "?autoload", reloadResponse);
           }
         }
-        return res;
+        localStorage.setItem(path, new Date().getTime());
       }
 
-      _computeLinks(doc, deps) {
-        for (let key in deps) {
-          let dep = deps[key];
-          if (!dep.node)
-            continue;
-          let value = CodePreview.addSourceURL(dep.value, dep.name, dep.type);
-          let url = CodePreview.makeURL(value, dep.type);
-          let attr = dep.type.startsWith('text/') ? 'href' : 'src';
-          dep.node.setAttribute(attr, url);
-        }
-        return doc;
+      static _makeCacheableResponse(content, filetype) {
+        let myBlob = new Blob([content], {type: filetype});
+        let init = {"status": 200, "statusText": "SuperSmashingGreat!"};
+        return new Response(myBlob, init);
       }
 
-      static parseHTML(str) {
-        const parser = new DOMParser();
-        return parser.parseFromString(str, 'text/html');
+      static getType(filename) {
+        let ext = filename.split(".").pop();
+        let types = {
+          html: 'text/html',
+          css: 'text/css',
+          js: 'application/javascript',
+          json: 'application/json'
+        };
+        return types[ext];
       }
 
-      static makeQuery(name, ext) {
-        if (ext === 'html' || ext === 'css')
-          return `link[href="${name}"]`;
-        else if (ext === 'js' || ext === 'json')
-          return `script[src="${name}"]`;
-      }
-
-      static addSourceURL(str, name, type) {
-        switch (type) {
-          case 'text/css':
-            return str + ` /*# sourceURL=${name} */`;
-          case 'application/javascript':
-            return str + ` //# sourceURL=${name}`;
-          default:
-            return str;
-        }
-      }
-
-      static makeURL(str, type) {
-        const blob = new Blob([str], {
-          type: type
-        });
-        return URL.createObjectURL(blob);
+      openPreview(entry, autoload) {
+        let path = "/preview/" + this.project.owner + "/" + this.project.project + "/" + entry + (autoload ? "?autoload": "");
+        window.open(path, 'Preview', "noopener,menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes");
       }
     }
+
     customElements.define(CodePreview.is, CodePreview);
   </script>
 </dom-module>
