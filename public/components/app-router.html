@@ -59,7 +59,7 @@
           url: AppRouter.pathSearchHashToURL(location.pathname, location.search, location.hash)
         };
         if (res.path)
-          res.segments = res.path.split("/").filter(item => item !== "");
+          res.segments = res.path.split("/").filter(item => item !== "").map(seg => decodeURI(seg));
         if (res.search) {
           res.queries = {};
           res.search.split("&").map(function (q) {

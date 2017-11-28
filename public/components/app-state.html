@@ -47,13 +47,13 @@
         }
       }
 
-      getLatestVersion(username, project) {
+      static getLatestVersion(persistent, username, project) {
         if (!username ||
           !project ||
-          !Tools.testPath(this.state.persistent, ["users", username, "projects", project, "versions"])) {
-          return -1;
+          !Tools.testPath(persistent, ["users", username, "projects", project, "versions"])) {
+          return undefined;
         }
-        let versions = this.state.persistent.users[username].projects[project].versions;
+        let versions = persistent.users[username].projects[project].versions;
         return Object.keys(versions).map(n => Number(n)).sort((a, b) => b - a)[0];
       }
 
@@ -74,9 +74,10 @@
         window.addEventListener('controller-add-file', this._addFile.bind(this));
         window.addEventListener('controller-remove-file', this._removeFile.bind(this));
         window.addEventListener('controller-file-edited', this._fileEdited.bind(this));
-        window.addEventListener('controller-current-project-changed', this._currentProjectChanged.bind(this));
+//        window.addEventListener('controller-current-project-changed', this._currentProjectChanged.bind(this));
         window.addEventListener('controller-new-projects', this._newProjects.bind(this));
         window.addEventListener('controller-new-versions', this._newVersions.bind(this));
+        window.addEventListener('controller-new-files', this._newFiles.bind(this));
       }
 
       _snap(action) {
@@ -118,39 +119,52 @@
         firebase.auth().onAuthStateChanged((user) => this.$emit("controller-auth-changed", user));
       }
 
+      static fourEqualSegments(a, b) {
+        for (let i = 0; i < 4; i++)
+          if (a[i] !== b[i])
+            return false;
+        return true;
+      }
+
       async _changeRoute(e) {
         const route = e.detail.payload;
-
-        const urlPage = route.segments[0];
-        let currentProject = {
-          owner: decodeURI(route.segments[1]),
-          project: route.segments[2],
-          version: Number(route.segments[3])
-        };
-        if (this.state.persistent.currentProject &&
-          currentProject.owner === this.state.persistent.currentProject.owner &&
-          currentProject.project === this.state.persistent.currentProject.project &&
-          currentProject.version === this.state.persistent.currentProject.version &&
-          this.state.persistent.currentProject.files )
+        if (this.state.session.route && AppState.fourEqualSegments(route.segments, this.state.session.route.segments))
           return;
+        const session = Tools.setIn(this.state.session, ['route'], route, this._frozen);
+        this._update(this.state.persistent, session, e.type);
 
-        //"editor"
-        if (urlPage === "editor") {
-          if (!route.segments[2])                    //no selected project. Go home!!
-            return this.$navigate("/home");
+        const cp = {
+          page: route.segments[0],
+          owner: route.segments[1],
+          project: route.segments[2],
+          version: route.segments[3]
+        };
 
-          const persistent = Tools.setIn(this.state.persistent, ['currentProject'], currentProject, this._frozen);
-          //todo update the files to use the files we already have
-          const session = Tools.setIn(this.state.session, ['route'], route, this._frozen);
-          //check that the files are there and then load them if they are not..
-          this._update(persistent, session, e.type);
-          this.$emit("controller-current-project-changed");
-        } else if (urlPage === "home") {
-          const session = Tools.setIn(this.state.session, ['route'], route, this._frozen);
-          this._update(this.state.persistent, session, e.type);
-        } else {
-          this.$navigate("/home");
+        //check for invalid route and if so, redirect /home
+        if (cp.page === "editor" && !cp.project)
+          return this.$navigate("/home/" + cp.owner);
+
+        let oldCp = this.state.persistent.currentProject;
+        if (oldCp && cp.page === oldCp.page && cp.owner === oldCp.owner && cp.project === oldCp.project && cp.version === oldCp.version) {
+          console.alert("wtf, look at this ivar");           //todo
+          return;                                            //todo can this ever occur ???
         }
+
+        cp.actualVersion = cp.version || AppState.getLatestVersion(this.state.persistent, cp.owner, cp.project);
+        if (cp.actualVersion) {
+          if (Tools.testPath(this.state.persistent, ["users", cp.owner, "projects", cp.project, "versions", cp.actualVersion, "files"]))
+            cp.files = this.state.persistent.users[cp.owner].projects[cp.project].versions[cp.actualVersion].files;
+          else
+            this._listenForFiles(cp.owner, cp.project, cp.actualVersion);
+        }
+
+        const persistent = Tools.setIn(this.state.persistent, ['currentProject'], cp, this._frozen);
+        this._update(persistent, this.state.session, e.type);
+
+        //side effects
+        if (this.state.persistent.user)
+          AppData.saveCurrentProject(this.state.persistent.user.name, cp);
+        this._updateVersionsListener(cp.owner, cp.project, e.type);
       }
 
       /**
@@ -175,6 +189,9 @@
         firebase.auth().signOut();
       }
 
+      /**
+       * LISTENERS FOR PROJECTS, VERSIONS, FILES
+       */
       _updateProjectsListener(username, action) {
         const existingSub = this.state.session.subscriptions.projects;
         if (existingSub === null && username === null)        //the same, null
@@ -194,45 +211,6 @@
         }
         const session = Tools.setIn(this.state.session, ['subscriptions', 'projects'], unsub, this._frozen);
         this._update(this.state.persistent, session, action);
-      }
-
-      /**
-       * CURRENT PROJECT AND LISTENERS FOR VERSION
-       */
-      async _currentProjectChanged(e) {
-        const currentProject = this.state.persistent.currentProject;
-        if (this.state.persistent.user)
-          AppData.setCurrentProject(this.state.persistent.user.name, this.state.persistent.currentProject);
-        if (!currentProject)
-          return this.$navigate("/home");
-
-        let ownerName = currentProject.owner;
-        let projectId = currentProject.project;
-        let version = currentProject.version;
-        this._updateVersionsListener(ownerName, projectId, e.type);
-
-        if (!version) {
-          let latest = this.getLatestVersion(ownerName, projectId);
-          if (latest !== -1)
-            this.$navigate(`/editor/${ownerName}/${projectId}/${latest}`);
-          return;
-        }
-        let persistent = this.state.persistent;
-        if (Tools.testPath(this.state.persistent, ["users", ownerName, "projects", projectId, "versions", version, "comment"])) {
-          let comment = this.state.persistent.users[ownerName].projects [projectId].versions[version].comment;
-          persistent = Tools.setIn(persistent, ['currentProject', 'versionComment'], comment, this._frozen);
-        }
-        if (this.state.persistent.currentProject &&
-          ownerName === this.state.persistent.currentProject.owner &&
-          projectId === this.state.persistent.currentProject.project &&
-          version === this.state.persistent.currentProject.version &&
-          this.state.persistent.currentProject.files )
-          return;
-        
-        let files = await this._getFiles(ownerName, projectId, version);
-        persistent = Tools.setIn(persistent, ['users', ownerName, 'projects', projectId, 'versions', version, 'files'], files, this._frozen);
-        persistent = Tools.setIn(persistent, ['currentProject', 'files'], files, this._frozen);
-        this._update(persistent, this.state.session, e.type);
       }
 
       _updateVersionsListener(ownerName, projectId, action) {
@@ -261,6 +239,14 @@
         this._update(this.state.persistent, session, action);
       }
 
+      async _listenForFiles(owner, project, version) {
+        const files = await AppData.getFiles(owner, project, version);
+        this.$emit("controller-new-files", {owner: owner, project: project, version: version, files: files});
+      }
+
+      /**
+       * RECEIVERS FOR PROJECTS, VERSIONS, FILES
+       */
       _newProjects(e) {
         let username = e.detail.payload.username;
         let projects = e.detail.payload.ids;
@@ -271,10 +257,40 @@
       _newVersions(e) {
         let project = e.detail.payload.project;
         let owner = e.detail.payload.owner;
-        let versionIds = e.detail.payload.versions;
-        const persistent = Tools.filterFirestore(this.state.persistent, ["users", owner, "projects", project, "versions"], versionIds, this._frozen);
+        let versionsShallow = e.detail.payload.versions;
+
+        let persistent = Tools.filterFirestore(this.state.persistent, ["users", owner, "projects", project, "versions"], versionsShallow, this._frozen);
+        let cp = this.state.persistent.currentProject;
+        if (!cp.version) {
+          const latest = AppState.getLatestVersion(persistent, owner, project);
+          if (
+            cp.owner === owner &&
+            cp.project === project &&
+            !cp.version &&
+            (!cp.actualVersion ||
+              cp.actualVersion < latest)
+          ) {
+            persistent = Tools.setIn(persistent, ['currentProject', 'actualVersion'], latest, this._frozen);
+            if (Tools.testPath(this.state.persistent, ["users", owner, "projects", project, "versions", latest, "files"])) {
+              let files = this.state.persistent.users[owner].projects[project].versions[latest].files;
+              persistent = Tools.setIn(persistent, ['currentProject', 'files'], files, this._frozen);
+            } else
+              this._listenForFiles(owner, project, latest);
+          }
+        }
         this._update(persistent, this.state.session, e.type);
-        this.$emit("controller-current-project-changed");
+      }
+
+      _newFiles(e) {
+        let res = e.detail.payload;
+        let persistent = Tools.setIn(this.state.persistent, ['users', res.owner, 'projects', res.project, 'versions', res.version, 'files'], res.files, this._frozen);
+        if (
+          this.state.persistent.currentProject.owner === res.owner &&
+          this.state.persistent.currentProject.project === res.project &&
+          this.state.persistent.currentProject.actualVersion === res.version
+        )
+          persistent = Tools.setIn(persistent, ['currentProject', 'files'], res.files, this._frozen);
+        this._update(persistent, this.state.session, e.type);
       }
 
       async _addProject(e) {
@@ -306,25 +322,18 @@
         //todo, maybe mark the object as newly deleted, orange
       }
 
-      async _saveNewVersion() {
-        let cp = this.state.persistent.currentProject;
-//        let comment = e.detail.payload;
-        //todo,this await is a little bad, we should lock the currentProject object here
-        let nextVersion = await AppData.addVersion(cp.owner, cp.project, cp.files, "autosaved");
-        let persistent = Tools.filterFirestore(this.state.persistent, ["users", cp.owner, "projects", cp.project, "versions", nextVersion], cp.files, this._frozen);
-        persistent = Tools.setIn(this.state.persistent, ["currentProject", "version"], nextVersion);
-        persistent = Tools.setIn(persistent, ["currentProject", "changed"], null);
-        this._update(persistent, this.state.session, "autosave -> _saveNewVersion");
-        this.$navigate(`/editor/${cp.owner}/${cp.project}/${nextVersion}`);
-      }
-
       _fileEdited(e) {
         const filename = e.detail.payload.name;
         const value = e.detail.payload.value;
         let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename, "value"], value);
+        persistent = Tools.setIn(persistent, ["currentProject", "files", filename, "sameAsVersion"], null);
         persistent = Tools.setIn(persistent, ["currentProject", "changed"], new Date().getTime());
         this._update(persistent, this.state.session, e.type);
-        this.$debounce(this._saveNewVersion.bind(this), 3000);
+        this.$debounce(this._saveNewVersionNew.bind(this), 3000);
+      }
+
+      _saveNewVersionNew() {
+        AppData.addVersion(this.state.persistent.currentProject);
       }
 
       _addFile(e) {
@@ -353,12 +362,6 @@
         let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files"], files, this._frozen);
         persistent = Tools.setIn(persistent, ["currentProject", "changed"], new Date().getTime());
         this._update(persistent, this.state.session, e.type);
-      }
-
-      async _getFiles(username, id, version) {
-        if (Tools.testPath(this.state.persistent, ["users", username, "projects", id, "versions", version, "files"]))
-          return this.state.persistent.users[username].projects[id].versions[version].files;
-        return await AppData.getFiles(username, id, version);
       }
     }
 

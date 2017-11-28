@@ -9,7 +9,7 @@ class AppData {
     return coll.docs[0];
   }
 
-  static async setCurrentProject(username, currentProject) {
+  static async saveCurrentProject(username, currentProject) {
     const db = firebase.firestore();
     currentProject = Tools.removeUndefinedFields(currentProject);
     try {
@@ -55,7 +55,8 @@ class AppData {
   }
 
   //todo, a little unsafe, get the next version number inside a transaction in AppData
-  static async addVersion(username, project, files, comment) {
+  static async addVersion(cp) {
+    let username = cp.owner, project = cp.project, files = cp.files;
     const db = firebase.firestore();
 
     let versionsRef = db.collection(`users/${username}/projects/${project}/versions/`)
@@ -68,14 +69,20 @@ class AppData {
 
     const batch = db.batch();
     const newVersionRef = db.doc(`users/${username}/projects/${project}/versions/${version}`);
-    batch.set(newVersionRef, {name: version, comment: comment});
+    batch.set(newVersionRef, {name: version});
     for (let key in files) {
       let file = files[key];
+      if (file.sameAsVersion === null)
+        file.sameAsVersion = version;
       let fileRef = db.doc(`users/${username}/projects/${project}/versions/${version}/files/${file.name}`);
       batch.set(fileRef, file);
     }
-    await batch.commit();
-    return version;
+    /*await */batch.commit();
+    // let res = {};
+    // res[username] = {};
+    // res[username][versions] = {};
+    // res[username][versions][version] = {name: version, files: files};
+    // return res;
   }
 
   static async getFiles(username, projectId, version) {
