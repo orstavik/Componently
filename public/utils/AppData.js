@@ -9,17 +9,17 @@ class AppData {
     return coll.docs[0];
   }
 
-  static async saveCurrentProject(username, currentProject) {
-    const db = firebase.firestore();
-    currentProject = Tools.removeUndefinedFields(currentProject);
-    try {
-      await db.doc(`users/${username}`).update({
-        currentProject: currentProject
-      });
-    } catch (e) {
-      console.log(e);
-    }
-  }
+  // static async saveCurrentProject(username, currentProject) {
+  //   const db = firebase.firestore();
+  //   currentProject = Tools.removeUndefinedFields(currentProject);
+  //   try {
+  //     await db.doc(`users/${username}`).update({
+  //       currentProject: currentProject
+  //     });
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // }
 
   static async addProject(username, id) {
     const db = firebase.firestore();
@@ -73,7 +73,7 @@ class AppData {
     for (let key in files) {
       let file = files[key];
       if (file.sameAsVersion === null)
-        file.sameAsVersion = version;
+        file = Tools.setIn(file, ["sameAsVersion"], version, false);
       let fileRef = db.doc(`users/${username}/projects/${project}/versions/${version}/files/${file.name}`);
       batch.set(fileRef, file);
     }

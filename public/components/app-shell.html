@@ -3,6 +3,7 @@
 <link rel="import" href="app-state.html">
 <link rel="import" href="app-pages.html">
 <link rel="import" href="app-iconset.html">
+<link rel="import" href="app-db.html">
 
 <dom-module id="app-shell">
   <template>
@@ -15,14 +16,19 @@
     <app-state state="{{state}}"></app-state>
     <app-router default-url="home"></app-router>
 
+    <app-db state="[[state]]"></app-db>
+
     <app-pages page="[[state.session.route.segments.0]]">
       <home-page page="home"
                  user="[[state.persistent.user]]"
                  projects="[[_userProjects]]">
       </home-page>
       <editor-page page="editor"
-                   current-project="[[state.persistent.currentProject]]"
-                   versions="[[_currentVersions]]">
+                   actual-version="[[state.session.actualVersion]]"
+                   owner="[[state.session.route.segments.1]]"
+                   project="[[state.session.route.segments.2]]"
+                   files="[[_toArray(currentFiles)]]"
+                   versions="[[_projectObject.versions]]">
       </editor-page>
       <notfound-page page="notfound"></notfound-page>
     </app-pages>
@@ -37,29 +43,78 @@
       static get properties() {
         return {
           state: Object,
-          _currentVersions: {
-            type: Array,
-            computed: "_retrieveVersions(state.persistent.currentProject, state.persistent.users)"
+
+          _userObject: {
+            type: Object,
+            computed: "_makeUserObject(state.persistent.user.name, state.persistent.users)"
           },
-          _userProjects: {
+          _ownerObject: {
+            type: Object,
+            computed: "_makeOwnerObject(state.session.route.segments.1, state.persistent.users)"
+          },
+          _projectObject: {
+            type: Object,
+            computed: "_makeProjectObject(state.session.route.segments.2, _ownerObject)"
+          },
+          _versionObject: {
+            type: Object,
+            computed: "_makeVersionObject(state.session.actualVersion, _projectObject)"
+          },
+          currentFiles: {
             type: Array,
-            computed: "_retrieveUserProjects(state.persistent.user.name, state.persistent.users)"
+            computed: "_mergeCurrentFiles(state.session.editFiles, _versionObject)"
           }
         }
       }
 
-      _retrieveVersions(currentProject, users) {
-        if (!currentProject || !users)
-          return [];
-        let owner = currentProject.owner;
-        let project = currentProject.project;
-        if (!Tools.testPath(users, [owner, "projects", project, "versions"]))
-          return [];
-        return Object.keys(users[owner].projects[project].versions);
+      _makeUserObject(user, users) {
+        if (this.$fullPathCheck("_MakeUserObject.user", user) && this.$fullPathCheck("_MakeUserObject.users", users))
+          return this._userObject;
+
+        return (users && user) ? users[user] : undefined;
+      }
+      
+      _makeOwnerObject(owner, users) {
+        if (this.$fullPathCheck("_makeOwnerObject.owner", owner) && this.$fullPathCheck("_makeOwnerObject.users", users))
+          return this._ownerObject;
+
+        return (users && owner) ? users[owner] : undefined;
       }
 
-      _retrieveUserProjects(username, users) {
-        return !username || !users ? [] : users[username].projects;
+      _makeProjectObject(project, user) {
+        if (this.$fullPathCheck("_makeProjectObject.project", project) && this.$fullPathCheck("_makeProjectObject.user", user))
+          return this._projectObject;
+
+        return (user && project) ? user.projects[project] : undefined;
+      }
+
+      _makeVersionObject(version, project) {
+        if (this.$fullPathCheck("_makeVersionObject.version", version) && this.$fullPathCheck("_makeVersionObject.project", project))
+          return this._versionObject;
+
+        return (project && version) ? project.versions[version] : undefined;
+      }
+
+      _mergeCurrentFiles(edits, _versionObject) {
+        if (this.$fullPathCheck("_mergeCurrentFiles.edits", edits) && this.$fullPathCheck("_mergeCurrentFiles._versionObject", _versionObject))
+          return this.currentFiles;
+
+        if (!_versionObject || !_versionObject.files)
+          return undefined;
+        let files = _versionObject.files;
+        if (edits) {
+          for (let filename in edits) {
+            if (edits[filename].value === null)
+              delete files[filename];
+            else
+              files[filename] = edits[filename];
+          }
+        }
+        return files;
+      }
+
+      _toArray(obj) {
+        return !obj ? [] : Object.keys(obj).map(key => obj[key]);
       }
     }
 

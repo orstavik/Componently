@@ -1,0 +1,137 @@
+<dom-module id="app-db">
+  <template>
+    <style>
+      :host { display: block; }
+    </style>
+
+  </template>
+  <script>
+    class AppDb extends IntertextMixin(Polymer.Element) {
+
+      static get is() {
+        return "app-db";
+      }
+
+      static get properties() {
+        return {
+          state: Object
+        };
+      }
+
+      static get observers() {
+        return [
+          "_listenForFiles(state.session.route.segments, state.session.actualVersion)",
+          "_updateVersionsListener(state.session.route.segments)",
+          "_updateProjectsListener(state.persistent.user.name)",
+          "_editsChanged(state.session.edits)",
+        ];
+      }
+
+      _editsChanged(edits) {
+        if (this.$fullPathCheck("_editsChanged.edits", edits)) return;
+
+        if (!edits)
+          return;
+        this.$debounce(this._saveEdits.bind(this), 5000);
+      }
+
+      _saveEdits() {
+        let edits = this.state.session.edits;
+        if (!edits)
+          return;
+
+        for (let owner in edits) {
+          let ownerObj = edits[owner];
+          for (let project in ownerObj) {
+            let latestVersionNumber = AppState.getLatestVersionNumber(this.state.persistent, owner, project);
+            let latestFiles = this.state.persistent.users[owner].projects[project].versions[latestVersionNumber].files;
+            AppData.addVersion({
+              owner: owner,
+              project: project,
+              files: Tools.mergeDeepWithNullToDelete(latestFiles, ownerObj[project], this._frozen)
+            });
+          }
+        }
+      }
+
+      _updateProjectsListener(username) {
+        if (this.$fullPathCheck("_updateProjectsListener.userName", username)) return;
+
+        const existingSub = this.state.session.subscriptions.projects;
+        if (!existingSub && !username)                        //the same, undefined
+          return;
+        if (existingSub && existingSub.username === username) //the same, not null
+          return;
+        if (existingSub)
+          existingSub.unsubscribe();
+
+        let unsub = null;
+        if (username) {
+          const cb = ids => this.$emit("controller-new-projects", {username: username, ids: ids});
+          unsub = {
+            username: username,
+            unsubscribe: AppData.listenToProjects(username, cb)
+          };
+        }
+        this.$emit("controller-new-projects-subscription", unsub);
+      }
+
+      _updateVersionsListener(segments) {
+        if (this.$fullPathCheck("_updateVersionsListener.segments", segments)) return;
+
+        if (!segments)
+          return;
+        const urlPage = segments[0];
+        const ownerName = segments[1];
+        const projectId = segments[2];
+        if (urlPage !== "editor")
+          return;
+        if (!ownerName || !projectId)
+          return;
+
+        const existingSub = this.state.session.subscriptions.versions;
+        if (existingSub === null && ownerName === null)                             //the same, null
+          return;
+        if (existingSub && existingSub.owner === ownerName && existingSub.project === projectId)   //the same, not null
+          return;
+        if (existingSub)
+          existingSub.unsubscribe();
+
+        let unsub = null;
+        if (ownerName && projectId) {
+          const cb = ids => this.$emit("controller-new-versions", {
+            owner: ownerName,
+            project: projectId,
+            versions: ids
+          });
+          unsub = {
+            owner: ownerName,
+            project: projectId,
+            unsubscribe: AppData.listenToVersions(ownerName, projectId, cb)
+          };
+        }
+        this.$emit("controller-new-version-subscription", unsub);
+      }
+
+      async _listenForFiles(segments, actualVersion) {
+        if (this.$fullPathCheck("_listenForFiles.segments", segments) && this.$fullPathCheck("_listenForFiles.actualVersion", actualVersion)) return;
+
+        if (!segments || !actualVersion)
+          return;
+        if (segments[0] !== "editor")
+          return;
+
+        const owner = segments[1];
+        const project = segments[2];
+        if (!owner || !project)
+          return;
+        if (Tools.testPath(this.state.persistent, ["users", owner, "projects", project, "versions", actualVersion, "files"]))
+          return;
+        const files = await AppData.getFiles(owner, project, actualVersion);
+        this.$emit("controller-new-files", {owner: owner, project: project, version: actualVersion, files: files});
+      }
+    }
+
+    customElements.define(AppDb.is, AppDb);
+  </script>
+</dom-module>

@@ -15,20 +15,23 @@
 
       static get properties() {
         return {
-          project: {
-            type: Object,
-            observer: "_updatePreviewCache"
-          }
+          owner: String,
+          project: String,
+          files: Object
         }
       }
 
-      async _updatePreviewCache(project) {
-        if (!project || !project.files || !project.owner || !project.project)
+      static get observers() {
+        return ["_updatePreviewCache(owner, project, files)"];
+      }
+
+      async _updatePreviewCache(owner, project, files) {
+        if (!owner || !project || !files)
           return;
-        let path = "/" + project.owner + "/" + project.project + "/";
+        let path = "/" + owner + "/" + project + "/";
         let cache = await caches.open("preview");
-        for (let filename in project.files) {
-          let file = project.files[filename];
+        for (let filename in files) {
+          let file = files[filename];
           let filetype = CodePreview.getType(filename);
           let myResponse = CodePreview._makeCacheableResponse(file.value, filetype);
           cache.put(path + filename, myResponse);
@@ -59,7 +62,7 @@
       }
 
       openPreview(entry, autoload) {
-        let path = "/preview/" + this.project.owner + "/" + this.project.project + "/" + entry + (autoload ? "?autoload": "");
+        let path = "/preview/" + this.owner + "/" + this.project + "/" + entry + (autoload ? "?autoload": "");
         window.open(path, 'Preview', "noopener,menubar=yes,location=yes,resizable=yes,scrollbars=yes,status=yes");
       }
     }

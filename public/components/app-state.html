@@ -47,7 +47,7 @@
         }
       }
 
-      static getLatestVersion(persistent, username, project) {
+      static getLatestVersionNumber(persistent, username, project) {
         if (!username ||
           !project ||
           !Tools.testPath(persistent, ["users", username, "projects", project, "versions"])) {
@@ -63,21 +63,24 @@
         this._init({type: "state-init"});
         window.addEventListener('state-change-route', this._changeRoute.bind(this));          //select-project
 
+        //auth
         window.addEventListener('controller-auth-changed', this._authChanged.bind(this));
         window.addEventListener('controller-sign-in', this._signIn.bind(this));
         window.addEventListener('controller-sign-out', this._signOut.bind(this));
+        //user
         window.addEventListener('controller-add-project', this._addProject.bind(this));
         window.addEventListener('controller-remove-project', this._removeProject.bind(this));
         window.addEventListener('controller-select-project', this._selectProject.bind(this));
         window.addEventListener('controller-select-version', this._selectVersion.bind(this));
-//        window.addEventListener('controller-save-new-version', this._saveNewVersion.bind(this));
         window.addEventListener('controller-add-file', this._addFile.bind(this));
         window.addEventListener('controller-remove-file', this._removeFile.bind(this));
         window.addEventListener('controller-file-edited', this._fileEdited.bind(this));
-//        window.addEventListener('controller-current-project-changed', this._currentProjectChanged.bind(this));
+        //db
         window.addEventListener('controller-new-projects', this._newProjects.bind(this));
         window.addEventListener('controller-new-versions', this._newVersions.bind(this));
         window.addEventListener('controller-new-files', this._newFiles.bind(this));
+        window.addEventListener('controller-new-version-subscription', this._newVersionSubscription.bind(this));
+        window.addEventListener('controller-new-projects-subscription', this._newProjectsSubscription.bind(this));
       }
 
       _snap(action) {
@@ -117,60 +120,34 @@
         const session = Tools.mergeDeepWithNullToDelete(this.state.session, this.initial.session, this._frozen);
         this._update(persistent, session, 'state-init');
         firebase.auth().onAuthStateChanged((user) => this.$emit("controller-auth-changed", user));
-      }
-
-      static fourEqualSegments(a, b) {
-        for (let i = 0; i < 4; i++)
-          if (a[i] !== b[i])
-            return false;
-        return true;
+//        firebase.auth().onAuthStateChanged(this._authChanged.bind(this));
       }
 
       async _changeRoute(e) {
-        const route = e.detail.payload;
-        if (this.state.session.route && AppState.fourEqualSegments(route.segments, this.state.session.route.segments))
-          return;
-        const session = Tools.setIn(this.state.session, ['route'], route, this._frozen);
+        const newR = e.detail.payload.segments;
+        if (this.state.session.route) {
+          const oldR = this.state.session.route.segments;
+          if (newR[0] === oldR[0] && newR[1] === oldR[1] && newR[2] === oldR[2] && newR[3] === oldR[3])
+            return;
+        }
+        //check for invalid route, and if so, redirect /home
+        if (newR[0] === "editor" && !newR[2])
+          return this.$navigate("/home/" + newR[1]);
+
+        let session = Tools.setIn(this.state.session, ['route'], e.detail.payload, this._frozen);
+
+        let actualVersion = newR[3];
+        if (!actualVersion)
+          actualVersion = AppState.getLatestVersionNumber(this.state.persistent, newR[1], newR[2]);
+        session = Tools.setIn(session, ['actualVersion'], actualVersion, this._frozen);
+
         this._update(this.state.persistent, session, e.type);
-
-        const cp = {
-          page: route.segments[0],
-          owner: route.segments[1],
-          project: route.segments[2],
-          version: route.segments[3]
-        };
-
-        //check for invalid route and if so, redirect /home
-        if (cp.page === "editor" && !cp.project)
-          return this.$navigate("/home/" + cp.owner);
-
-        let oldCp = this.state.persistent.currentProject;
-        if (oldCp && cp.page === oldCp.page && cp.owner === oldCp.owner && cp.project === oldCp.project && cp.version === oldCp.version) {
-          console.alert("wtf, look at this ivar");           //todo
-          return;                                            //todo can this ever occur ???
-        }
-
-        cp.actualVersion = cp.version || AppState.getLatestVersion(this.state.persistent, cp.owner, cp.project);
-        if (cp.actualVersion) {
-          if (Tools.testPath(this.state.persistent, ["users", cp.owner, "projects", cp.project, "versions", cp.actualVersion, "files"]))
-            cp.files = this.state.persistent.users[cp.owner].projects[cp.project].versions[cp.actualVersion].files;
-          else
-            this._listenForFiles(cp.owner, cp.project, cp.actualVersion);
-        }
-
-        const persistent = Tools.setIn(this.state.persistent, ['currentProject'], cp, this._frozen);
-        this._update(persistent, this.state.session, e.type);
-
-        //side effects
-        if (this.state.persistent.user)
-          AppData.saveCurrentProject(this.state.persistent.user.name, cp);
-        this._updateVersionsListener(cp.owner, cp.project, e.type);
       }
 
       /**
-       * USER AND LISTENING FOR logged in USERS PROJECTS
+       * AUTH
        */
-      async _authChanged(e) {
+      async _authChanged(e/*user*/) {
         let user = e.detail.payload;
         if (user) {
           let userData = await AppData.getCurrentUserData(user.uid);  //wait for the nickname to load
@@ -178,75 +155,31 @@
         }
         let persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
         this._update(persistent, this.state.session, e.type);
-        this._updateProjectsListener(user ? user.name : null, e.type);
       }
 
       _signIn(e) {
-        firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
+        firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());//.then(this._authChanged.bind(this));
       }
 
       _signOut(e) {
-        firebase.auth().signOut();
+        firebase.auth().signOut();//.then(this._authChanged.bind(this));
       }
 
       /**
-       * LISTENERS FOR PROJECTS, VERSIONS, FILES
+       * DB INITIATED EVENTS
        */
-      _updateProjectsListener(username, action) {
-        const existingSub = this.state.session.subscriptions.projects;
-        if (existingSub === null && username === null)        //the same, null
-          return;
-        if (existingSub && existingSub.username === username) //the same, not null
-          return;
-        if (existingSub)
-          existingSub.unsubscribe();
-
-        let unsub = null;
-        if (username) {
-          const cb = ids => this.$emit("controller-new-projects", {username: username, ids: ids});
-          unsub = {
-            username: username,
-            unsubscribe: AppData.listenToProjects(username, cb)
-          };
-        }
-        const session = Tools.setIn(this.state.session, ['subscriptions', 'projects'], unsub, this._frozen);
-        this._update(this.state.persistent, session, action);
-      }
-
-      _updateVersionsListener(ownerName, projectId, action) {
-        const existingSub = this.state.session.subscriptions.versions;
-        if (existingSub === null && ownerName === null)                             //the same, null
-          return;
-        if (existingSub && existingSub.owner === ownerName && existingSub.project === projectId)   //the same, not null
-          return;
-        if (existingSub)
-          existingSub.unsubscribe();
-
-        let unsub = null;
-        if (ownerName && projectId) {
-          const cb = ids => this.$emit("controller-new-versions", {
-            owner: ownerName,
-            project: projectId,
-            versions: ids
-          });
-          unsub = {
-            owner: ownerName,
-            project: projectId,
-            unsubscribe: AppData.listenToVersions(ownerName, projectId, cb)
-          };
-        }
+      _newVersionSubscription(e) {
+        let unsub = e.detail.payload;
         const session = Tools.setIn(this.state.session, ['subscriptions', 'versions'], unsub, this._frozen);
-        this._update(this.state.persistent, session, action);
+        this._update(this.state.persistent, session, e.type);
       }
 
-      async _listenForFiles(owner, project, version) {
-        const files = await AppData.getFiles(owner, project, version);
-        this.$emit("controller-new-files", {owner: owner, project: project, version: version, files: files});
+      _newProjectsSubscription(e) {
+        let unsub = e.detail.payload;
+        const session = Tools.setIn(this.state.session, ['subscriptions', 'projects'], unsub, this._frozen);
+        this._update(this.state.persistent, session, e.type);
       }
 
-      /**
-       * RECEIVERS FOR PROJECTS, VERSIONS, FILES
-       */
       _newProjects(e) {
         let username = e.detail.payload.username;
         let projects = e.detail.payload.ids;
@@ -258,49 +191,56 @@
         let project = e.detail.payload.project;
         let owner = e.detail.payload.owner;
         let versionsShallow = e.detail.payload.versions;
-
         let persistent = Tools.filterFirestore(this.state.persistent, ["users", owner, "projects", project, "versions"], versionsShallow, this._frozen);
-        let cp = this.state.persistent.currentProject;
-        if (!cp.version) {
-          const latest = AppState.getLatestVersion(persistent, owner, project);
-          if (
-            cp.owner === owner &&
-            cp.project === project &&
-            !cp.version &&
-            (!cp.actualVersion ||
-              cp.actualVersion < latest)
-          ) {
-            persistent = Tools.setIn(persistent, ['currentProject', 'actualVersion'], latest, this._frozen);
-            if (Tools.testPath(this.state.persistent, ["users", owner, "projects", project, "versions", latest, "files"])) {
-              let files = this.state.persistent.users[owner].projects[project].versions[latest].files;
-              persistent = Tools.setIn(persistent, ['currentProject', 'files'], files, this._frozen);
-            } else
-              this._listenForFiles(owner, project, latest);
-          }
-        }
         this._update(persistent, this.state.session, e.type);
+
+        const segments = this.state.session.route.segments;
+        if (segments[3] || segments[1] !== owner || segments[2] !== project)
+          return;
+        let actualVersion = AppState.getLatestVersionNumber(this.state.persistent, segments[1], segments[2]);
+        let session = Tools.setIn(this.state.session, ['actualVersion'], actualVersion, this._frozen);
+        this._update(this.state.persistent, session, e.type);
       }
 
       _newFiles(e) {
-        let res = e.detail.payload;
-        let persistent = Tools.setIn(this.state.persistent, ['users', res.owner, 'projects', res.project, 'versions', res.version, 'files'], res.files, this._frozen);
-        if (
-          this.state.persistent.currentProject.owner === res.owner &&
-          this.state.persistent.currentProject.project === res.project &&
-          this.state.persistent.currentProject.actualVersion === res.version
-        )
-          persistent = Tools.setIn(persistent, ['currentProject', 'files'], res.files, this._frozen);
+        let owner = e.detail.payload.owner;
+        let project = e.detail.payload.project;
+        let version = e.detail.payload.version;
+        let files = e.detail.payload.files;
+        let persistent = Tools.setIn(this.state.persistent, ['users', owner, 'projects', project, 'versions', version, 'files'], files, this._frozen);
         this._update(persistent, this.state.session, e.type);
+
+
+//        debugger;
+        //todo here we should test if the new files are the same as the editFiles,
+        //todo and if so update version and remove the parts of the editFiles from the
+        //todo if there are no conflict, only other files that are updated,
+        //todo then the version we are working on can be updated seamlessly.
+        if (
+          this.state.session.route.segments[1] === owner &&
+          this.state.session.route.segments[1] === project &&
+          this.state.session.actualVersion < version &&
+          this.state.session.edits
+        ) {
+          let newEdits = Object.assign({}, this.state.session.edits);
+
+        }
+        //todo remove from edits if the update file(s) are the same as the edits
+//        let cp = this.state.persistent.currentProject;
+//        if (cp.owner !== res.owner || cp.project !== res.project)
+//          return;
+//
+//        let latestVersion = AppState.getLatestVersionNumber(this.state.persistent, cp.owner, cp.project);
+//        if ((cp.version && cp.version === res.version) || (latestVersion === res.version)) {
+//          persistent = Tools.setIn(persistent, ['currentProject', 'files'], res.files, this._frozen);
+//          persistent = Tools.setIn(persistent, ['currentProject', 'actualVersion'], res.version, this._frozen);
+//          this._update(persistent, this.state.session, e.type);
+//        }
       }
 
-      async _addProject(e) {
-        const id = e.detail.payload;
-        const user = this.state.persistent.user;
-        await AppData.addProject(user.name, id);
-        //todo update state directly by adding the project that was deleted from the state itself.
-        //todo, maybe mark the object as newly created, green
-      }
-
+      /**
+       * USER INITIATED EVENTS
+       */
       async _selectProject(e) {
         const username = this.state.persistent.user.name;
         const id = e.detail.payload;
@@ -314,6 +254,14 @@
         this.$navigate(`/editor/${owner}/${project}/${version}`);
       }
 
+      async _addProject(e) {
+        const id = e.detail.payload;
+        const user = this.state.persistent.user;
+        await AppData.addProject(user.name, id);
+        //todo update state directly by adding the project that was deleted from the state itself.
+        //todo, maybe mark the object as newly created, green
+      }
+
       async _removeProject(e) {
         const id = e.detail.payload;
         const user = this.state.persistent.user;
@@ -325,43 +273,47 @@
       _fileEdited(e) {
         const filename = e.detail.payload.name;
         const value = e.detail.payload.value;
-        let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename, "value"], value);
-        persistent = Tools.setIn(persistent, ["currentProject", "files", filename, "sameAsVersion"], null);
-        persistent = Tools.setIn(persistent, ["currentProject", "changed"], new Date().getTime());
-        this._update(persistent, this.state.session, e.type);
-        this.$debounce(this._saveNewVersionNew.bind(this), 3000);
-      }
-
-      _saveNewVersionNew() {
-        AppData.addVersion(this.state.persistent.currentProject);
+        const owner = this.state.session.route.segments[1];
+        const project = this.state.session.route.segments[2];
+        let session = Tools.setIn(this.state.session, ["edits", owner, project, filename], {
+          name: filename,
+          value: value,
+          timestamp: new Date().getTime()
+        });
+        this._update(this.state.persistent, session, e.type);
       }
 
       _addFile(e) {
         const filename = e.detail.payload.filename;
         const username = this.state.persistent.user.name;
-        const ext = filename.split('.').pop();
-        let value;
-        if (ext === 'html')
-          value = "<!-- created at " + new Date() + " by " + username + "-->"; //annoying bug in webstorm crashes on these backtick quotes
-        else if (ext === 'css')
-          value = `/* created at ${new Date()} by ${username} */`;
-        else if (ext === 'js')
-          value = `// created at ${new Date()} by ${username}`;
-        let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files", filename], {
+        const owner = this.state.session.route.segments[1];
+        const project = this.state.session.route.segments[2];
+        let session = Tools.setIn(this.state.session, ["edits", owner, project, filename], {
           name: filename,
-          value: value
+          value: AppState.getDefaultText(filename, username),
+          timestamp: new Date().getTime()
         });
-        persistent = Tools.setIn(persistent, ["currentProject", "changed"], new Date().getTime());
-        this._update(persistent, this.state.session, e.type);
+        this._update(this.state.persistent, session, e.type);
+//        let makeView = AppState.makeView(this.state.persistent.edits, this.state.persistent.currentProject, this.state.persistent.users);
+//        persistent = Tools.setIn(persistent, ["view"], makeView);
       }
 
       _removeFile(e) {
         const filename = e.detail.payload;
-        const files = Object.assign({}, this.state.persistent.currentProject.files);
-        delete files[filename];
-        let persistent = Tools.setIn(this.state.persistent, ["currentProject", "files"], files, this._frozen);
-        persistent = Tools.setIn(persistent, ["currentProject", "changed"], new Date().getTime());
-        this._update(persistent, this.state.session, e.type);
+        const owner = this.state.session.route.segments[1];
+        const project = this.state.session.route.segments[2];
+        let session = Tools.setIn(this.state.session, ["edits", owner, project, filename], null, this._frozen);
+        this._update(this.state.persistent, session, e.type);
+      }
+
+      static getDefaultText(filename, username) {
+        const ext = filename.split('.').pop();
+        if (ext === 'html')
+          return "<!-- created at " + new Date() + " by " + username + "-->"; //annoying bug in webstorm crashes on these backtick quotes
+        if (ext === 'css')
+          return `/* created at ${new Date()} by ${username} */`;
+        if (ext === 'js')
+          return `// created at ${new Date()} by ${username}`;
       }
     }
 
