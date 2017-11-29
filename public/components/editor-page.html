@@ -65,11 +65,11 @@
       </div>
     </slide-bar>
     <resizable-boxes id="editors">
-      <template is="dom-repeat" items="[[files]]">
+      <template is="dom-repeat" items="[[_toArray(files)]]">
         <code-editor name="[[item.name]]" mode="[[_getExt(item.name)]]" value="[[item.value]]"></code-editor>
       </template>
     </resizable-boxes>
-    <code-preview id="preview" owner="[[owner]]" files="[[files]]" project="[[project]]"></code-preview>
+    <code-preview id="preview" owner="[[owner]]" project="[[project]]" files="[[files]]"></code-preview>
 
   </template>
   <script>
@@ -83,7 +83,7 @@
           owner: String,
           project: String,
           version: Number,
-          files: Array,
+          files: Object,
           versions: {
             type: Array,
             value: () => [],
@@ -127,6 +127,10 @@
           return false;
         const fileType = name.split(".").pop();
         return ["html", "css", "js", "json"].indexOf(fileType) !== -1;
+      }
+
+      _toArray(obj) {
+        return !obj ? [] : Object.keys(obj).map(key => obj[key]);
       }
 
       _getExt(name) {

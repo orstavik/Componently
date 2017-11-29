@@ -27,7 +27,7 @@
                    owner="[[state.session.route.segments.1]]"
                    project="[[state.session.route.segments.2]]"
                    version="[[state.session.actualVersion]]"
-                   files="[[_toArray(currentFiles)]]"
+                   files="[[currentFiles]]"
                    versions="[[_projectObject.versions]]">
       </editor-page>
       <notfound-page page="notfound"></notfound-page>
@@ -111,10 +111,6 @@
           }
         }
         return files;
-      }
-
-      _toArray(obj) {
-        return !obj ? [] : Object.keys(obj).map(key => obj[key]);
       }
     }
 
