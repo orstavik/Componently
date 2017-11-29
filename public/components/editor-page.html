@@ -58,7 +58,7 @@
           Version:
           <select on-change="_changeVersion">
             <template is="dom-repeat" items="[[versionNames]]">
-              <option value="[[item]]" selected="[[_isSelectedVersion(item, actualVersion)]]">[[item]]</option>
+              <option value="[[item]]" selected="[[_isSelectedVersion(item, version)]]">[[item]]</option>
             </template>
           </select>
         </div>
@@ -82,7 +82,7 @@
         return {
           owner: String,
           project: String,
-          actualVersion: Number,
+          version: Number,
           files: Array,
           versions: {
             type: Array,
@@ -99,8 +99,8 @@
         return !versions ? [] : Object.keys(versions);
       }
 
-      _isSelectedVersion(item, actualVersion) {
-        return item == actualVersion;
+      _isSelectedVersion(item, version) {
+        return item == version;
       }
 
       _changeVersion(e) {
