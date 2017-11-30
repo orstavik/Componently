@@ -3,6 +3,15 @@
  */
 class Tools {
 
+  static navigate(path) {
+    history.pushState({}, null, path);
+    window.dispatchEvent(new CustomEvent('location-changed'));
+  }
+
+  static lockPath(obj, path, msg){
+    return {};//todo not implemented
+  }
+
   static objectEquals(x, y) {
     if (x === null || x === undefined || y === null || y === undefined) { return x === y; }
     // after this just checking type of one would be enough

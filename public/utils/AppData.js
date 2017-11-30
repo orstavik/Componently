@@ -40,11 +40,11 @@ class AppData {
     return AppData.listenCollectionIds(`users/${username}/projects`, cb);
   }
 
-  static async removeProject(user, id) {
+  static async removeProject(username, id) {
     const db = firebase.firestore();
-    const deleteDoc = db.doc(`users/${user.name}/projects/${id}`).delete();
+    const deleteDoc = db.doc(`users/${username}/projects/${id}`).delete();
     const deleteCollections = AppData.deleteCollection(db, db.collection(
-      `users/${user.name}/projects/${id}/versions`));
+      `users/${username}/projects/${id}/versions`));
     //todo do we need to remove all the /versions/version/files too?
     await deleteDoc;
     await deleteCollections;

@@ -15,17 +15,6 @@
             notify: true,
             value: () => ({})
           },
-          initial: {
-            type: Object,
-            value: () => Tools.deepFreeze({
-              session: {
-                subscriptions: {}
-              },
-              persistent: {
-                user: null
-              }
-            })
-          },
           history: {
             type: Array,
             value: () => []
@@ -56,155 +45,146 @@
       connectedCallback() {
         super.connectedCallback();
 
-        this._init({type: "state-init"});
-        window.addEventListener('state-change-route', this._changeRoute.bind(this));          //select-project
+        this.bindToReduce('state-change-route', AppState._changeRoute);          //select-project
 
         //auth
-        window.addEventListener('controller-auth-changed', this._authChanged.bind(this));
-        window.addEventListener('controller-sign-in', this._signIn.bind(this));
-        window.addEventListener('controller-sign-out', this._signOut.bind(this));
+        this.bindToReduce('controller-auth-changed', AppState._authChanged);
+        this.bindToReduce('controller-sign-in', AppState._signIn);
+        this.bindToReduce('controller-sign-out', AppState._signOut);
         //user
-        window.addEventListener('controller-add-project', this._addProject.bind(this));
-        window.addEventListener('controller-remove-project', this._removeProject.bind(this));
-        window.addEventListener('controller-select-project', this._selectProject.bind(this));
-        window.addEventListener('controller-select-version', this._selectVersion.bind(this));
-        window.addEventListener('controller-add-file', this._addFile.bind(this));
-        window.addEventListener('controller-remove-file', this._removeFile.bind(this));
-        window.addEventListener('controller-file-edited', this._fileEdited.bind(this));
+        this.bindToReduce('controller-add-project', AppState._addProject);
+        this.bindToReduce('controller-remove-project', AppState._removeProject);
+        this.bindToReduce('controller-select-project', AppState._selectProject);
+        this.bindToReduce('controller-select-version', AppState._selectVersion);
+        this.bindToReduce('controller-add-file', AppState._addFile);
+        this.bindToReduce('controller-remove-file', AppState._removeFile);
+        this.bindToReduce('controller-file-edited', AppState._fileEdited);
         //db
-        window.addEventListener('controller-new-projects', this._newProjects.bind(this));
-        window.addEventListener('controller-new-versions', this._newVersions.bind(this));
-        window.addEventListener('controller-new-files', this._newFiles.bind(this));
-        window.addEventListener('controller-new-version-subscription', this._newVersionSubscription.bind(this));
-        window.addEventListener('controller-new-projects-subscription', this._newProjectsSubscription.bind(this));
+        this.bindToReduce('controller-new-projects', AppState._newProjects);
+        this.bindToReduce('controller-new-versions', AppState._newVersions);
+        this.bindToReduce('controller-new-files', AppState._newFiles);
+        this.bindToReduce('controller-new-version-subscription', AppState._newVersionSubscription);
+        this.bindToReduce('controller-new-projects-subscription', AppState._newProjectsSubscription);
+
+        firebase.auth().onAuthStateChanged((user) => this.$emit("controller-auth-changed", user));
+
+        this.reduce(this.init(), "init");
       }
 
-      _snap(action) {
+      bindToReduce(eventName, fun) {
+        window.addEventListener(eventName, e => this.reduce(fun(this.state, e.detail), e.type));
+      }
+
+      async reduce(newState, action) {
+        if (newState.then instanceof Function)
+          newState = await newState;
+        this.set('state', newState);
         console.log(action, performance.now());
         const snap = {
           action: action,
-          snapshot: this.state,
+          snapshot: newState,
           timestamp: new Date().getTime(),
           apptime: performance.now()
         };
         this.set('history', [snap].concat(this.history));
-      }
-
-      _update(persistent, session, action) {
-        this.set('state', {
-          session: session,
-          persistent: persistent
-        });
-        this._snap(action);
-//        if (persistent)
-//          this._store(persistent);
-      }
-
-      _store(state) {
-        localStorage.setItem('state', JSON.stringify(state));
-      }
-
-      _getStored() {
-        return Tools.deepFreeze(JSON.parse(localStorage.getItem('state')));
+//        if (newState.persistent)
+//          localStorage.setItem('state', JSON.stringify(newState.persistent));
       }
 
       /**
        * INIT AND ROUTE
        */
-      async _init(e) {
-        let persistent = this.state.persistent || this._getStored() || this.initial.persistent;
-        const session = Tools.mergeDeepWithNullToDelete(this.state.session, this.initial.session);
-        this._update(persistent, session, 'state-init');
-        firebase.auth().onAuthStateChanged((user) => this.$emit("controller-auth-changed", user));
-//        firebase.auth().onAuthStateChanged(this._authChanged.bind(this));
+      init() {
+        const initial = Tools.deepFreeze({
+          session: {
+            subscriptions: {}
+          },
+          persistent: {
+            user: null
+          }
+        });
+        let stored = Tools.deepFreeze(JSON.parse(localStorage.getItem('state')));
+        if (stored)
+          return Tools.setIn(initial, ["persistent"]);
+        return initial;
       }
 
-      async _changeRoute(e) {
-        const newR = e.detail.payload.segments;
-        if (this.state.session.route) {
-          const oldR = this.state.session.route.segments;
+      static _changeRoute(state, payload) {
+        const newR = payload.segments;
+        if (state.session.route) {
+          const oldR = state.session.route.segments;
           if (newR[0] === oldR[0] && newR[1] === oldR[1] && newR[2] === oldR[2] && newR[3] === oldR[3])
-            return;
+            return state;
         }
         //check for invalid route, and if so, redirect /home
-        if (newR[0] === "editor" && !newR[2])
-          return this.$navigate("/home/" + newR[1]);
-
-        let session = Tools.setIn(this.state.session, ['route'], e.detail.payload);
+        if (newR[0] === "editor" && !newR[2]) {
+          Tools.navigate("/home/" + newR[1]);
+          return state;
+        }
+        state = Tools.setIn(state, ['session', 'route'], payload);
 
         let actualVersion = newR[3];
         if (!actualVersion)
-          actualVersion = AppState.getLatestVersionNumber(this.state.persistent, newR[1], newR[2]);
-        session = Tools.setIn(session, ['actualVersion'], actualVersion);
-
-        this._update(this.state.persistent, session, e.type);
+          actualVersion = AppState.getLatestVersionNumber(state.persistent, newR[1], newR[2]);
+        return Tools.setIn(state, ['session', 'actualVersion'], actualVersion);
       }
 
       /**
        * AUTH
        */
-      async _authChanged(e/*user*/) {
-        let user = e.detail.payload;
-        if (user) {
-          let userData = await AppData.getCurrentUserData(user.uid);  //wait for the nickname to load
-          user = AppState.makeUser(userData.id, user);
-        }
-        let persistent = Tools.setIn(this.state.persistent, ['user'], user);
-        this._update(persistent, this.state.session, e.type);
+      static async _authChanged(state, user) {
+        const lock = Tools.lockPath(state, ["persistent", "user"], "retrieving extra user data.");
+        if (!user)
+          return Tools.setIn(state, ["persistent", 'user'], user, lock);
+
+        let userData = await AppData.getCurrentUserData(user.uid);  //wait for the nickname to load
+        return Tools.setIn(state, ["persistent", 'user'], AppState.makeUser(userData.id, user), lock);
       }
 
-      _signIn(e) {
+      static _signIn(state) {
         firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());//.then(this._authChanged.bind(this));
+        return state;
       }
 
-      _signOut(e) {
+      static _signOut(state) {
         firebase.auth().signOut();//.then(this._authChanged.bind(this));
+        return state;
       }
 
       /**
        * DB INITIATED EVENTS
        */
-      _newVersionSubscription(e) {
-        let unsub = e.detail.payload;
-        const session = Tools.setIn(this.state.session, ['subscriptions', 'versions'], unsub);
-        this._update(this.state.persistent, session, e.type);
+      static _newVersionSubscription(state, unsub) {
+        return Tools.setIn(state, ['session', 'subscriptions', 'versions'], unsub);
       }
 
-      _newProjectsSubscription(e) {
-        let unsub = e.detail.payload;
-        const session = Tools.setIn(this.state.session, ['subscriptions', 'projects'], unsub);
-        this._update(this.state.persistent, session, e.type);
+      static _newProjectsSubscription(state, unsub) {
+        return Tools.setIn(state, ['session', 'subscriptions', 'projects'], unsub);
       }
 
-      _newProjects(e) {
-        let username = e.detail.payload.username;
-        let projects = e.detail.payload.ids;
-        const persistent = Tools.filterFirestore(this.state.persistent, ["users", username, "projects"], projects);
-        this._update(persistent, this.state.session, e.type);
+      static _newProjects(state, payload) {
+        return Tools.filterFirestore(state, ["persistent", "users", payload.username, "projects"], payload.ids);
       }
 
-      _newVersions(e) {
-        let project = e.detail.payload.project;
-        let owner = e.detail.payload.owner;
-        let versionsShallow = e.detail.payload.versions;
-        let persistent = Tools.filterFirestore(this.state.persistent, ["users", owner, "projects", project, "versions"], versionsShallow);
-        this._update(persistent, this.state.session, e.type);
+      static _newVersions(state, payload) {
+        let project = payload.project;
+        let owner = payload.owner;
+        let versionsShallow = payload.versions;
+        state = Tools.filterFirestore(state, ["persistent", "users", owner, "projects", project, "versions"], versionsShallow);
 
-        const segments = this.state.session.route.segments;
+        const segments = state.session.route.segments;
         if (segments[3] || segments[1] !== owner || segments[2] !== project)
-          return;
-        let actualVersion = AppState.getLatestVersionNumber(this.state.persistent, segments[1], segments[2]);
-        let session = Tools.setIn(this.state.session, ['actualVersion'], actualVersion);
-        this._update(this.state.persistent, session, e.type);
+          return state;
+        let actualVersion = AppState.getLatestVersionNumber(state.persistent, segments[1], segments[2]);
+        return Tools.setIn(state, ['session', 'actualVersion'], actualVersion);
       }
 
-      _newFiles(e) {
-        let owner = e.detail.payload.owner;
-        let project = e.detail.payload.project;
-        let version = e.detail.payload.version;
-        let files = e.detail.payload.files;
-        let persistent = Tools.setIn(this.state.persistent, ['users', owner, 'projects', project, 'versions', version, 'files'], files);
-        this._update(persistent, this.state.session, e.type);
+      static _newFiles(state, payload) {
+        let owner = payload.owner;
+        let project = payload.project;
+        let version = payload.version;
+        let files = payload.files;
+        state = Tools.setIn(state, ['persistent', 'users', owner, 'projects', project, 'versions', version, 'files'], files);
 
 
 //        debugger;
@@ -213,93 +193,89 @@
         //todo if there are no conflict, only other files that are updated,
         //todo then the version we are working on can be updated seamlessly.
         if (
-          this.state.session.route.segments[1] === owner &&
-          this.state.session.route.segments[1] === project &&
-          this.state.session.actualVersion < version &&
-          this.state.session.edits
+          state.session.route.segments[1] === owner &&
+          state.session.route.segments[1] === project &&
+          state.session.actualVersion < version &&
+          state.session.edits
         ) {
-          let newEdits = Object.assign({}, this.state.session.edits);
+          let newEdits = Object.assign({}, state.session.edits);
 
         }
+        return state;
         //todo remove from edits if the update file(s) are the same as the edits
-//        let cp = this.state.persistent.currentProject;
+//        let cp = state.persistent.currentProject;
 //        if (cp.owner !== res.owner || cp.project !== res.project)
 //          return;
 //
-//        let latestVersion = AppState.getLatestVersionNumber(this.state.persistent, cp.owner, cp.project);
+//        let latestVersion = AppState.getLatestVersionNumber(state.persistent, cp.owner, cp.project);
 //        if ((cp.version && cp.version === res.version) || (latestVersion === res.version)) {
 //          persistent = Tools.setIn(persistent, ['currentProject', 'files'], res.files);
 //          persistent = Tools.setIn(persistent, ['currentProject', 'actualVersion'], res.version);
-//          this._update(persistent, this.state.session, e.type);
+//          this._update(persistent, state.session, e.type);
 //        }
       }
 
       /**
        * USER INITIATED EVENTS
        */
-      async _selectProject(e) {
-        const username = this.state.persistent.user.name;
-        const id = e.detail.payload;
-        this.$navigate(`/editor/${username}/${id}`);
+      static _selectProject(state, id) {
+        Tools.navigate(`/editor/${state.persistent.user.name}/${id}`);
+        return state;
       }
 
-      async _selectVersion(e) {
-        const project = e.detail.payload.project;
-        const version = e.detail.payload.version;
-        const owner = e.detail.payload.owner;
-        this.$navigate(`/editor/${owner}/${project}/${version}`);
+      static _selectVersion(state, payload) {
+        const project = payload.project;
+        const version = payload.version;
+        const owner = payload.owner;
+        Tools.navigate(`/editor/${owner}/${project}/${version}`);
+        return state;
       }
 
-      async _addProject(e) {
-        const id = e.detail.payload;
-        const user = this.state.persistent.user;
-        await AppData.addProject(user.name, id);
+      static _addProject(state, payload) {
+        AppData.addProject(state.persistent.user.name, payload);
+        return state;
         //todo update state directly by adding the project that was deleted from the state itself.
         //todo, maybe mark the object as newly created, green
       }
 
-      async _removeProject(e) {
-        const id = e.detail.payload;
-        const user = this.state.persistent.user;
-        await AppData.removeProject(user, id);
+      static _removeProject(state, payload) {
+        AppData.removeProject(state.persistent.user.name, payload);
+        return state;
         //todo update state directly by removing the project that was deleted from the state itself.
         //todo, maybe mark the object as newly deleted, orange
       }
 
-      _fileEdited(e) {
-        const filename = e.detail.payload.name;
-        const value = e.detail.payload.value;
-        const owner = this.state.session.route.segments[1];
-        const project = this.state.session.route.segments[2];
-        let session = Tools.setIn(this.state.session, ["edits", owner, "projects", project, "versions", "workingCopy", "files", filename], {
+      static _fileEdited(state, payload) {
+        const filename = payload.name;
+        const value = payload.value;
+        const owner = state.session.route.segments[1];
+        const project = state.session.route.segments[2];
+        return Tools.setIn(state, ["session", "edits", owner, "projects", project, "versions", "workingCopy", "files", filename], {
           name: filename,
           value: value,
           timestamp: new Date().getTime()
         });
-        this._update(this.state.persistent, session, e.type);
       }
 
-      _addFile(e) {
-        const filename = e.detail.payload.filename;
-        const username = this.state.persistent.user.name;
-        const owner = this.state.session.route.segments[1];
-        const project = this.state.session.route.segments[2];
-        let session = Tools.setIn(this.state.session, ["edits", owner, "projects", project, "versions", "workingCopy", "files", filename], {
+      static _addFile(state, payload) {
+        const filename = payload.filename;
+        const username = state.persistent.user.name;
+        const owner = state.session.route.segments[1];
+        const project = state.session.route.segments[2];
+        return Tools.setIn(state, ["session", "edits", owner, "projects", project, "versions", "workingCopy", "files", filename], {
           name: filename,
           value: AppState.getDefaultText(filename, username),
           timestamp: new Date().getTime()
         });
-        this._update(this.state.persistent, session, e.type);
-//        let makeView = AppState.makeView(this.state.persistent.edits, this.state.persistent.currentProject, this.state.persistent.users);
+//        let makeView = AppState.makeView(state.persistent.edits, state.persistent.currentProject, state.persistent.users);
 //        persistent = Tools.setIn(persistent, ["view"], makeView);
       }
 
-      _removeFile(e) {
-        const filename = e.detail.payload;
-        const owner = this.state.session.route.segments[1];
-        const project = this.state.session.route.segments[2];
-        let session = Tools.setIn(this.state.session, ["edits", owner, "projects", project, "versions", "workingCopy", "files", filename], null);
-        this._update(this.state.persistent, session, e.type);
+      static _removeFile(state, payload) {
+        const filename = payload;
+        const owner = state.session.route.segments[1];
+        const project = state.session.route.segments[2];
+        return Tools.setIn(state, ["session", "edits", owner, "projects", project, "versions", "workingCopy", "files", filename], null);
       }
 
       static getDefaultText(filename, username) {
