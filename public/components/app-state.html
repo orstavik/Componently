@@ -29,10 +29,6 @@
           history: {
             type: Array,
             value: () => []
-          },
-          _frozen: {
-            type: Boolean,
-            value: true
           }
         }
       }
@@ -117,7 +113,7 @@
        */
       async _init(e) {
         let persistent = this.state.persistent || this._getStored() || this.initial.persistent;
-        const session = Tools.mergeDeepWithNullToDelete(this.state.session, this.initial.session, this._frozen);
+        const session = Tools.mergeDeepWithNullToDelete(this.state.session, this.initial.session);
         this._update(persistent, session, 'state-init');
         firebase.auth().onAuthStateChanged((user) => this.$emit("controller-auth-changed", user));
 //        firebase.auth().onAuthStateChanged(this._authChanged.bind(this));
@@ -134,12 +130,12 @@
         if (newR[0] === "editor" && !newR[2])
           return this.$navigate("/home/" + newR[1]);
 
-        let session = Tools.setIn(this.state.session, ['route'], e.detail.payload, this._frozen);
+        let session = Tools.setIn(this.state.session, ['route'], e.detail.payload);
 
         let actualVersion = newR[3];
         if (!actualVersion)
           actualVersion = AppState.getLatestVersionNumber(this.state.persistent, newR[1], newR[2]);
-        session = Tools.setIn(session, ['actualVersion'], actualVersion, this._frozen);
+        session = Tools.setIn(session, ['actualVersion'], actualVersion);
 
         this._update(this.state.persistent, session, e.type);
       }
@@ -153,7 +149,7 @@
           let userData = await AppData.getCurrentUserData(user.uid);  //wait for the nickname to load
           user = AppState.makeUser(userData.id, user);
         }
-        let persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
+        let persistent = Tools.setIn(this.state.persistent, ['user'], user);
         this._update(persistent, this.state.session, e.type);
       }
 
@@ -170,20 +166,20 @@
        */
       _newVersionSubscription(e) {
         let unsub = e.detail.payload;
-        const session = Tools.setIn(this.state.session, ['subscriptions', 'versions'], unsub, this._frozen);
+        const session = Tools.setIn(this.state.session, ['subscriptions', 'versions'], unsub);
         this._update(this.state.persistent, session, e.type);
       }
 
       _newProjectsSubscription(e) {
         let unsub = e.detail.payload;
-        const session = Tools.setIn(this.state.session, ['subscriptions', 'projects'], unsub, this._frozen);
+        const session = Tools.setIn(this.state.session, ['subscriptions', 'projects'], unsub);
         this._update(this.state.persistent, session, e.type);
       }
 
       _newProjects(e) {
         let username = e.detail.payload.username;
         let projects = e.detail.payload.ids;
-        const persistent = Tools.filterFirestore(this.state.persistent, ["users", username, "projects"], projects, this._frozen);
+        const persistent = Tools.filterFirestore(this.state.persistent, ["users", username, "projects"], projects);
         this._update(persistent, this.state.session, e.type);
       }
 
@@ -191,14 +187,14 @@
         let project = e.detail.payload.project;
         let owner = e.detail.payload.owner;
         let versionsShallow = e.detail.payload.versions;
-        let persistent = Tools.filterFirestore(this.state.persistent, ["users", owner, "projects", project, "versions"], versionsShallow, this._frozen);
+        let persistent = Tools.filterFirestore(this.state.persistent, ["users", owner, "projects", project, "versions"], versionsShallow);
         this._update(persistent, this.state.session, e.type);
 
         const segments = this.state.session.route.segments;
         if (segments[3] || segments[1] !== owner || segments[2] !== project)
           return;
         let actualVersion = AppState.getLatestVersionNumber(this.state.persistent, segments[1], segments[2]);
-        let session = Tools.setIn(this.state.session, ['actualVersion'], actualVersion, this._frozen);
+        let session = Tools.setIn(this.state.session, ['actualVersion'], actualVersion);
         this._update(this.state.persistent, session, e.type);
       }
 
@@ -207,7 +203,7 @@
         let project = e.detail.payload.project;
         let version = e.detail.payload.version;
         let files = e.detail.payload.files;
-        let persistent = Tools.setIn(this.state.persistent, ['users', owner, 'projects', project, 'versions', version, 'files'], files, this._frozen);
+        let persistent = Tools.setIn(this.state.persistent, ['users', owner, 'projects', project, 'versions', version, 'files'], files);
         this._update(persistent, this.state.session, e.type);
 
 
@@ -232,8 +228,8 @@
 //
 //        let latestVersion = AppState.getLatestVersionNumber(this.state.persistent, cp.owner, cp.project);
 //        if ((cp.version && cp.version === res.version) || (latestVersion === res.version)) {
-//          persistent = Tools.setIn(persistent, ['currentProject', 'files'], res.files, this._frozen);
-//          persistent = Tools.setIn(persistent, ['currentProject', 'actualVersion'], res.version, this._frozen);
+//          persistent = Tools.setIn(persistent, ['currentProject', 'files'], res.files);
+//          persistent = Tools.setIn(persistent, ['currentProject', 'actualVersion'], res.version);
 //          this._update(persistent, this.state.session, e.type);
 //        }
       }
@@ -275,7 +271,7 @@
         const value = e.detail.payload.value;
         const owner = this.state.session.route.segments[1];
         const project = this.state.session.route.segments[2];
-        let session = Tools.setIn(this.state.session, ["edits", owner, project, filename], {
+        let session = Tools.setIn(this.state.session, ["edits", owner, "projects", project, "versions", "workingCopy", "files", filename], {
           name: filename,
           value: value,
           timestamp: new Date().getTime()
@@ -288,7 +284,7 @@
         const username = this.state.persistent.user.name;
         const owner = this.state.session.route.segments[1];
         const project = this.state.session.route.segments[2];
-        let session = Tools.setIn(this.state.session, ["edits", owner, project, filename], {
+        let session = Tools.setIn(this.state.session, ["edits", owner, "projects", project, "versions", "workingCopy", "files", filename], {
           name: filename,
           value: AppState.getDefaultText(filename, username),
           timestamp: new Date().getTime()
@@ -302,7 +298,7 @@
         const filename = e.detail.payload;
         const owner = this.state.session.route.segments[1];
         const project = this.state.session.route.segments[2];
-        let session = Tools.setIn(this.state.session, ["edits", owner, project, filename], null, this._frozen);
+        let session = Tools.setIn(this.state.session, ["edits", owner, "projects", project, "versions", "workingCopy", "files", filename], null);
         this._update(this.state.persistent, session, e.type);
       }
 

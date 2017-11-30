@@ -48,7 +48,8 @@ class Tools {
   }
 
   //todo use the filter method recursively to add, delete, update doc data in the objects as well.
-  static filterFirestore(origin, path, filter, _frozen) {
+  static filterFirestore(origin, path, filter) {
+    const _frozen = true;
     let res = Object.assign({}, origin);
     const start = res;
     for (let key of path) {
@@ -81,7 +82,8 @@ class Tools {
     return o;
   }
 
-  static deepClone(obj, freeze) {
+  static deepClone(obj) {
+    const freeze = true;
     if (null == obj || "object" != typeof obj)
       return obj;
     let clone = Object.assign({}, obj);
@@ -98,7 +100,8 @@ class Tools {
   //
   //if either only B === null, then the branch will be deleted. (if the same criteria was set for A, it would be impossible to write in a new value for the same key later)
   //if either A or B === undefined or {} (empty object), then the other branch is used.
-  static mergeDeepWithNullToDelete(A, B, freeze) {
+  static mergeDeepWithNullToDelete(A, B) {
+    const freeze = true;
     if (B === null) return null;
     if (B === undefined || Tools.emptyObject(B))
       return freeze ? Object.freeze(A) : A;
@@ -180,14 +183,16 @@ class Tools {
     return result;
   }
 
-  static setIn(obj, path, value, freeze) {
+  static setIn(obj, path, value) {
+    const freeze = true;
     return Tools.getIn(obj, path) === value ? obj : Tools.setInNoCheck(obj, path, value, freeze);
   }
 
   //returns sets a value to object tree path,
   //if some part of that path is explicitly set to null,
   //then nothing is set and undefined is returned
-  static setInNoCheck(obj, path, value, freeze) {
+  static setInNoCheck(obj, path, value) {
+    const freeze = true;
     let rootRes = Object.assign({}, obj);
     let resPath = [];
     let res = rootRes;
