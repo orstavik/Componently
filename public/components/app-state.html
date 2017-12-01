@@ -1,4 +1,5 @@
 <script src="../utils/Tools.js"></script>
+<script src="../utils/AppData.js"></script>
 
 <dom-module id="app-state">
   <script>
@@ -31,8 +32,8 @@
         return Object.keys(versions).map(n => Number(n)).sort((a, b) => b - a)[0];
       }
 
-      constructor() {
-        super();
+      connectedCallback() {
+        super.connectedCallback();
 
         this.state = {};
         this.history = [];
@@ -125,7 +126,8 @@
        * AUTH
        */
       static _authChanged(state, user) {
-        return Tools.setIn(state, ["persistent", 'user'], user);
+        state = Tools.setIn(state, ['persistent', 'user'], null);
+        return Tools.setIn(state, ['session', 'auth'], user);
       }
 
       static _signIn(state) {
@@ -142,8 +144,8 @@
        * DB INITIATED EVENTS
        */
       static _newUserData(state, payload) {
-        if (state.persistent.user !== payload.user)
-          return Tools.setIn(state, ["session", "errorMsg"], "wtf?? loading an old version of the user??");
+        if (state.session.auth !== payload.user)
+          return Tools.setIn(state, ["session", "errorMsg"], "wtf?? loading a user not authorized??");
         return Tools.setIn(state, ["persistent", "user"], AppState.makeUser(payload.data.id, payload.user));
       }
 

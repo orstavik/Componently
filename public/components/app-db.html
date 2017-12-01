@@ -1,5 +1,3 @@
-<script src="../utils/AppData.js"></script>
-
 <dom-module id="app-db">
   <template>
     <style>
@@ -27,18 +25,18 @@
           "_updateProjectsListener(state.persistent.user.name)",
           "_editsChanged(state.session.edits)",
           "_projectsEdited(state.session.edits, state.persistent.user.name)",
-          "_userChanged(state.persistent.user, state.locks)",
+          "_userChanged(state.session.auth)",
         ];
       }
 
-      //
-      async _userChanged(user, locks) {
-        if (this.$fullPathCheck("_userChanged", [user, locks])) return;
+      async _userChanged(user) {
+        if (this.$fullPathCheck("_userChanged", [user])) return;
 
         if (!user || !user.uid)
           return;
         let userData = await AppData.getCurrentUserData(user.uid);  //wait for the nickname to load
-        this.$emit("controller-new-user-data", {user: user, data: userData});
+        if (userData)
+          this.$emit("controller-new-user-data", {user: user, data: userData});
       }
 
       _editsChanged(edits) {
@@ -62,7 +60,7 @@
             continue;
           if (keys[0] === created)
             AppData.addProject(name, projectName);              //todo here we could await the result and throw an event
-          else if(keys[0] === created)
+          else if (keys[0] === deleted)
             AppData.removeProject(name, projectName);           //todo here we could await the result and throw an event
         }
       }
@@ -89,23 +87,11 @@
       _updateProjectsListener(username) {
         if (this.$fullPathCheck("_updateProjectsListener", [username])) return;
 
-//        const existingSub = this.state.session.subscriptions.projects;
-//        if (!existingSub && !username)                        //the same, undefined
-//          return;
-//        if (existingSub && existingSub.username === username) //the same, not null
-//          return;
-//        if (existingSub)
-//          existingSub.unsubscribe();
-
-        let unsub = null;
-        if (username) {
-          const cb = ids => this.$emit("controller-new-projects", {username: username, ids: ids});
-          unsub = {
-            username: username,
-            unsubscribe: AppData.listenToProjects(username, cb)
-          };
-        }
-        this.$emit("controller-new-projects-subscription", unsub);
+        if (!username)
+          return this.$emit("controller-new-projects-subscription", null);
+        const cb = ids => this.$emit("controller-new-projects", {username: username, ids: ids});
+        const unsubscribe = AppData.listenToProjects(username, cb);
+        this.$emit("controller-new-projects-subscription", {username: username, unsubscribe: unsubscribe});
       }
 
       _updateVersionsListener(segments) {
@@ -114,35 +100,16 @@
         if (!segments)
           return;
         const urlPage = segments[0];
-        const ownerName = segments[1];
-        const projectId = segments[2];
-        if (urlPage !== "editor")
-          return;
-        if (!ownerName || !projectId)
+        const owner = segments[1];
+        const project = segments[2];
+        if ((urlPage !== "editor") || (!owner || !project))
           return;
 
-//        const existingSub = this.state.session.subscriptions.versions;
-//        if (existingSub === null && ownerName === null)                             //the same, null
-//          return;
-//        if (existingSub && existingSub.owner === ownerName && existingSub.project === projectId)   //the same, not null
-//          return;
-//        if (existingSub)
-//          existingSub.unsubscribe();
-//
-        let unsub = null;
-        if (ownerName && projectId) {
-          const cb = ids => this.$emit("controller-new-versions", {
-            owner: ownerName,
-            project: projectId,
-            versions: ids
-          });
-          unsub = {
-            owner: ownerName,
-            project: projectId,
-            unsubscribe: AppData.listenToVersions(ownerName, projectId, cb)
-          };
-        }
-        this.$emit("controller-new-version-subscription", unsub);
+        if (!owner || !project)
+          this.$emit("controller-new-versions", null);
+        const cb = data => this.$emit("controller-new-versions", {owner: owner, project: project, versions: data});
+        const unsubscribe = AppData.listenToVersions(owner, project, cb);
+        this.$emit("controller-new-version-subscription", {owner: owner, project: project, unsubscribe: unsubscribe});
       }
 
       async _listenForFiles(segments, actualVersion) {
