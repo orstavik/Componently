@@ -3,6 +3,7 @@
 <link rel="import" href="app-state.html">
 <link rel="import" href="app-pages.html">
 <link rel="import" href="app-iconset.html">
+<link rel="import" href="app-dialog.html">
 
 <dom-module id="app-shell">
   <template>
@@ -27,6 +28,14 @@
       <notfound-page page="notfound"></notfound-page>
     </app-pages>
 
+    <app-dialog id="nickDialog" on-dialog-canceled="_signOut">
+      <form on-submit="_submitNickname">
+        <p>Enter your nickname to register</p>
+        <input type="text" id="nickname" placeholder="nickname">
+        <input type="submit" value="Finish">
+      </form>
+    </app-dialog>
+
   </template>
   <script>
     class AppShell extends IntertextMixin(Polymer.Element) {
@@ -48,6 +57,11 @@
         }
       }
 
+      connectedCallback() {
+        super.connectedCallback();
+        this.addEventListener('ui-nickname-dialog', (e) => this.$.nickDialog.open());
+      }
+
       _retrieveVersions(currentProject, users) {
         if (!currentProject || !users)
           return [];
@@ -60,6 +74,17 @@
 
       _retrieveUserProjects(username, users) {
         return !username || !users ? [] : users[username].projects;
+      }
+
+      _submitNickname(e) {
+        e.preventDefault();
+        this.$.nickDialog.close();
+        this.$emit('controller-user-nickname', this.$.nickname.value);
+        this.$.nickname.value = '';
+      }
+
+      _signOut(e) {
+        this.$emit('controller-sign-out');
       }
     }
 

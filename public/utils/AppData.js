@@ -9,6 +9,17 @@ class AppData {
     return coll.docs[0];
   }
 
+  static async addUserToDB(nickname) {
+    const user = firebase.auth().currentUser;
+    const db = firebase.firestore();
+    await db.doc(`users/${nickname}`).update({
+      uids: {
+        [user.uid]: true
+      }
+    });
+    return user;
+  }
+
   static async setCurrentProject(username, currentProject) {
     const db = firebase.firestore();
     currentProject = Tools.removeUndefinedFields(currentProject);

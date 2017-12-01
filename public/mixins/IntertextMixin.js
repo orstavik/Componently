@@ -1,5 +1,5 @@
 const IntertextMixin = (superClass) => class extends superClass {
-  
+
   $emit(name, payload) {
     return new Promise((resolve, reject) => {
       this.dispatchEvent(new CustomEvent(name, {
@@ -36,5 +36,27 @@ const IntertextMixin = (superClass) => class extends superClass {
         this._throttleTimeout = null;
         callback();
       }, ms);
+  }
+
+  $listener(node, events) {
+    return {
+      _node: node,
+      _events: events.length === 1 ? [events] : events,
+      subscribe: function (cb) {
+        this._events.forEach((_event) => {
+          this._node.addEventListener(_event, this._callback);
+        });
+
+        this._callback = cb;
+
+        return () => {
+          this._events.forEach((_event) => {
+            this._node.removeEventListener(_event, this._callback);
+          });
+
+          delete this._callback;
+        };
+      }
+    }
   }
 }

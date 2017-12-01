@@ -1,3 +1,4 @@
+<link rel="import" href="css-animation.html">
 
 
 <dom-module id="app-dialog">
@@ -75,7 +76,7 @@
   </template>
 
   <script>
-    class AppDialog extends Polymer.GestureEventListeners(Polymer.Element) {
+    class AppDialog extends IntertextMixin(Polymer.GestureEventListeners(Polymer.Element)) {
       static get is() {
         return "app-dialog";
       }
@@ -98,13 +99,19 @@
 			connectedCallback() {
 				super.connectedCallback();
 				if (!this.closeOnActions)
-					Polymer.Gestures.addListener(this.$.overlay, 'tap', (e) => this.close());
+					Polymer.Gestures.addListener(this.$.overlay, 'tap', (e) => this.cancel());
 			}
 
       open() {
         this.opened = true;
         this.$.overlay.enter();
         this.$.body.enter();
+        this.$emit('dialog-opened');
+      }
+
+      async cancel() {
+        await this.close();
+        this.$emit('dialog-canceled');
       }
 
       close() {
@@ -112,8 +119,9 @@
 					this.$.overlay.leave(),
 					this.$.body.leave()
 				];
-				Promise.all(closeAnimations).then(() => {
+				return Promise.all(closeAnimations).then(() => {
         	this.opened = false;
+          this.$emit('dialog-closed');
 				});
       }
     }

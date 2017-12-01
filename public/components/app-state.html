@@ -40,7 +40,6 @@
       static makeUser(nick, user) {
         return {
           name: nick,
-          displayName: user.displayName,
           email: user.email,
           photo: user.photoURL,
           uid: user.uid
@@ -66,6 +65,7 @@
         window.addEventListener('controller-auth-changed', this._authChanged.bind(this));
         window.addEventListener('controller-sign-in', this._signIn.bind(this));
         window.addEventListener('controller-sign-out', this._signOut.bind(this));
+        window.addEventListener('controller-user-nickname', this._userNickname.bind(this));
         window.addEventListener('controller-add-project', this._addProject.bind(this));
         window.addEventListener('controller-remove-project', this._removeProject.bind(this));
         window.addEventListener('controller-select-project', this._selectProject.bind(this));
@@ -156,6 +156,8 @@
         let user = e.detail.payload;
         if (user) {
           let userData = await AppData.getCurrentUserData(user.uid);  //wait for the nickname to load
+          if (!userData)
+            return this.$emit('ui-nickname-dialog');
           user = AppState.makeUser(userData.id, user);
         }
         let persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
@@ -169,6 +171,15 @@
 
       _signOut(e) {
         firebase.auth().signOut();
+      }
+
+      async _userNickname(e) {
+        const nickname = e.detail.payload;
+        let user = await AppData.addUserToDB(nickname);
+        user = AppState.makeUser(nickname, user);
+        let persistent = Tools.setIn(this.state.persistent, ['user'], user, this._frozen);
+        this._update(persistent, this.state.session, e.type);
+        this._updateProjectsListener(user ? user.name : null, e.type);
       }
 
       _updateProjectsListener(username, action) {
