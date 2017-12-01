@@ -13,7 +13,7 @@
       }
     </style>
 
-    <app-state state="{{state}}"></app-state>
+    <app-state on-state-changed="_stateChanged"></app-state>
     <app-router default-url="home"></app-router>
 
     <app-db state="[[state]]"></app-db>
@@ -21,7 +21,7 @@
     <app-pages page="[[state.session.route.segments.0]]">
       <home-page page="home"
                  user="[[state.persistent.user]]"
-                 projects="[[_userProjects]]">
+                 user-data="[[_userObject]]">
       </home-page>
       <editor-page page="editor"
                    owner="[[state.session.route.segments.1]]"
@@ -43,60 +43,60 @@
       static get properties() {
         return {
           state: Object,
+          history: Array,
 
           _userObject: {
             type: Object,
             computed: "_makeUserObject(state.persistent.user.name, state.persistent.users)"
           },
-          _ownerObject: {
+          _fullProjectObject: {
             type: Object,
-            computed: "_makeOwnerObject(state.session.route.segments.1, state.persistent.users)"
+            computed: "_makeProjectObject(state.session.route.segments.1, state.session.route.segments.2, state.persistent.users, state.session.edits)"
           },
-          _projectObject: {
+          _projectObjectWithWorkingCopy: {
             type: Object,
-            computed: "_makeProjectObject(state.session.route.segments.2, _ownerObject)"
-          },
-          _versionObject: {
-            type: Object,
-            computed: "_makeVersionObject(state.session.actualVersion, _projectObject)"
-          },
-          currentFiles: {
-            type: Array,
-            computed: "_mergeCurrentFiles(state.session.editFiles, _versionObject)"
+            computed: "_makeProjectObjectWithWorkingCopy(_projectObject, state.session.edits)"
           }
         }
       }
 
+      _stateChanged(e){
+        this.set("state", e.detail.state);
+        this.set("history", e.detail.history);
+      }
+
       _makeUserObject(user, users) {
-        if (this.$fullPathCheck("_MakeUserObject.user", user) && this.$fullPathCheck("_MakeUserObject.users", users))
+        if (this.$fullPathCheck("_MakeUserObject", [user, users]))
           return this._userObject;
 
         return (users && user) ? users[user] : undefined;
       }
-      
-      _makeOwnerObject(owner, users) {
-        if (this.$fullPathCheck("_makeOwnerObject.owner", owner) && this.$fullPathCheck("_makeOwnerObject.users", users))
-          return this._ownerObject;
 
-        return (users && owner) ? users[owner] : undefined;
-      }
-
-      _makeProjectObject(project, user) {
-        if (this.$fullPathCheck("_makeProjectObject.project", project) && this.$fullPathCheck("_makeProjectObject.user", user))
+      _fullProjectObject(owner, project, users, edits) {
+        if (this.$fullPathCheck("_makeProjectObject", [owner, project, users, edits]))
           return this._projectObject;
 
-        return (user && project) ? user.projects[project] : undefined;
-      }
-
-      _makeVersionObject(version, project) {
-        if (this.$fullPathCheck("_makeVersionObject.version", version) && this.$fullPathCheck("_makeVersionObject.project", project))
-          return this._versionObject;
-
-        return (project && version) ? project.versions[version] : undefined;
+        if (!owner || !project || !users || !Tools.testPath(users, [owner, "projects", project]))
+          return undefined;
+        let savedProject = users[owner].projects[project];
+        if (!edits || !Tools.testPath(edits, [owner, "projects", project]))
+          return savedProject;
+        const latestVersionObjectFiles = savedProject.verisons[savedProject.latestVersion].files;
+        const editsProject = edits[owner].projects[project];
+        const workingCopyVersionFiles = editsProject.versions[workingCopy].files;
+        if (workingCopyVersionFiles) {
+          for (let filename in workingCopyVersionFiles) {
+            if (workingCopyVersionFiles[filename].value === null)
+              delete latestVersionObjectFiles[filename];
+            else
+              latestVersionObjectFiles[filename] = workingCopyVersionFiles[filename];
+          }
+        }
+        return latestVersionObjectFiles;
       }
 
       _mergeCurrentFiles(edits, _versionObject) {
-        if (this.$fullPathCheck("_mergeCurrentFiles.edits", edits) && this.$fullPathCheck("_mergeCurrentFiles._versionObject", _versionObject))
+        if (this.$fullPathCheck("_mergeCurrentFiles", [edits, _versionObject]))
           return this.currentFiles;
 
         if (!_versionObject || !_versionObject.files)

@@ -34,17 +34,21 @@ const IntertextMixin = (superClass) => class extends superClass {
       callback);
   }
 
-  $fullPathCheck(path, obj) {
+  $fullPathCheck(key, ar) {
     if (!this.__polymerPatch_CheckFullPath)
       this.__polymerPatch_CheckFullPath = {};
-    if (
-      this.__polymerPatch_CheckFullPath[path] === obj
-    //when we do fullPathCheck, we want to skip the initial execution when the value being checked is undefined.
-    //that is why we dont run the extra check below
-    // && (obj !== undefined || Object.keys(this.__polymerPatch_CheckFullPath).indexOf(path) !== -1)
-    )
-      return true;
-    this.__polymerPatch_CheckFullPath[path] = obj;
-    return false;
+    let theSame = true;
+    for (let i = 0; i< ar.length; i++) {
+      let path = key + "." + i;
+      let obj = ar[i];
+      if (this.__polymerPatch_CheckFullPath[path] !== obj) {
+        this.__polymerPatch_CheckFullPath[path] = obj;
+        theSame = false;
+      }
+    }
+    return theSame;
   }
+  //when we do fullPathCheck, we want to skip the initial execution when the value being checked is undefined.
+  //that is why we dont run the extra check below
+  // && (obj !== undefined || Object.keys(this.__polymerPatch_CheckFullPath).indexOf(path) !== -1)
 };

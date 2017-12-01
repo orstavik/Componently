@@ -6,7 +6,12 @@ class AppData {
   static async getCurrentUserData(uid) {
     const db = firebase.firestore();
     const coll = await db.collection("users").where("uids." + uid, "==", true).get();
-    return coll.docs[0];
+    return new Promise((resolve, reject) => {
+      setTimeout(function(){
+        resolve(coll.docs[0]);
+      }, 30000);
+    });
+    // return coll.docs[0];
   }
 
   // static async saveCurrentProject(username, currentProject) {

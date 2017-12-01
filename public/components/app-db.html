@@ -1,3 +1,5 @@
+<script src="../utils/AppData.js"></script>
+
 <dom-module id="app-db">
   <template>
     <style>
@@ -24,15 +26,45 @@
           "_updateVersionsListener(state.session.route.segments)",
           "_updateProjectsListener(state.persistent.user.name)",
           "_editsChanged(state.session.edits)",
+          "_projectsEdited(state.session.edits, state.persistent.user.name)",
+          "_userChanged(state.persistent.user, state.locks)",
         ];
       }
 
+      //
+      async _userChanged(user, locks) {
+        if (this.$fullPathCheck("_userChanged", [user, locks])) return;
+
+        if (!user || !user.uid)
+          return;
+        let userData = await AppData.getCurrentUserData(user.uid);  //wait for the nickname to load
+        this.$emit("controller-new-user-data", {user: user, data: userData});
+      }
+
       _editsChanged(edits) {
-        if (this.$fullPathCheck("_editsChanged.edits", edits)) return;
+        if (this.$fullPathCheck("_editsChanged", [edits])) return;
 
         if (!edits)
           return;
         this.$debounce(this._saveEdits.bind(this), 5000);
+      }
+
+      _projectsEdited(edits, name) {
+        if (this.$fullPathCheck("_projectsEdited", [edits, name])) return;
+
+        if (!edits || !name)
+          return;
+        let newProjects = edits[name].projects;
+        for (let projectName in newProjects) {
+          let proj = newProjects[projectName];
+          const keys = Object.keys(proj);
+          if (keys.length !== 1)
+            continue;
+          if (keys[0] === created)
+            AppData.addProject(name, projectName);              //todo here we could await the result and throw an event
+          else if(keys[0] === created)
+            AppData.removeProject(name, projectName);           //todo here we could await the result and throw an event
+        }
       }
 
       _saveEdits() {
@@ -43,7 +75,7 @@
         for (let owner in edits) {
           let ownerObj = edits[owner];
           for (let project in ownerObj) {
-            let latestVersionNumber = AppState.getLatestVersionNumber(this.state.persistent, owner, project);
+            let latestVersionNumber = this.state.persistent.users[owner].projects[project].latestVersion;
             let latestFiles = this.state.persistent.users[owner].projects[project].versions[latestVersionNumber].files;
             AppData.addVersion({
               owner: owner,
@@ -55,15 +87,15 @@
       }
 
       _updateProjectsListener(username) {
-        if (this.$fullPathCheck("_updateProjectsListener.userName", username)) return;
+        if (this.$fullPathCheck("_updateProjectsListener", [username])) return;
 
-        const existingSub = this.state.session.subscriptions.projects;
-        if (!existingSub && !username)                        //the same, undefined
-          return;
-        if (existingSub && existingSub.username === username) //the same, not null
-          return;
-        if (existingSub)
-          existingSub.unsubscribe();
+//        const existingSub = this.state.session.subscriptions.projects;
+//        if (!existingSub && !username)                        //the same, undefined
+//          return;
+//        if (existingSub && existingSub.username === username) //the same, not null
+//          return;
+//        if (existingSub)
+//          existingSub.unsubscribe();
 
         let unsub = null;
         if (username) {
@@ -77,7 +109,7 @@
       }
 
       _updateVersionsListener(segments) {
-        if (this.$fullPathCheck("_updateVersionsListener.segments", segments)) return;
+        if (this.$fullPathCheck("_updateVersionsListener", [segments])) return;
 
         if (!segments)
           return;
@@ -89,14 +121,14 @@
         if (!ownerName || !projectId)
           return;
 
-        const existingSub = this.state.session.subscriptions.versions;
-        if (existingSub === null && ownerName === null)                             //the same, null
-          return;
-        if (existingSub && existingSub.owner === ownerName && existingSub.project === projectId)   //the same, not null
-          return;
-        if (existingSub)
-          existingSub.unsubscribe();
-
+//        const existingSub = this.state.session.subscriptions.versions;
+//        if (existingSub === null && ownerName === null)                             //the same, null
+//          return;
+//        if (existingSub && existingSub.owner === ownerName && existingSub.project === projectId)   //the same, not null
+//          return;
+//        if (existingSub)
+//          existingSub.unsubscribe();
+//
         let unsub = null;
         if (ownerName && projectId) {
           const cb = ids => this.$emit("controller-new-versions", {
@@ -114,7 +146,7 @@
       }
 
       async _listenForFiles(segments, actualVersion) {
-        if (this.$fullPathCheck("_listenForFiles.segments", segments) && this.$fullPathCheck("_listenForFiles.actualVersion", actualVersion)) return;
+        if (this.$fullPathCheck("_listenForFiles", [segments, actualVersion])) return;
 
         if (!segments || !actualVersion)
           return;

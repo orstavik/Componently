@@ -1,25 +1,10 @@
 <script src="../utils/Tools.js"></script>
-<script src="../utils/AppData.js"></script>
 
 <dom-module id="app-state">
   <script>
     class AppState extends IntertextMixin(Polymer.Element) {
       static get is() {
         return "app-state";
-      }
-
-      static get properties() {
-        return {
-          state: {
-            type: Object,
-            notify: true,
-            value: () => ({})
-          },
-          history: {
-            type: Array,
-            value: () => []
-          }
-        }
       }
 
       static makeUser(nick, user) {
@@ -39,12 +24,18 @@
           return undefined;
         }
         let versions = persistent.users[username].projects[project].versions;
+        return AppState.getLatestVersionNumberFromVersionObject(versions);
+      }
+
+      static getLatestVersionNumberFromVersionObject(versions) {
         return Object.keys(versions).map(n => Number(n)).sort((a, b) => b - a)[0];
       }
 
-      connectedCallback() {
-        super.connectedCallback();
+      constructor() {
+        super();
 
+        this.state = {};
+        this.history = [];
         this.bindToReduce('state-change-route', AppState._changeRoute);          //select-project
 
         //auth
@@ -60,25 +51,25 @@
         this.bindToReduce('controller-remove-file', AppState._removeFile);
         this.bindToReduce('controller-file-edited', AppState._fileEdited);
         //db
+        this.bindToReduce('controller-new-user-data', AppState._newUserData);
         this.bindToReduce('controller-new-projects', AppState._newProjects);
         this.bindToReduce('controller-new-versions', AppState._newVersions);
         this.bindToReduce('controller-new-files', AppState._newFiles);
         this.bindToReduce('controller-new-version-subscription', AppState._newVersionSubscription);
         this.bindToReduce('controller-new-projects-subscription', AppState._newProjectsSubscription);
 
-        firebase.auth().onAuthStateChanged((user) => this.$emit("controller-auth-changed", user));
+        firebase.auth().onAuthStateChanged((user) => this.$emit('controller-auth-changed', user));
 
-        this.reduce(this.init(), "init");
+        this._updateState(AppState.init(), 'init');
+
       }
 
-      bindToReduce(eventName, fun) {
-        window.addEventListener(eventName, e => this.reduce(fun(this.state, e.detail), e.type));
+      bindToReduce(eventName, reducer) {
+        window.addEventListener(eventName, e => { this._updateState(reducer(this.state, e.detail), e.type); });
       }
 
-      async reduce(newState, action) {
-        if (newState.then instanceof Function)
-          newState = await newState;
-        this.set('state', newState);
+      _updateState(newState, action) {
+        this.state = newState;
         console.log(action, performance.now());
         const snap = {
           action: action,
@@ -86,15 +77,16 @@
           timestamp: new Date().getTime(),
           apptime: performance.now()
         };
-        this.set('history', [snap].concat(this.history));
+        this.history = [snap].concat(this.history);
 //        if (newState.persistent)
 //          localStorage.setItem('state', JSON.stringify(newState.persistent));
+        this.$emit("state-changed", {state: this.state, history: this.history});
       }
 
       /**
        * INIT AND ROUTE
        */
-      init() {
+      static init() {
         const initial = Tools.deepFreeze({
           session: {
             subscriptions: {}
@@ -132,34 +124,39 @@
       /**
        * AUTH
        */
-      static async _authChanged(state, user) {
-        const lock = Tools.lockPath(state, ["persistent", "user"], "retrieving extra user data.");
-        if (!user)
-          return Tools.setIn(state, ["persistent", 'user'], user, lock);
-
-        let userData = await AppData.getCurrentUserData(user.uid);  //wait for the nickname to load
-        return Tools.setIn(state, ["persistent", 'user'], AppState.makeUser(userData.id, user), lock);
+      static _authChanged(state, user) {
+        return Tools.setIn(state, ["persistent", 'user'], user);
       }
 
       static _signIn(state) {
-        firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());//.then(this._authChanged.bind(this));
+        firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
         return state;
       }
 
       static _signOut(state) {
-        firebase.auth().signOut();//.then(this._authChanged.bind(this));
+        firebase.auth().signOut();
         return state;
       }
 
       /**
        * DB INITIATED EVENTS
        */
-      static _newVersionSubscription(state, unsub) {
-        return Tools.setIn(state, ['session', 'subscriptions', 'versions'], unsub);
+      static _newUserData(state, payload) {
+        if (state.persistent.user !== payload.user)
+          return Tools.setIn(state, ["session", "errorMsg"], "wtf?? loading an old version of the user??");
+        return Tools.setIn(state, ["persistent", "user"], AppState.makeUser(payload.data.id, payload.user));
       }
 
-      static _newProjectsSubscription(state, unsub) {
-        return Tools.setIn(state, ['session', 'subscriptions', 'projects'], unsub);
+      static _newVersionSubscription(state, subscription) {
+        if (this.state.session.subscriptions.versions)
+          this.state.session.subscriptions.versions.unsubscribe();
+        return Tools.setIn(state, ['session', 'subscriptions', 'versions'], subscription);
+      }
+
+      static _newProjectsSubscription(state, subscription) {
+        if (this.state.session.subscriptions.projects)
+          this.state.session.subscriptions.projects.unsubscribe();
+        return Tools.setIn(state, ['session', 'subscriptions', 'projects'], subscription);
       }
 
       static _newProjects(state, payload) {
@@ -170,13 +167,14 @@
         let project = payload.project;
         let owner = payload.owner;
         let versionsShallow = payload.versions;
-        state = Tools.filterFirestore(state, ["persistent", "users", owner, "projects", project, "versions"], versionsShallow);
-
         const segments = state.session.route.segments;
-        if (segments[3] || segments[1] !== owner || segments[2] !== project)
-          return state;
-        let actualVersion = AppState.getLatestVersionNumber(state.persistent, segments[1], segments[2]);
-        return Tools.setIn(state, ['session', 'actualVersion'], actualVersion);
+        state = Tools.filterFirestore(state, ["persistent", "users", owner, "projects", project, "versions"], versionsShallow);
+        const latestVersionNumber = AppState.getLatestVersionNumber(state.persistent, segments[1], segments[2]);
+        state = Tools.filterFirestore(state, ["persistent", "users", owner, "projects", project, "latestVersion"], latestVersionNumber);
+
+        if (!segments[3] && segments[1] === owner && segments[2] === project)
+          state = Tools.setIn(state, ['session', 'actualVersion'], latestVersionNumber);
+        return state;
       }
 
       static _newFiles(state, payload) {
@@ -223,26 +221,17 @@
         return state;
       }
 
-      static _selectVersion(state, payload) {
-        const project = payload.project;
-        const version = payload.version;
-        const owner = payload.owner;
-        Tools.navigate(`/editor/${owner}/${project}/${version}`);
+      static _selectVersion(state, data) {
+        Tools.navigate(`/editor/${data.owner}/${data.project}/${data.version}`);
         return state;
       }
 
       static _addProject(state, payload) {
-        AppData.addProject(state.persistent.user.name, payload);
-        return state;
-        //todo update state directly by adding the project that was deleted from the state itself.
-        //todo, maybe mark the object as newly created, green
+        return Tools.setIn(state, ["session", "edits", owner, "projects", payload], {created: new Date().getTime()});
       }
 
       static _removeProject(state, payload) {
-        AppData.removeProject(state.persistent.user.name, payload);
-        return state;
-        //todo update state directly by removing the project that was deleted from the state itself.
-        //todo, maybe mark the object as newly deleted, orange
+        return Tools.setIn(state, ["session", "edits", owner, "projects", payload], {deleted: new Date().getTime()});
       }
 
       static _fileEdited(state, payload) {

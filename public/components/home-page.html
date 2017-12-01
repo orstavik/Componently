@@ -216,7 +216,7 @@
       <h2>Projects</h2>
       <hr>
       <ul id="gridContainer">
-        <template is="dom-repeat" items="[[_toArray(projects)]]">
+        <template is="dom-repeat" items="[[_toArray(userData.projects)]]">
           <li on-tap="_selectProject" data-id$="[[item]]">
             <div style="flex: 1"></div>
             <div class="description">
@@ -245,7 +245,7 @@
             type: Object,
             value: null
           },
-          projects: Object,
+          userData: Object,
           _userIn: Boolean
         }
       }
