@@ -32,8 +32,8 @@
         return Object.keys(versions).map(n => Number(n)).sort((a, b) => b - a)[0];
       }
 
-      connectedCallback() {
-        super.connectedCallback();
+      constructor() {
+        super();
 
         this.state = {};
         this.history = [];
@@ -127,7 +127,8 @@
        */
       static _authChanged(state, user) {
         state = Tools.setIn(state, ['persistent', 'user'], null);
-        return Tools.setIn(state, ['session', 'auth'], user);
+//        return state;
+        return Tools.setIn(state, ['session', 'auth'], AppState.makeUser(null, user));
       }
 
       static _signIn(state) {
@@ -150,14 +151,14 @@
       }
 
       static _newVersionSubscription(state, subscription) {
-        if (this.state.session.subscriptions.versions)
-          this.state.session.subscriptions.versions.unsubscribe();
+        if (state.session.subscriptions.versions)
+          state.session.subscriptions.versions.unsubscribe();
         return Tools.setIn(state, ['session', 'subscriptions', 'versions'], subscription);
       }
 
       static _newProjectsSubscription(state, subscription) {
-        if (this.state.session.subscriptions.projects)
-          this.state.session.subscriptions.projects.unsubscribe();
+        if (state.session.subscriptions.projects)
+          state.session.subscriptions.projects.unsubscribe();
         return Tools.setIn(state, ['session', 'subscriptions', 'projects'], subscription);
       }
 
