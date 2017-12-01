@@ -1,6 +1,6 @@
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="app-router.html">
-<link rel="import" href="app-state.html">
+<!--<link rel="import" href="app-state.html">-->
 <link rel="import" href="app-pages.html">
 <link rel="import" href="app-iconset.html">
 <link rel="import" href="app-db.html">
@@ -13,7 +13,7 @@
       }
     </style>
 
-    <app-state on-state-changed="_stateChanged"></app-state>
+    <!--<app-state on-state-changed="_stateChanged"></app-state>-->
     <app-router default-url="home"></app-router>
 
     <app-db state="[[state]]"></app-db>
@@ -58,6 +58,13 @@
             computed: "_makeProjectObjectWithWorkingCopy(_projectObject, state.session.edits)"
           }
         }
+      }
+
+      constructor(){
+        super();
+
+        this._stateObj = new AppState();
+        window.addEventListener("state-changed",this._stateChanged.bind(this));
       }
 
       _stateChanged(e){
