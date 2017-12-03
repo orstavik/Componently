@@ -70,10 +70,10 @@ class AppState {
     this.history = [snap].concat(this.history);
 //        if (newState.persistent)
 //          localStorage.setItem('state', JSON.stringify(newState.persistent));
-    this.$emit("state-changed", {state: this.state, history: this.history});
+    AppState.$emit("state-changed", {state: this.state, history: this.history});
   }
 
-  $emit(name, payload) {
+  static $emit(name, payload) {
     return window.dispatchEvent(new CustomEvent(name, {
       composed: true,
       bubbles: true,
@@ -228,11 +228,11 @@ class AppState {
   }
 
   static _addProject(state, payload) {
-    return Tools.setIn(state, ["session", "edits", owner, "projects", payload], {created: new Date().getTime()});
+    return Tools.setIn(state, ["session", "edits", state.persistent.user.name, "projects", payload], {created: new Date().getTime()});
   }
 
   static _removeProject(state, payload) {
-    return Tools.setIn(state, ["session", "edits", owner, "projects", payload], {deleted: new Date().getTime()});
+    return Tools.setIn(state, ["session", "edits", state.persistent.user.name, "projects", payload], {deleted: new Date().getTime()});
   }
 
   static _fileEdited(state, payload) {
