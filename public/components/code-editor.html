@@ -3,8 +3,8 @@
 <script src="../bower_components/codemirror/lib/codemirror.js"></script>
 <script src="../bower_components/codemirror/mode/css/css.js"></script>
 <script src="../bower_components/codemirror/mode/css/css.js"></script>
-<!-- <script src="../bower_components/codemirror/mode/xml/xml.js"></script> -->
-<script src="../bower_components/codemirror/mode/htmlmixed/htmlmixed.js"></script>
+ <script src="../bower_components/codemirror/mode/xml/xml.js"></script>
+<!--<script src="../bower_components/codemirror/mode/htmlmixed/htmlmixed.js"></script>-->
 <script src="../bower_components/codemirror/mode/javascript/javascript.js"></script>
 <script src="../bower_components/codemirror/addon/edit/closetag.js"></script>
 <script src="../bower_components/codemirror/addon/edit/closebrackets.js"></script>
@@ -114,8 +114,10 @@
       }
 
       _updateEditor() {
-        if (this.editor && this.value !== this.editor.getValue())
-          console.log("we have a different text in editor and state!!");
+        if (this.editor)
+          this.editor.setValue(this.value);
+//        if (this.editor && this.value !== this.editor.getValue())
+//          console.log("we have a different text in editor and state!!");
       }
 
       _removeFile() {

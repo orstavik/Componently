@@ -13,7 +13,7 @@ this.addEventListener('install', event => {
 });
 
 this.addEventListener('fetch', async event => {
-  console.log("fetching: " + event.request.url);
+  // console.log("fetching: " + event.request.url);
   let url = new URL(event.request.url);
   if (url.pathname.startsWith("/preview/")) {
     let segments = url.pathname.split("/");

@@ -1,17 +1,11 @@
 const IntertextMixin = (superClass) => class extends superClass {
 
   $emit(name, payload) {
-    return new Promise((resolve, reject) => {
-      this.dispatchEvent(new CustomEvent(name, {
-        composed: true,
-        bubbles: true,
-        detail: {
-          payload: payload,
-          resolve: resolve,
-          reject: reject
-        }
-      }));
-    });
+    return this.dispatchEvent(new CustomEvent(name, {
+      composed: true,
+      bubbles: true,
+      detail: payload,
+    }));
   }
 
   $once(name) {
@@ -22,11 +16,6 @@ const IntertextMixin = (superClass) => class extends superClass {
       };
       this.addEventListener(name, callback);
     });
-  }
-
-  $navigate(path) {
-    history.pushState({}, null, path);
-    window.dispatchEvent(new CustomEvent('location-changed'));
   }
 
   $throttle(callback, ms) {
@@ -59,4 +48,32 @@ const IntertextMixin = (superClass) => class extends superClass {
       }
     }
   }
-}
+  
+  $debounce(callback, ms) {
+    let _debouncers = window.__superSpecificPolymerDebouncerLongNameArray;
+    if (!_debouncers)
+      _debouncers = window.__superSpecificPolymerDebouncerLongNameArray = {};
+    _debouncers[callback.name] = Polymer.Debouncer.debounce(
+      _debouncers[callback.name], // initially undefined
+      Polymer.Async.timeOut.after(ms),
+      callback);
+  }
+
+  $fullPathCheck(key, ar) {
+    if (!this.__polymerPatch_CheckFullPath)
+      this.__polymerPatch_CheckFullPath = {};
+    let theSame = true;
+    for (let i = 0; i< ar.length; i++) {
+      let path = key + "." + i;
+      let obj = ar[i];
+      if (this.__polymerPatch_CheckFullPath[path] !== obj) {
+        this.__polymerPatch_CheckFullPath[path] = obj;
+        theSame = false;
+      }
+    }
+    return theSame;
+  }
+  //when we do fullPathCheck, we want to skip the initial execution when the value being checked is undefined.
+  //that is why we dont run the extra check below
+  // && (obj !== undefined || Object.keys(this.__polymerPatch_CheckFullPath).indexOf(path) !== -1)
+};

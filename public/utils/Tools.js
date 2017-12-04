@@ -3,7 +3,60 @@
  */
 class Tools {
 
+  static navigate(path) {
+    history.pushState({}, null, path);
+    window.dispatchEvent(new CustomEvent('location-changed'));
+  }
+
+  static emit(name, payload) {
+    return window.dispatchEvent(new CustomEvent(name, {
+      composed: true,
+      bubbles: true,
+      detail: payload,
+    }));
+  }
+
+  debounce(callback, ms) {
+    let _debouncers = window.__superSpecificPolymerDebouncerLongNameArray;
+    if (!_debouncers)
+      _debouncers = window.__superSpecificPolymerDebouncerLongNameArray = {};
+    _debouncers[callback.name] = Polymer.Debouncer.debounce(
+      _debouncers[callback.name], // initially undefined
+      Polymer.Async.timeOut.after(ms),
+      callback);
+  }
+
+  static lockPath(obj, path, msg){
+    return {};//todo not implemented
+  }
+
+  static objectEquals(x, y) {
+    if (x === null || x === undefined || y === null || y === undefined) { return x === y; }
+    // after this just checking type of one would be enough
+    if (x.constructor !== y.constructor) { return false; }
+    // if they are functions, they should exactly refer to same one (because of closures)
+    if (x instanceof Function) { return x === y; }
+    // if they are regexps, they should exactly refer to same one (it is hard to better equality check on current ES)
+    if (x instanceof RegExp) { return x === y; }
+    if (x === y || x.valueOf() === y.valueOf()) { return true; }
+    if (Array.isArray(x) && x.length !== y.length) { return false; }
+
+    // if they are dates, they must had equal valueOf
+    if (x instanceof Date) { return false; }
+
+    // if they are strictly equal, they both need to be object at least
+    if (!(x instanceof Object)) { return false; }
+    if (!(y instanceof Object)) { return false; }
+
+    // recursive object equality check
+    let p = Object.keys(x);
+    return Object.keys(y).every(function (i) { return p.indexOf(i) !== -1; }) &&
+      p.every(function (i) { return Tools.objectEquals(x[i], y[i]); });
+  }
+
   static testPath(root, path){
+    if(!root)
+      return false;
     for (let key of path) {
       if (!root[key])
         return false;
@@ -22,7 +75,8 @@ class Tools {
   }
 
   //todo use the filter method recursively to add, delete, update doc data in the objects as well.
-  static filterFirestore(origin, path, filter, _frozen) {
+  static filterFirestore(origin, path, filter) {
+    const _frozen = true;
     let res = Object.assign({}, origin);
     const start = res;
     for (let key of path) {
@@ -55,7 +109,8 @@ class Tools {
     return o;
   }
 
-  static deepClone(obj, freeze) {
+  static deepClone(obj) {
+    const freeze = true;
     if (null == obj || "object" != typeof obj)
       return obj;
     let clone = Object.assign({}, obj);
@@ -72,7 +127,8 @@ class Tools {
   //
   //if either only B === null, then the branch will be deleted. (if the same criteria was set for A, it would be impossible to write in a new value for the same key later)
   //if either A or B === undefined or {} (empty object), then the other branch is used.
-  static mergeDeepWithNullToDelete(A, B, freeze) {
+  static mergeDeepWithNullToDelete(A, B) {
+    const freeze = true;
     if (B === null) return null;
     if (B === undefined || Tools.emptyObject(B))
       return freeze ? Object.freeze(A) : A;
@@ -154,14 +210,16 @@ class Tools {
     return result;
   }
 
-  static setIn(obj, path, value, freeze) {
+  static setIn(obj, path, value) {
+    const freeze = true;
     return Tools.getIn(obj, path) === value ? obj : Tools.setInNoCheck(obj, path, value, freeze);
   }
 
   //returns sets a value to object tree path,
   //if some part of that path is explicitly set to null,
   //then nothing is set and undefined is returned
-  static setInNoCheck(obj, path, value, freeze) {
+  static setInNoCheck(obj, path, value) {
+    const freeze = true;
     let rootRes = Object.assign({}, obj);
     let resPath = [];
     let res = rootRes;

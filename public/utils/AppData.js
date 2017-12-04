@@ -6,31 +6,36 @@ class AppData {
   static async getCurrentUserData(uid) {
     const db = firebase.firestore();
     const coll = await db.collection("users").where("uids." + uid, "==", true).get();
+    // return new Promise((resolve, reject) => {
+    //   setTimeout(function(){
+    //     resolve(coll.docs[0]);
+    //   }, 30000);
+    // });
     return coll.docs[0];
   }
 
-  static async addUserToDB(nickname) {
-    const user = firebase.auth().currentUser;
+  static async addUserToDB(uid, nickname) {
     const db = firebase.firestore();
-    await db.doc(`users/${nickname}`).update({
+    const uids = {
       uids: {
-        [user.uid]: true
+        [uid]: true
       }
-    });
-    return user;
+    };
+    await db.doc(`users/${nickname}`).update(uids);
+    return uids;
   }
 
-  static async setCurrentProject(username, currentProject) {
-    const db = firebase.firestore();
-    currentProject = Tools.removeUndefinedFields(currentProject);
-    try {
-      await db.doc(`users/${username}`).update({
-        currentProject: currentProject
-      });
-    } catch (e) {
-      console.log(e);
-    }
-  }
+  // static async saveCurrentProject(username, currentProject) {
+  //   const db = firebase.firestore();
+  //   currentProject = Tools.removeUndefinedFields(currentProject);
+  //   try {
+  //     await db.doc(`users/${username}`).update({
+  //       currentProject: currentProject
+  //     });
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // }
 
   static async addProject(username, id) {
     const db = firebase.firestore();
@@ -51,11 +56,11 @@ class AppData {
     return AppData.listenCollectionIds(`users/${username}/projects`, cb);
   }
 
-  static async removeProject(user, id) {
+  static async removeProject(username, id) {
     const db = firebase.firestore();
-    const deleteDoc = db.doc(`users/${user.name}/projects/${id}`).delete();
+    const deleteDoc = db.doc(`users/${username}/projects/${id}`).delete();
     const deleteCollections = AppData.deleteCollection(db, db.collection(
-      `users/${user.name}/projects/${id}/versions`));
+      `users/${username}/projects/${id}/versions`));
     //todo do we need to remove all the /versions/version/files too?
     await deleteDoc;
     await deleteCollections;
@@ -66,7 +71,8 @@ class AppData {
   }
 
   //todo, a little unsafe, get the next version number inside a transaction in AppData
-  static async addVersion(username, project, version, files, comment) {
+  static async addVersion(cp) {
+    let username = cp.owner, project = cp.project, files = cp.files;
     const db = firebase.firestore();
 
     let versionsRef = db.collection(`users/${username}/projects/${project}/versions/`)
@@ -75,18 +81,24 @@ class AppData {
     let latestVersions = await versionsRef.get();
     if (latestVersions.empty)
       throw new Error("wtf?!");
-    version = latestVersions.docs[0].data().name + 1;
+    const version = latestVersions.docs[0].data().name + 1;
 
     const batch = db.batch();
     const newVersionRef = db.doc(`users/${username}/projects/${project}/versions/${version}`);
-    batch.set(newVersionRef, {name: version, comment: comment});
+    batch.set(newVersionRef, {name: version});
     for (let key in files) {
       let file = files[key];
+      if (file.sameAsVersion === null)
+        file = Tools.setIn(file, ["sameAsVersion"], version, false);
       let fileRef = db.doc(`users/${username}/projects/${project}/versions/${version}/files/${file.name}`);
       batch.set(fileRef, file);
     }
-    await batch.commit();
-    return version;
+    /*await */batch.commit();
+    // let res = {};
+    // res[username] = {};
+    // res[username][versions] = {};
+    // res[username][versions][version] = {name: version, files: files};
+    // return res;
   }
 
   static async getFiles(username, projectId, version) {

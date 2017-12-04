@@ -1,6 +1,5 @@
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="app-router.html">
-<link rel="import" href="app-state.html">
 <link rel="import" href="app-pages.html">
 <link rel="import" href="app-iconset.html">
 <link rel="import" href="app-dialog.html">
@@ -13,17 +12,19 @@
       }
     </style>
 
-    <app-state state="{{state}}"></app-state>
     <app-router default-url="home"></app-router>
 
     <app-pages page="[[state.session.route.segments.0]]">
       <home-page page="home"
                  user="[[state.persistent.user]]"
-                 projects="[[_userProjects]]">
+                 user-data="[[state._userObject]]">
       </home-page>
       <editor-page page="editor"
-                   current-project="[[state.persistent.currentProject]]"
-                   versions="[[_currentVersions]]">
+                   owner="[[state.session.route.segments.1]]"
+                   project="[[state.session.route.segments.2]]"
+                   version="[[state.session.actualVersion]]"
+                   project-object="[[state._projectObjectWithWorkingCopy]]"
+                   versions="[[state._projectObject.versions]]">
       </editor-page>
       <notfound-page page="notfound"></notfound-page>
     </app-pages>
@@ -46,45 +47,76 @@
       static get properties() {
         return {
           state: Object,
-          _currentVersions: {
-            type: Array,
-            computed: "_retrieveVersions(state.persistent.currentProject, state.persistent.users)"
-          },
-          _userProjects: {
-            type: Array,
-            computed: "_retrieveUserProjects(state.persistent.user.name, state.persistent.users)"
-          }
+          history: Array,
         }
       }
 
-      connectedCallback() {
-        super.connectedCallback();
-        this.addEventListener('ui-nickname-dialog', (e) => this.$.nickDialog.open());
-      }
+      constructor() {
+        super();
 
-      _retrieveVersions(currentProject, users) {
-        if (!currentProject || !users)
-          return [];
-        let owner = currentProject.owner;
-        let project = currentProject.project;
-        if (!Tools.testPath(users, [owner, "projects", project, "versions"]))
-          return [];
-        return Object.keys(users[owner].projects[project].versions);
-      }
+        this.state = new AppState();
+        this.state.bindReducer('state-change-route', AppReducers._changeRoute);          //select-project
 
-      _retrieveUserProjects(username, users) {
-        return !username || !users ? [] : users[username].projects;
+        //auth
+        this.state.bindReducer('controller-auth-changed', AppReducers._authChanged);
+        this.state.bindReducer('controller-sign-in', AppReducers._signIn);
+        this.state.bindReducer('controller-sign-out', AppReducers._signOut);
+        this.state.bindReducer('controller-user-nickname', AppReducers._userNickname);
+        //user
+        this.state.bindReducer('controller-add-project', AppReducers._addProject);
+        this.state.bindReducer('controller-remove-project', AppReducers._removeProject);
+        this.state.bindReducer('controller-select-project', AppReducers._selectProject);
+        this.state.bindReducer('controller-select-version', AppReducers._selectVersion);
+        this.state.bindReducer('controller-add-file', AppReducers._addFile);
+        this.state.bindReducer('controller-remove-file', AppReducers._removeFile);
+        this.state.bindReducer('controller-file-edited', AppReducers._fileEdited);
+        //db
+        this.state.bindReducer('controller-new-user-data', AppReducers._newUserData);
+        this.state.bindReducer('controller-new-projects', AppReducers._newProjects);
+        this.state.bindReducer('controller-new-versions', AppReducers._newVersions);
+        this.state.bindReducer('controller-new-files', AppReducers._newFiles);
+        this.state.bindReducer('controller-new-version-subscription', AppReducers._newVersionSubscription);
+        this.state.bindReducer('controller-new-projects-subscription', AppReducers._newProjectsSubscription);
+
+        this.state.bindCompute("_userObject", AppReducers._makeUserObject, ["persistent.user.name", "persistent.users"]);
+        this.state.bindCompute("_fullProjectObject", AppReducers._makeProjectObject, ["session.route.segments.1", "session.route.segments.2", "persistent.users"]);
+        this.state.bindCompute("_editProjectObject", AppReducers._makeProjectObject, ["session.route.segments.1", "session.route.segments.2", "session.edits"]);
+        this.state.bindCompute("_projectObjectWithWorkingCopy", AppReducers._mergedProjectObject, ["_fullProjectObject", "_editProjectObject"]);
+
+        this.state.bindObserve(AppReducers._listenForFiles, ["session.route.segments", "session.actualVersion", "persistent"]);
+        this.state.bindObserve(AppReducers._updateVersionsListener, ["session.route.segments"]);
+        this.state.bindObserve(AppReducers._updateProjectsListener, ["persistent.user.name"]);
+        this.state.bindObserve(AppReducers._projectsEdited, ["session.edits", "persistent.user.name"]);
+        this.state.bindObserve(AppReducers._userChanged, ["session.auth"]);
+        this.state.bindObserve(AppReducers._editsChanged, ["session.edits"]);
+
+        this.state.init({
+          session: {
+            subscriptions: {}
+          },
+          persistent: {
+            user: null
+          }
+        });
+
+        firebase.auth().onAuthStateChanged((user) => Tools.emit('controller-auth-changed', user));
+        window.addEventListener('ui-nickname-dialog', (e) => this.$.nickDialog.open());
+
+        this.state.onChange(stateHist => {
+          this.set("state", stateHist.state);
+          this.set("history", stateHist.history);
+        });
       }
 
       _submitNickname(e) {
         e.preventDefault();
         this.$.nickDialog.close();
-        this.$emit('controller-user-nickname', this.$.nickname.value);
+        Tools.emit('controller-user-nickname', this.$.nickname.value);
         this.$.nickname.value = '';
       }
 
       _signOut(e) {
-        this.$emit('controller-sign-out');
+        Tools.emit('controller-sign-out');
       }
     }
 

@@ -47,29 +47,29 @@
         <div>
           <a id="homeLink" href="/home">&#60;</a>
         </div>
-        <h2 id="title">[[currentProject.project]]</h2>
+        <h2 id="title">[[project]]</h2>
         <div>
           <input type="text" id="newFileName" style="width: 120px;" placeholder="file">
           <button on-tap="_addFile">+</button>
           <button on-tap="_openPreview">Preview</button>
-          <input hidden="[[!currentProject.changed]]" type="text" id="versionComment" style="width: 120px;"
+          <input hidden="[[!true]]" type="text" id="versionComment" style="width: 120px;"
                  placeholder="version comment">
-          <button hidden="[[!currentProject.changed]]" on-tap="_saveChanges">Save</button>
+          <button hidden="[[!true]]" on-tap="_saveChanges">Save</button>
           Version:
           <select on-change="_changeVersion">
-            <template is="dom-repeat" items="[[versions]]">
-              <option value="[[item]]" selected="[[_isSelectedVersion(item, currentProject)]]">[[item]]</option>
+            <template is="dom-repeat" items="[[versionNames]]">
+              <option value="[[item]]" selected="[[_isSelectedVersion(item, version)]]">[[item]]</option>
             </template>
           </select>
         </div>
       </div>
     </slide-bar>
     <resizable-boxes id="editors">
-      <template is="dom-repeat" items="[[filesArray]]">
+      <template is="dom-repeat" items="[[_toArray(files)]]">
         <code-editor name="[[item.name]]" mode="[[_getExt(item.name)]]" value="[[item.value]]"></code-editor>
       </template>
     </resizable-boxes>
-    <code-preview id="preview" project="[[currentProject]]"></code-preview>
+    <code-preview id="preview" owner="[[owner]]" project="[[project]]" files="[[files]]"></code-preview>
 
   </template>
   <script>
@@ -80,27 +80,34 @@
 
       static get properties() {
         return {
-          currentProject: Object,
+          owner: String,
+          project: String,
+          version: Number,
+          files: Object,
           versions: {
             type: Array,
             value: () => [],
           },
-          filesArray: {
+          versionNames: {
             type: Array,
-            computed: "_toArray(currentProject.files)",
+            computed: "_makeVersionNames(versions)"
           }
         }
       }
 
-      _isSelectedVersion(item, cp) {
-        return Number(item) === Number(cp.version);
+      _makeVersionNames(versions) {
+        return !versions ? [] : Object.keys(versions);
+      }
+
+      _isSelectedVersion(item, version) {
+        return item == version;
       }
 
       _changeVersion(e) {
         if (e.target.value) {
           const versionElect = {
-            owner: this.currentProject.owner,
-            project: this.currentProject.project,
+            owner: this.owner,
+            project: this.project,
             version: Number(e.target.value)
           };
           this.$emit('controller-select-version', versionElect);
@@ -122,24 +129,24 @@
         return ["html", "css", "js", "json"].indexOf(fileType) !== -1;
       }
 
+      _toArray(obj) {
+        return !obj ? [] : Object.keys(obj).map(key => obj[key]);
+      }
+
       _getExt(name) {
         if (name)
           return name.split('.').pop();
       }
 
-      _saveChanges() {
-        let comment = this.$.versionComment.value;
-        this.$emit('controller-save-new-version', comment);
-        this.$.versionComment.value = '';
-      }
-
+//      _saveChanges() {               //todo this should be reshaped into a comment version
+//        let comment = this.$.versionComment.value;
+//        this.$emit('controller-save-new-version', comment);
+//        this.$.versionComment.value = '';
+//      }
+//
       _openPreview() {
         //todo here we can choose to have different html pages and autoload
         this.$.preview.openPreview("index.html", true);
-      }
-
-      _toArray(files) {
-        return !files ? [] : Object.keys(files).map(key => files[key]);
       }
     }
 

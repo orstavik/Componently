@@ -33,7 +33,7 @@
         text-decoration: none;
         font-family: 'Vollkorn SC';
         font-size: 48px;
-        animation: Pulse 1s ease-in-out alternate infinite;
+      /*  animation: Pulse 1s ease-in-out alternate infinite;*/
       }
 
       .userBox {
@@ -205,7 +205,7 @@
         <button on-tap="_signIn" id="signIn">Sign In</button>
       </div>
       <div class="userBox" hidden="[[!_userIn]]">
-        <span>Let's code, [[user.name]]!</span>
+        <span>Let's code, [[user.nickname]]!</span>
         <img src="[[user.photo]]" alt="user photo">
         <button on-tap="_signOut" id="signOut" area-label="Sign out">
           <iron-icon icon="app-icons:sign-out"></iron-icon>
@@ -216,7 +216,7 @@
       <h2>Projects</h2>
       <hr>
       <ul id="gridContainer">
-        <template is="dom-repeat" items="[[_toArray(projects)]]">
+        <template is="dom-repeat" items="[[_toArray(userData.projects)]]">
           <li on-tap="_selectProject" data-id$="[[item]]">
             <div style="flex: 1"></div>
             <div class="description">
@@ -245,7 +245,7 @@
             type: Object,
             value: null
           },
-          projects: Object,
+          userData: Object,
           _userIn: Boolean
         }
       }
