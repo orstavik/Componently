@@ -1,51 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Componently</title>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Componently</title>
 
-    <script src="utils/Tools.js"></script>
-    <script src="utils/AppData.js"></script>
-    <script src="utils/AppState.js"></script>
+  <script src="utils/Tools.js"></script>
+  <script src="utils/AppData.js"></script>
+  <script src="utils/AppState.js"></script>
+  <script src="utils/AppReducers.js"></script>
+  <script src="utils/stateDecorator.js"></script>
 
-    <script src="/bower_components/webcomponentsjs/webcomponents-loader.js"></script>
-    <script src="/mixins/IntertextMixin.js"></script>
-    <link rel="import" href="/components/app-shell.html">
+  <script src="/bower_components/webcomponentsjs/webcomponents-loader.js"></script>
+  <script src="/mixins/IntertextMixin.js"></script>
+  <link rel="import" href="/components/app-shell.html">
 
-    <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-firestore.js"></script>
-    <script>
-      const fireConfig = {
-        apiKey: "AIzaSyA2Bv86HdUKVodeuGON0vC7nPFikIlfzwQ",
-        authDomain: "two-js-no.firebaseapp.com",
-        databaseURL: "https://two-js-no.firebaseio.com",
-        projectId: "two-js-no",
-        storageBucket: "two-js-no.appspot.com",
-        messagingSenderId: "1032974918154"
-      };
-      firebase.initializeApp(fireConfig);
-    </script>
-    <script>
-//    if ('serviceWorker' in navigator)
-//      navigator.serviceWorker.register('/sw.js');
-    </script>
-    <style>
-      @import url('https://fonts.googleapis.com/css?family=Quicksand:300,400,500,700|Vollkorn+SC:400,600,700,900');
-      body {
-        margin: 0;
-        font-family: Quicksand;
-      }
-    </style>
-  </head>
+  <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-firestore.js"></script>
+  <script>
+    const fireConfig = {
+      apiKey: "AIzaSyA2Bv86HdUKVodeuGON0vC7nPFikIlfzwQ",
+      authDomain: "two-js-no.firebaseapp.com",
+      databaseURL: "https://two-js-no.firebaseio.com",
+      projectId: "two-js-no",
+      storageBucket: "two-js-no.appspot.com",
+      messagingSenderId: "1032974918154"
+    };
+    firebase.initializeApp(fireConfig);
+  </script>
+  <script>
+    //    if ('serviceWorker' in navigator)
+    //      navigator.serviceWorker.register('/sw.js');
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css?family=Quicksand:300,400,500,700|Vollkorn+SC:400,600,700,900');
+    body {
+      margin: 0;
+      font-family: Quicksand;
+    }
+  </style>
+</head>
 
-  <body>
-    <app-shell></app-shell>
-  </body>
+<body>
+<app-shell></app-shell>
+</body>
 <!--
       doc\_NAME
          \_CREATED
@@ -56,4 +58,17 @@
                       \UIDS\UID                             \DESCRIPTION       \FILENAME
                                                                                \VALUE
 -->
+<script>
+
+  const makeOne = function (numberA) {
+    return numberA + 1;
+  };
+
+  const computer = new FunctionalComputer();
+  computer.bind("one", makeOne, ["state.numberA"]);
+
+  computer.set("state", {numberA: 3});
+  let one = computer.get("one");
+  console.log(one === 4 ? "congrats ivar!" : "buhuu..");
+</script>
 </html>

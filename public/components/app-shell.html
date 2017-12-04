@@ -1,6 +1,5 @@
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="app-router.html">
-<!--<link rel="import" href="app-state.html">-->
 <link rel="import" href="app-pages.html">
 <link rel="import" href="app-iconset.html">
 <link rel="import" href="app-db.html">
@@ -13,7 +12,6 @@
       }
     </style>
 
-    <!--<app-state on-state-changed="_stateChanged"></app-state>-->
     <app-router default-url="home"></app-router>
 
     <app-db state="[[state]]"></app-db>
@@ -27,7 +25,7 @@
                    owner="[[state.session.route.segments.1]]"
                    project="[[state.session.route.segments.2]]"
                    version="[[state.session.actualVersion]]"
-                   files="[[currentFiles]]"
+                   project-object="[[_projectObjectWithWorkingCopy]]"
                    versions="[[_projectObject.versions]]">
       </editor-page>
       <notfound-page page="notfound"></notfound-page>
@@ -44,80 +42,90 @@
         return {
           state: Object,
           history: Array,
-
-          _userObject: {
-            type: Object,
-            computed: "_makeUserObject(state.persistent.user.name, state.persistent.users)"
-          },
-          _fullProjectObject: {
-            type: Object,
-            computed: "_makeProjectObject(state.session.route.segments.1, state.session.route.segments.2, state.persistent.users, state.session.edits)"
-          },
-          _projectObjectWithWorkingCopy: {
-            type: Object,
-            computed: "_makeProjectObjectWithWorkingCopy(_projectObject, state.session.edits)"
-          }
+          _userObject: Object,
+          _fullProjectObject: Object,
+          _projectObjectWithWorkingCopy: Object
         }
       }
 
-      constructor(){
+      constructor() {
         super();
 
         this._stateObj = new AppState();
-        window.addEventListener("state-changed",this._stateChanged.bind(this));
+        this._stateObj.bindReducer('state-change-route', AppReducers._changeRoute);          //select-project
+
+        //auth
+        this._stateObj.bindReducer('controller-auth-changed', AppReducers._authChanged);
+        this._stateObj.bindReducer('controller-sign-in', AppReducers._signIn);
+        this._stateObj.bindReducer('controller-sign-out', AppReducers._signOut);
+        //user
+        this._stateObj.bindReducer('controller-add-project', AppReducers._addProject);
+        this._stateObj.bindReducer('controller-remove-project', AppReducers._removeProject);
+        this._stateObj.bindReducer('controller-select-project', AppReducers._selectProject);
+        this._stateObj.bindReducer('controller-select-version', AppReducers._selectVersion);
+        this._stateObj.bindReducer('controller-add-file', AppReducers._addFile);
+        this._stateObj.bindReducer('controller-remove-file', AppReducers._removeFile);
+        this._stateObj.bindReducer('controller-file-edited', AppReducers._fileEdited);
+        //db
+        this._stateObj.bindReducer('controller-new-user-data', AppReducers._newUserData);
+        this._stateObj.bindReducer('controller-new-projects', AppReducers._newProjects);
+        this._stateObj.bindReducer('controller-new-versions', AppReducers._newVersions);
+        this._stateObj.bindReducer('controller-new-files', AppReducers._newFiles);
+        this._stateObj.bindReducer('controller-new-version-subscription', AppReducers._newVersionSubscription);
+        this._stateObj.bindReducer('controller-new-projects-subscription', AppReducers._newProjectsSubscription);
+
+        this._stateObj.init({
+          session: {
+            subscriptions: {}
+          },
+          persistent: {
+            user: null
+          }
+        });
+        firebase.auth().onAuthStateChanged((user) => Tools.emit('controller-auth-changed', user));
+
+        this.computer = new FunctionalComputer();
+        this.computer.bind("_userObject", AppShell._makeUserObject, ["state.persistent.user.name", "state.persistent.users"]);
+        this.computer.bind("_fullProjectObject", AppShell._makeProjectObject, ["state.session.route.segments.1", "state.session.route.segments.2", "state.persistent.users"]);
+        this.computer.bind("_editProjectObject", AppShell._makeProjectObject, ["state.session.route.segments.1", "state.session.route.segments.2", "state.session.edits"]);
+        this.computer.bind("_projectObjectWithWorkingCopy", AppShell._mergedProjectObject, ["_fullProjectObject", "_editProjectObject"]);
+
+        window.addEventListener("state-changed", this._stateChanged.bind(this));
       }
 
-      _stateChanged(e){
+      _stateChanged(e) {
+        this.computer.set("state", e.detail.state);
+        this.set("_userObject", this.computer.get("_userObject"));
+        this.set("_projectObjectWithWorkingCopy", this.computer.get("_projectObjectWithWorkingCopy"));
         this.set("state", e.detail.state);
         this.set("history", e.detail.history);
       }
 
-      _makeUserObject(user, users) {
-        if (this.$fullPathCheck("_MakeUserObject", [user, users]))
-          return this._userObject;
-
-        return (users && user) ? users[user] : undefined;
+      static _makeUserObject(user, users) {
+        return users && user ? users[user] : undefined;
       }
 
-      _fullProjectObject(owner, project, users, edits) {
-        if (this.$fullPathCheck("_makeProjectObject", [owner, project, users, edits]))
-          return this._projectObject;
+      static _makeProjectObject(owner, project, users) {
+        return !owner || !project || !users || !users[owner] || !users[owner].projects ? undefined : users[owner].projects[project];
+      }
 
-        if (!owner || !project || !users || !Tools.testPath(users, [owner, "projects", project]))
-          return undefined;
-        let savedProject = users[owner].projects[project];
-        if (!edits || !Tools.testPath(edits, [owner, "projects", project]))
+      static _mergedProjectObject(savedProject, editedProject) {
+        if (!savedProject)
+          return editedProject;
+        if (!editedProject)
           return savedProject;
-        const latestVersionObjectFiles = savedProject.verisons[savedProject.latestVersion].files;
-        const editsProject = edits[owner].projects[project];
-        const workingCopyVersionFiles = editsProject.versions[workingCopy].files;
+
+        let latestVersionObjectFiles = savedProject.versions[savedProject.latestVersion].files;
+        const workingCopyVersionFiles = editedProject.versions[workingCopy].files;
         if (workingCopyVersionFiles) {
           for (let filename in workingCopyVersionFiles) {
-            if (workingCopyVersionFiles[filename].value === null)
-              delete latestVersionObjectFiles[filename];
+            if (workingCopyVersionFiles[filename].deleted)
+              latestVersionObjectFiles = Tools.setIn(latestVersionObjectFiles, [filename], null);
             else
-              latestVersionObjectFiles[filename] = workingCopyVersionFiles[filename];
+              latestVersionObjectFiles = Tools.setIn(latestVersionObjectFiles, [filename], workingCopyVersionFiles[filename]);
           }
         }
         return latestVersionObjectFiles;
-      }
-
-      _mergeCurrentFiles(edits, _versionObject) {
-        if (this.$fullPathCheck("_mergeCurrentFiles", [edits, _versionObject]))
-          return this.currentFiles;
-
-        if (!_versionObject || !_versionObject.files)
-          return undefined;
-        let files = _versionObject.files;
-        if (edits) {
-          for (let filename in edits) {
-            if (edits[filename].value === null)
-              delete files[filename];
-            else
-              files[filename] = edits[filename];
-          }
-        }
-        return files;
       }
     }
 

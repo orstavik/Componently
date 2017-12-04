@@ -8,6 +8,14 @@ class Tools {
     window.dispatchEvent(new CustomEvent('location-changed'));
   }
 
+  static emit(name, payload) {
+    return window.dispatchEvent(new CustomEvent(name, {
+      composed: true,
+      bubbles: true,
+      detail: payload,
+    }));
+  }
+
   static lockPath(obj, path, msg){
     return {};//todo not implemented
   }
