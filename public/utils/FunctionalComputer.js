@@ -16,7 +16,7 @@ class FunctionalComputer {
       this.uniquePathsAsArray = Tools.setInNoCheck(this.uniquePathsAsArray, path, path);
       return path;
     });
-    this.functionsRegister[func.name] = {
+    this.functionsRegister[propName+'__'+func.name] = {
       returnProp: propName,
       func: func,
       argsPaths: pathsAsArray,
@@ -56,6 +56,7 @@ class FunctionalComputer {
         continue;                                 //Therefore, we don't need to recheck any of the previous functions run.
       pathsCache[propName] = newComputedValue;
       const newProps = Tools.setIn(props, [propName], newComputedValue);
+      // const newProps = Tools.setIn(props, ['computed', propName], newComputedValue);
       return FunctionalComputer.__compute(newProps, count++, functions, pathsCache);
     }
     return {state: props, functions: functions};

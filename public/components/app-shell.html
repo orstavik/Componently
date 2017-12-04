@@ -58,36 +58,34 @@
         this.state.bindReducer('state-change-route', AppReducers._changeRoute);          //select-project
 
         //auth
-        this.state.bindReducer('controller-auth-changed', AppReducers._authChanged);
-        this.state.bindReducer('controller-sign-in', AppReducers._signIn);
-        this.state.bindReducer('controller-sign-out', AppReducers._signOut);
-        this.state.bindReducer('controller-user-nickname', AppReducers._userNickname);
-        //user
+        this.state.bindReducer('controller-auth-changed', UserReducers._authChanged);
+        this.state.bindReducer('controller-sign-in', UserReducers._signIn);
+        this.state.bindReducer('controller-sign-out', UserReducers._signOut);
+        this.state.bindReducer('controller-user-nickname', UserReducers._userNickname);
+        this.state.bindReducer('controller-new-user-data', UserReducers._newUserData);
+        this.state.bindCompute("_userObject", UserReducers._makeUserObject, ["persistent.user.nickname", "persistent.users"]);
+        this.state.bindObserve(UserReducers._userChanged, ["session.auth"]);
+
         this.state.bindReducer('controller-add-project', AppReducers._addProject);
         this.state.bindReducer('controller-remove-project', AppReducers._removeProject);
-        this.state.bindReducer('controller-select-project', AppReducers._selectProject);
-        this.state.bindReducer('controller-select-version', AppReducers._selectVersion);
         this.state.bindReducer('controller-add-file', AppReducers._addFile);
         this.state.bindReducer('controller-remove-file', AppReducers._removeFile);
         this.state.bindReducer('controller-file-edited', AppReducers._fileEdited);
         //db
-        this.state.bindReducer('controller-new-user-data', AppReducers._newUserData);
         this.state.bindReducer('controller-new-projects', AppReducers._newProjects);
         this.state.bindReducer('controller-new-versions', AppReducers._newVersions);
         this.state.bindReducer('controller-new-files', AppReducers._newFiles);
         this.state.bindReducer('controller-new-version-subscription', AppReducers._newVersionSubscription);
         this.state.bindReducer('controller-new-projects-subscription', AppReducers._newProjectsSubscription);
 
-        this.state.bindCompute("_userObject", AppReducers._makeUserObject, ["persistent.user.name", "persistent.users"]);
         this.state.bindCompute("_fullProjectObject", AppReducers._makeProjectObject, ["session.route.segments.1", "session.route.segments.2", "persistent.users"]);
         this.state.bindCompute("_editProjectObject", AppReducers._makeProjectObject, ["session.route.segments.1", "session.route.segments.2", "session.edits"]);
         this.state.bindCompute("_projectObjectWithWorkingCopy", AppReducers._mergedProjectObject, ["_fullProjectObject", "_editProjectObject"]);
 
         this.state.bindObserve(AppReducers._listenForFiles, ["session.route.segments", "session.actualVersion", "persistent"]);
         this.state.bindObserve(AppReducers._updateVersionsListener, ["session.route.segments"]);
-        this.state.bindObserve(AppReducers._updateProjectsListener, ["persistent.user.name"]);
-        this.state.bindObserve(AppReducers._projectsEdited, ["session.edits", "persistent.user.name"]);
-        this.state.bindObserve(AppReducers._userChanged, ["session.auth"]);
+        this.state.bindObserve(AppReducers._updateProjectsListener, ["persistent.user.nickname"]);
+        this.state.bindObserve(AppReducers._projectsEdited, ["session.edits", "persistent.user.nickname"]);
         this.state.bindObserve(AppReducers._editsChanged, ["session.edits"]);
 
         this.state.init({
@@ -106,6 +104,19 @@
           this.set("state", stateHist.state);
           this.set("history", stateHist.history);
         });
+
+        window.addEventListener('controller-select-project', e => this._selectProject(e));
+        window.addEventListener('controller-select-version', e => this._selectVersion(e));
+      }
+
+      _selectProject(e) {
+        const id = e.detail;
+        Tools.navigate(`/editor/${this.state.persistent.user.nickname}/${id}`);
+      }
+    
+      _selectVersion(e) {
+        const data = e.detail;
+        Tools.navigate(`/editor/${data.owner}/${data.project}/${data.version}`);
       }
 
       _submitNickname(e) {

@@ -1,14 +1,4 @@
 class AppReducers {
-  static makeUser(user) {
-    if (!user)
-      return null;
-    return {
-      displayName: user.displayName,
-      email: user.email,
-      photo: user.photoURL,
-      uid: user.uid
-    }
-  }
 
   static getLatestVersionNumber(persistent, username, project) {
     if (!username ||
@@ -24,8 +14,8 @@ class AppReducers {
     return Object.keys(versions).map(n => Number(n)).sort((a, b) => b - a)[0];
   }
 
-  static _changeRoute(state, payload) {
-    const newR = payload.segments;
+  static _changeRoute(state, route) {
+    const newR = route.segments;
     if (state.session.route) {
       const oldR = state.session.route.segments;
       if (newR[0] === oldR[0] && newR[1] === oldR[1] && newR[2] === oldR[2] && newR[3] === oldR[3])
@@ -36,7 +26,7 @@ class AppReducers {
       Tools.navigate("/home/" + newR[1]);
       return state;
     }
-    state = Tools.setIn(state, ['session', 'route'], payload);
+    state = Tools.setIn(state, ['session', 'route'], route);
 
     let actualVersion = newR[3];
     if (!actualVersion)
@@ -45,37 +35,8 @@ class AppReducers {
   }
 
   /**
-   * AUTH
-   */
-  static _authChanged(state, auth) {
-    state = Tools.setIn(state, ['persistent', 'user'], null);
-    return Tools.setIn(state, ['session', 'auth'], AppReducers.makeUser(auth));
-  }
-
-  static _signIn(state) {
-    firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
-    return state;
-  }
-
-  static _signOut(state) {
-    firebase.auth().signOut();
-    return state;
-  }
-  
-  static _userNickname(state, nickname) {
-    return Tools.setIn(state, ['session', 'auth', 'nickname'], nickname);
-  }
-
-  /**
    * DB INITIATED EVENTS
    */
-  static _newUserData(state, payload) {
-    if (state.session.auth !== payload.auth)
-      return Tools.setIn(state, ["session", "errorMsg"], "wtf?? loading a user not authorized??");
-    state = Tools.setIn(state, ["session", "auth"], null);
-    state = Tools.setIn(state, ["persistent", "user"], payload.auth);
-    return Tools.setIn(state, ["persistent", "user", "nickname"], payload.nickname);
-  }
 
   static _newVersionSubscription(state, subscription) {
     if (state.session.subscriptions.versions)
@@ -146,22 +107,13 @@ class AppReducers {
   /**
    * USER INITIATED EVENTS
    */
-  static _selectProject(state, id) {
-    Tools.navigate(`/editor/${state.persistent.user.name}/${id}`);
-    return state;
-  }
-
-  static _selectVersion(state, data) {
-    Tools.navigate(`/editor/${data.owner}/${data.project}/${data.version}`);
-    return state;
-  }
 
   static _addProject(state, payload) {
-    return Tools.setIn(state, ["session", "edits", state.persistent.user.name, "projects", payload], {created: new Date().getTime()});
+    return Tools.setIn(state, ["session", "edits", state.persistent.user.nickname, "projects", payload], {created: new Date().getTime()});
   }
 
   static _removeProject(state, payload) {
-    return Tools.setIn(state, ["session", "edits", state.persistent.user.name, "projects", payload], {deleted: new Date().getTime()});
+    return Tools.setIn(state, ["session", "edits", state.persistent.user.nickname, "projects", payload], {deleted: new Date().getTime()});
   }
 
   static _fileEdited(state, payload) {
@@ -178,7 +130,7 @@ class AppReducers {
 
   static _addFile(state, payload) {
     const filename = payload.filename;
-    const username = state.persistent.user.name;
+    const username = state.persistent.user.nickname;
     const owner = state.session.route.segments[1];
     const project = state.session.route.segments[2];
     return Tools.setIn(state, ["session", "edits", owner, "projects", project, "versions", "workingCopy", "files", filename], {
@@ -211,10 +163,6 @@ class AppReducers {
    * COMPUTE FUNCTIONS
    */
 
-  static _makeUserObject(user, users) {
-    return users && user ? users[user] : undefined;
-  }
-
   static _makeProjectObject(owner, project, users) {
     return !owner || !project || !users || !users[owner] || !users[owner].projects ? undefined : users[owner].projects[project];
   }
@@ -241,18 +189,6 @@ class AppReducers {
   /**
    * OBSERVE FUNCTIONS
    */
-  static async _userChanged(auth) {
-    if (!auth || !auth.uid)
-      return;
-    if (auth.nickname) {
-      await AppData.addUserToDB(auth.uid, auth.nickname);
-      return Tools.emit("controller-new-user-data", {auth: auth, nickname: auth.nickname});
-    }
-    let userData = await AppData.getCurrentUserData(auth.uid);  //wait for the nickname to load
-    if (userData)
-      return Tools.emit("controller-new-user-data", {auth: auth, nickname: userData.id});
-    return Tools.emit("ui-nickname-dialog");
-  }
 
   static _projectsEdited(edits, name) {
     if (!edits || !name)
