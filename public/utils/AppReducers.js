@@ -1,5 +1,7 @@
 class AppReducers {
   static makeUser(nick, user) {
+    if (!user)
+      return null;
     return {
       name: nick,
       displayName: user.displayName,
@@ -199,5 +201,124 @@ class AppReducers {
       return `/* created at ${new Date()} by ${username} */`;
     if (ext === 'js')
       return `// created at ${new Date()} by ${username}`;
+  }
+
+  /**
+   * COMPUTE FUNCTIONS
+   */
+
+  static _makeUserObject(user, users) {
+    return users && user ? users[user] : undefined;
+  }
+
+  static _makeProjectObject(owner, project, users) {
+    return !owner || !project || !users || !users[owner] || !users[owner].projects ? undefined : users[owner].projects[project];
+  }
+
+  static _mergedProjectObject(savedProject, editedProject) {
+    if (!savedProject)
+      return editedProject;
+    if (!editedProject)
+      return savedProject;
+
+    let latestVersionObjectFiles = savedProject.versions[savedProject.latestVersion].files;
+    const workingCopyVersionFiles = editedProject.versions[workingCopy].files;
+    if (workingCopyVersionFiles) {
+      for (let filename in workingCopyVersionFiles) {
+        if (workingCopyVersionFiles[filename].deleted)
+          latestVersionObjectFiles = Tools.setIn(latestVersionObjectFiles, [filename], null);
+        else
+          latestVersionObjectFiles = Tools.setIn(latestVersionObjectFiles, [filename], workingCopyVersionFiles[filename]);
+      }
+    }
+    return latestVersionObjectFiles;
+  }
+
+  /**
+   * OBSERVE FUNCTIONS
+   */
+  static async _userChanged(user) {
+    if (!user || !user.uid)
+      return;
+    let userData = await AppData.getCurrentUserData(user.uid);  //wait for the nickname to load
+    if (userData)
+      Tools.emit("controller-new-user-data", {user: user, data: userData});
+  }
+
+  static _projectsEdited(edits, name) {
+    if (!edits || !name)
+      return;
+    let newProjects = edits[name].projects;
+    for (let projectName in newProjects) {
+      let proj = newProjects[projectName];
+      const keys = Object.keys(proj);
+      if (keys.length !== 1)
+        continue;
+      if (keys[0] === created)
+        AppData.addProject(name, projectName);              //todo here we could await the result and throw an event
+      else if (keys[0] === deleted)
+        AppData.removeProject(name, projectName);           //todo here we could await the result and throw an event
+    }
+  }
+
+  static _updateProjectsListener(username) {
+    if (!username)
+      return Tools.emit("controller-new-projects-subscription", null);
+    const cb = ids => Tools.emit("controller-new-projects", {username: username, ids: ids});
+    const unsubscribe = AppData.listenToProjects(username, cb);
+    Tools.emit("controller-new-projects-subscription", {username: username, unsubscribe: unsubscribe});
+  }
+
+  static _updateVersionsListener(segments) {
+    if (!segments)
+      return;
+    const urlPage = segments[0];
+    const owner = segments[1];
+    const project = segments[2];
+    if ((urlPage !== "editor") || (!owner || !project))
+      return;
+
+    if (!owner || !project)
+      Tools.emit("controller-new-versions", null);
+    const cb = data => Tools.emit("controller-new-versions", {owner: owner, project: project, versions: data});
+    const unsubscribe = AppData.listenToVersions(owner, project, cb);
+    Tools.emit("controller-new-version-subscription", {owner: owner, project: project, unsubscribe: unsubscribe});
+  }
+
+  static async _listenForFiles(segments, actualVersion, persistent) {
+    if (!segments || !actualVersion)
+      return;
+    if (segments[0] !== "editor")
+      return;
+
+    const owner = segments[1];
+    const project = segments[2];
+    if (!owner || !project)
+      return;
+    if (Tools.testPath(persistent, ["users", owner, "projects", project, "versions", actualVersion, "files"]))
+      return;
+    const files = await AppData.getFiles(owner, project, actualVersion);
+    Tools.emit("controller-new-files", {owner: owner, project: project, version: actualVersion, files: files});
+  }
+
+  static _editsChanged(edits) {
+    Tools.debounce(AppDb._saveEdits.bind(null, edits), 5000);
+  }
+
+  static _saveEdits(edits) {
+    if (!edits)
+      return;
+    for (let owner in edits) {
+      let ownerObj = edits[owner];
+      for (let project in ownerObj) {
+        let latestVersionNumber = this.state.persistent.users[owner].projects[project].latestVersion;
+        let latestFiles = this.state.persistent.users[owner].projects[project].versions[latestVersionNumber].files;
+        AppData.addVersion({
+          owner: owner,
+          project: project,
+          files: Tools.mergeDeepWithNullToDelete(latestFiles, ownerObj[project], this._frozen)
+        });
+      }
+    }
   }
 }

@@ -16,6 +16,16 @@ class Tools {
     }));
   }
 
+  debounce(callback, ms) {
+    let _debouncers = window.__superSpecificPolymerDebouncerLongNameArray;
+    if (!_debouncers)
+      _debouncers = window.__superSpecificPolymerDebouncerLongNameArray = {};
+    _debouncers[callback.name] = Polymer.Debouncer.debounce(
+      _debouncers[callback.name], // initially undefined
+      Polymer.Async.timeOut.after(ms),
+      callback);
+  }
+
   static lockPath(obj, path, msg){
     return {};//todo not implemented
   }

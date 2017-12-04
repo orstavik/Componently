@@ -3,7 +3,7 @@ class FunctionalComputer {
   constructor() {
     this.functionsRegister = {};
     this.uniquePathsAsArray = {};
-    this.props = {};
+    this.state = {};
   }
 
   bind(propName, func, pathsAsStrings) {
@@ -24,19 +24,14 @@ class FunctionalComputer {
     };
   }
 
-  get(propName) {
-    return this.props[propName];
-  }
-
-  set(propName, newValue) {
-    let newProps = Tools.setIn(this.props, [propName], newValue);
-    //todo change props into just a table of the actual values. This table is the same as the pathsCache. And then we actually don't need to send in newProps to __compute.
-    // let pathsCache = getTheCurrentValuesOfAllPathsIn(this.props);
+  update(newValue) {
+    //todo change state into just a table of the actual values. This table is the same as the pathsCache. And then we actually don't need to send in newProps to __compute.
+    // let pathsCache = getTheCurrentValuesOfAllPathsIn(this.state);
     // pathsCache = FunctionalComputer.__compute(0, this.functionsRegister, pathsCache);
-    // this.props = copyAllTheNewCachedValuesIntoTheCurrentPropsState(this.props, pathsCache);
-    let res = FunctionalComputer.__compute(newProps, 0, this.functionsRegister, {});
-    this.props = res.props;
+    // this.state = copyAllTheNewCachedValuesIntoTheCurrentPropsState(this.state, pathsCache);
+    let res = FunctionalComputer.__compute(newValue, 0, this.functionsRegister, {});
     this.functionsRegister = res.functions;
+    return this.state = res.state;
   }
 
   //pathsCache is a mutable structure passed into __compute stack
@@ -63,6 +58,6 @@ class FunctionalComputer {
       const newProps = Tools.setIn(props, [propName], newComputedValue);
       return FunctionalComputer.__compute(newProps, count++, functions, pathsCache);
     }
-    return {props: props, functions: functions};
+    return {state: props, functions: functions};
   }
 }

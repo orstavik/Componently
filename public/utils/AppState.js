@@ -1,14 +1,30 @@
 class AppState {
+
   constructor() {
     this.state = {};
     this.history = [];
+    this.computer = new FunctionalComputer();
+    this.observers = new FunctionalComputer();
+    this.listeners = [];
   }
 
   bindReducer(eventName, reducer) {
-    window.addEventListener(eventName, e => { this._updateState(reducer(this.state, e.detail), e.type); });
+    window.addEventListener(eventName, e => {
+      this._updateState(reducer(this.state, e.detail), e.type);
+    });
+  }
+
+  bindCompute(returnPropertyInState, stateFunctionToCall, parametersAsDotSeparatedStrings) {
+    this.computer.bind(returnPropertyInState, stateFunctionToCall, parametersAsDotSeparatedStrings);
+  }
+
+  bindObserve(stateFunctionToCall, parametersAsDotSeparatedStrings) {
+    this.observers.bind("__observableValueDoNotUseIt", stateFunctionToCall, parametersAsDotSeparatedStrings);
   }
 
   _updateState(newState, action) {
+    newState = this.computer.update(newState);
+    this.observers.update(newState);
     this.state = newState;
     console.log(action, performance.now());
     const snap = {
@@ -20,7 +36,12 @@ class AppState {
     this.history = [snap].concat(this.history);
 //        if (newState.persistent)
 //          localStorage.setItem('state', JSON.stringify(newState.persistent));
-    Tools.emit("state-changed", {state: this.state, history: this.history});
+    for (let cb of this.listeners)
+      cb({state: newState, history: this.history});
+  }
+
+  onChange(cb) {
+    this.listeners.push(cb);
   }
 
   init(initial) {

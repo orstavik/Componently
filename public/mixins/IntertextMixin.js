@@ -28,8 +28,11 @@ const IntertextMixin = (superClass) => class extends superClass {
   }
 
   $debounce(callback, ms) {
-    this._polymerDebouncer = Polymer.Debouncer.debounce(
-      this._polymerDebouncer, // initially undefined
+    let _debouncers = window.__superSpecificPolymerDebouncerLongNameArray;
+    if (!_debouncers)
+      _debouncers = window.__superSpecificPolymerDebouncerLongNameArray = {};
+    _debouncers[callback.name] = Polymer.Debouncer.debounce(
+      _debouncers[callback.name], // initially undefined
       Polymer.Async.timeOut.after(ms),
       callback);
   }

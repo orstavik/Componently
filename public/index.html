@@ -11,7 +11,7 @@
   <script src="utils/AppData.js"></script>
   <script src="utils/AppState.js"></script>
   <script src="utils/AppReducers.js"></script>
-  <script src="utils/stateDecorator.js"></script>
+  <script src="utils/FunctionalComputer.js"></script>
 
   <script src="/bower_components/webcomponentsjs/webcomponents-loader.js"></script>
   <script src="/mixins/IntertextMixin.js"></script>
@@ -58,17 +58,4 @@
                       \UIDS\UID                             \DESCRIPTION       \FILENAME
                                                                                \VALUE
 -->
-<script>
-
-  const makeOne = function (numberA) {
-    return numberA + 1;
-  };
-
-  const computer = new FunctionalComputer();
-  computer.bind("one", makeOne, ["state.numberA"]);
-
-  computer.set("state", {numberA: 3});
-  let one = computer.get("one");
-  console.log(one === 4 ? "congrats ivar!" : "buhuu..");
-</script>
 </html>
