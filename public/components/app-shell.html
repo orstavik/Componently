@@ -54,7 +54,7 @@
       constructor() {
         super();
 
-        this.state = new ObservableState(
+        this.state = new ITObservableState(
           {
             session: {
               subscriptions: {}
@@ -64,28 +64,28 @@
             }
           }
         );
-        this.state.bindReducer('state-change-route', AppReducers._changeRoute);          //select-project
+        this.state.bindReduce('state-change-route', AppReducers._changeRoute);          //select-project
 
         //auth
-        this.state.bindReducer('controller-auth-changed', UserReducers._authChanged);
-        this.state.bindReducer('controller-sign-in', UserReducers._signIn);
-        this.state.bindReducer('controller-sign-out', UserReducers._signOut);
-        this.state.bindReducer('controller-user-nickname', UserReducers._userNickname);
-        this.state.bindReducer('controller-new-user-data', UserReducers._newUserData);
+        this.state.bindReduce('controller-auth-changed', UserReducers._authChanged);
+        this.state.bindReduce('controller-sign-in', UserReducers._signIn);
+        this.state.bindReduce('controller-sign-out', UserReducers._signOut);
+        this.state.bindReduce('controller-user-nickname', UserReducers._userNickname);
+        this.state.bindReduce('controller-new-user-data', UserReducers._newUserData);
         this.state.bindCompute("_userObject", UserReducers._makeUserObject, ["persistent.user.nickname", "persistent.users"]);
         this.state.bindObserve(UserReducers._userChanged, ["session.auth"]);
 
-        this.state.bindReducer('controller-add-project', AppReducers._addProject);
-        this.state.bindReducer('controller-remove-project', AppReducers._removeProject);
-        this.state.bindReducer('controller-add-file', AppReducers._addFile);
-        this.state.bindReducer('controller-remove-file', AppReducers._removeFile);
-        this.state.bindReducer('controller-file-edited', AppReducers._fileEdited);
+        this.state.bindReduce('controller-add-project', AppReducers._addProject);
+        this.state.bindReduce('controller-remove-project', AppReducers._removeProject);
+        this.state.bindReduce('controller-add-file', AppReducers._addFile);
+        this.state.bindReduce('controller-remove-file', AppReducers._removeFile);
+        this.state.bindReduce('controller-file-edited', AppReducers._fileEdited);
         //db
-        this.state.bindReducer('controller-new-projects', AppReducers._newProjects);
-        this.state.bindReducer('controller-new-versions', AppReducers._newVersions);
-        this.state.bindReducer('controller-new-files', AppReducers._newFiles);
-        this.state.bindReducer('controller-new-version-subscription', AppReducers._newVersionSubscription);
-        this.state.bindReducer('controller-new-projects-subscription', AppReducers._newProjectsSubscription);
+        this.state.bindReduce('controller-new-projects', AppReducers._newProjects);
+        this.state.bindReduce('controller-new-versions', AppReducers._newVersions);
+        this.state.bindReduce('controller-new-files', AppReducers._newFiles);
+        this.state.bindReduce('controller-new-version-subscription', AppReducers._newVersionSubscription);
+        this.state.bindReduce('controller-new-projects-subscription', AppReducers._newProjectsSubscription);
 
         this.state.bindCompute("_fullProjectObject", AppReducers._makeProjectObject, ["session.route.segments.1", "session.route.segments.2", "persistent.users"]);
         this.state.bindCompute("_editProjectObject", AppReducers._makeProjectObject, ["session.route.segments.1", "session.route.segments.2", "session.edits"]);

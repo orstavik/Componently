@@ -39,7 +39,7 @@ class MicroObserver {
   static __compute(props, stackRemainderCount, functions, pathsCache) {
     if (stackRemainderCount < 0)
       throw new Error(
-        "StackOverFlowError in MicroObserver (ObservableState).\n " +
+        "StackOverFlowError in MicroObserver (ITObservableState).\n " +
         "More than " + this.maxStackSize + " __compute cycles. Likely infinite loop.\n " +
         "Tip: Even if it is not an infinite loop, you should still simplify your compute structure.");
 
