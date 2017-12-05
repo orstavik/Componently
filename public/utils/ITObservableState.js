@@ -6,9 +6,6 @@ class ITObservableState {
     this.computer = new MicroObserver();
     this.observer = new MicroObserver();
 
-    // let stored = JSON.parse(localStorage.getItem('state'));
-    // if (stored)
-    //   initial = Tools.setIn(initial, ["persistent"], stored);
     this.state = Tools.deepFreeze(initial);
     this.history = ITObservableState.addToHistory([], this.state, "init");
     this.que = [];
@@ -68,11 +65,9 @@ class ITObservableState {
     };
     Tools.emit("state-changed", this.state);
     Tools.emit("state-history-changed", this.history);
-    Tools.emit("state-debug-info", this.debugInfo);
+    Tools.emit("state-changed-debug", this.debugInfo);
 
 
-    // if (this.state.persistent)
-    //   localStorage.setItem('state', JSON.stringify(this.state.persistent));
     // let lastCompletedTask = this.que.shift();
     // if (lastCompletedTask !== task)                                                                //todo unnecessary
     //   throw new Error("completed task is not the same as the first task in the que?!");            //todo unnecessary

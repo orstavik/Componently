@@ -194,6 +194,9 @@ class AppReducers {
   /**
    * OBSERVE FUNCTIONS
    */
+  static _addPersistentToLocalStorage(persistent) {
+    localStorage.setItem('state', JSON.stringify(persistent));
+  }
 
   static _projectsEdited(edits, name) {
     if (!edits || !name)

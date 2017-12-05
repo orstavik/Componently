@@ -57,17 +57,15 @@
 
       constructor() {
         super();
+        const persistent = JSON.parse(localStorage.getItem('state')) || {user: null};
+        const initialState = {
+          session: {
+            subscriptions: {}
+          },
+          persistent: persistent
+        };
+        this.state = new ITObservableState(initialState);
 
-        this.state = new ITObservableState(
-          {
-            session: {
-              subscriptions: {}
-            },
-            persistent: {
-              user: null
-            }
-          }
-        );
         this.state.bindReduce('state-change-route', AppReducers._changeRoute, true);          //select-project
 
         //auth
@@ -99,6 +97,7 @@
 //        this.state.bindCompute("_workingCopyVersion", AppReducers._makeWorkingCopy, ["_editProjectObject", "_actualVersion"]);
 //        this.state.bindCompute("_projectObjectWithWorkingCopy", AppReducers._mergedProjectObject, ["_fullProjectObject", "_editProjectObject"]);
 
+        this.state.bindObserve(AppReducers._addPersistentToLocalStorage, ["persistent"]);
         this.state.bindObserve(AppReducers._observeMissingFilesForVersion, ["_actualVersion", "session.route.segments.1", "session.route.segments.2", "_actualVersionNumber"]);
         this.state.bindObserve(AppReducers._updateVersionsListener, ["session.route.segments.1", "session.route.segments.2"]);
         this.state.bindObserve(AppReducers._updateProjectsListener, ["persistent.user.nickname"]);
