@@ -14,7 +14,7 @@ class ITObservableState {
   }
 
   bindReduce(eventName, reducer) {
-    this.owner.addEventListener(eventName, e => this._reduceComputeObserve(e, reducer));
+    window.addEventListener(eventName, e => this._reduceComputeObserve(e, reducer));
   }
 
   bindCompute(returnProp, computeFunc, argsAsStrings) {

@@ -1,3 +1,7 @@
+<script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/4.6.2/firebase.js"></script>
+<script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-firestore.js"></script>
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="app-router.html">
 <link rel="import" href="app-pages.html">
@@ -97,23 +101,41 @@
         this.state.bindObserve(AppReducers._projectsEdited, ["session.edits", "persistent.user.nickname"]);
         this.state.bindObserve(AppReducers._editsChanged, ["session.edits"]);
 
-        firebase.auth().onAuthStateChanged((user) => Tools.emit('controller-auth-changed', user));
+        AppShell.initFirebase();
+
         window.addEventListener('ui-nickname-dialog', (e) => this.$.nickDialog.open());
 
-        this.state.onChange(stateHist => {
-          this.set("state", stateHist.state);
-          this.set("history", stateHist.history);
-        });
+        window.addEventListener("state-changed", e => this.set("state", e.detail));
+        window.addEventListener("state-history-changed", e => this.set("history", e.detail));
 
         window.addEventListener('controller-select-project', e => this._selectProject(e));
         window.addEventListener('controller-select-version', e => this._selectVersion(e));
+
+      }
+
+      static initFirebase() {
+        firebase.initializeApp({
+          apiKey: "AIzaSyA2Bv86HdUKVodeuGON0vC7nPFikIlfzwQ",
+          authDomain: "two-js-no.firebaseapp.com",
+          databaseURL: "https://two-js-no.firebaseio.com",
+          projectId: "two-js-no",
+          storageBucket: "two-js-no.appspot.com",
+          messagingSenderId: "1032974918154"
+        });
+        firebase.auth().onAuthStateChanged(user =>
+          window.dispatchEvent(new CustomEvent('controller-auth-changed', {
+            composed: true,
+            bubbles: true,
+            detail: user
+          }))
+        );
       }
 
       _selectProject(e) {
         const id = e.detail;
         Tools.navigate(`/editor/${this.state.persistent.user.nickname}/${id}`);
       }
-    
+
       _selectVersion(e) {
         const data = e.detail;
         Tools.navigate(`/editor/${data.owner}/${data.project}/${data.version}`);
