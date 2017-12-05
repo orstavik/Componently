@@ -286,7 +286,7 @@
 
       _selectProject(e) {
         const project = e.currentTarget.dataset.id;
-        this.$emit('controller-select-project', project);
+        this.$emit('controller-select-project', {owner: this.user.nickname, project: project});
       }
 
       _toArray(obj) {

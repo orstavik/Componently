@@ -109,8 +109,8 @@
         window.addEventListener("state-changed", e => this.set("state", e.detail));
         window.addEventListener("state-history-changed", e => this.set("history", e.detail));
 
-        window.addEventListener('controller-select-project', e => this._selectProject(e));
-        window.addEventListener('controller-select-version', e => this._selectVersion(e));
+        window.addEventListener('controller-select-project', this._selectProject);
+        window.addEventListener('controller-select-version', this._selectVersion);
 
       }
 
@@ -133,13 +133,11 @@
       }
 
       _selectProject(e) {
-        const id = e.detail;
-        Tools.navigate(`/editor/${this.state.persistent.user.nickname}/${id}`);
+        Tools.navigate(`/editor/${e.detail.owner}/${e.detail.project}`);
       }
 
       _selectVersion(e) {
-        const data = e.detail;
-        Tools.navigate(`/editor/${data.owner}/${data.project}/${data.version}`);
+        Tools.navigate(`/editor/${e.detail.owner}/${e.detail.project}/${e.detail.version}`);
       }
 
       _submitNickname(e) {
