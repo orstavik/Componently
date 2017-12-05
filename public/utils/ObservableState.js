@@ -3,8 +3,8 @@ class ObservableState {
   constructor(initial) {
     this.state = {};
     this.history = [];
-    this.computer = new FunctionalComputer();
-    this.observers = new FunctionalComputer();
+    this.computer = new MicroObserver();
+    this.observers = new MicroObserver();
     this.listeners = [];
 
     let stored = JSON.parse(localStorage.getItem('state'));

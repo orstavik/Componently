@@ -1,6 +1,7 @@
-class FunctionalComputer {
+class MicroObserver {
 
-  constructor() {
+  constructor(maxStackSize) {
+    this.maxStackSize = maxStackSize || 100;
     this.functionsRegister = {};
     this.uniquePathsAsArray = {};
     this.state = {};
@@ -16,7 +17,7 @@ class FunctionalComputer {
       this.uniquePathsAsArray = Tools.setInNoCheck(this.uniquePathsAsArray, path, path);
       return path;
     });
-    this.functionsRegister[propName+'__'+func.name] = {
+    this.functionsRegister[propName + '__' + func.name] = {
       returnProp: propName,
       func: func,
       argsPaths: pathsAsArray,
@@ -27,17 +28,20 @@ class FunctionalComputer {
   update(newValue) {
     //todo change state into just a table of the actual values. This table is the same as the pathsCache. And then we actually don't need to send in newProps to __compute.
     // let pathsCache = getTheCurrentValuesOfAllPathsIn(this.state);
-    // pathsCache = FunctionalComputer.__compute(0, this.functionsRegister, pathsCache);
+    // pathsCache = MicroObserver.__compute(0, this.functionsRegister, pathsCache);
     // this.state = copyAllTheNewCachedValuesIntoTheCurrentPropsState(this.state, pathsCache);
-    let res = FunctionalComputer.__compute(newValue, 0, this.functionsRegister, {});
+    let res = MicroObserver.__compute(newValue, this.maxStackSize, this.functionsRegister, {});
     this.functionsRegister = res.functions;
     return this.state = res.state;
   }
 
   //pathsCache is a mutable structure passed into __compute stack
-  static __compute(props, count, functions, pathsCache) {
-    if (count > 100)
-      throw new Error("More than 100 __compute cycles. Possible infinite loop. And if not, too complex computes.");
+  static __compute(props, stackRemainderCount, functions, pathsCache) {
+    if (stackRemainderCount < 0)
+      throw new Error(
+        "StackOverFlowError in MicroObserver (ObservableState).\n " +
+        "More than " + this.maxStackSize + " __compute cycles. Likely infinite loop.\n " +
+        "Tip: Even if it is not an infinite loop, you should still simplify your compute structure.");
 
     for (let funcName in functions) {           //todo, here we could prioritize the functions with the most changed input properties. That could make the functions quicker
       const funcObj = functions[funcName];
@@ -57,7 +61,7 @@ class FunctionalComputer {
       pathsCache[propName] = newComputedValue;
       const newProps = Tools.setIn(props, [propName], newComputedValue);
       // const newProps = Tools.setIn(props, ['computed', propName], newComputedValue);
-      return FunctionalComputer.__compute(newProps, count++, functions, pathsCache);
+      return MicroObserver.__compute(newProps, stackRemainderCount--, functions, pathsCache);
     }
     return {state: props, functions: functions};
   }
