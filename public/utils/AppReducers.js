@@ -91,11 +91,12 @@ class AppReducers {
   }
 
   static _fileEdited(state, payload) {
-    const filename = payload.name;
+    const owner = payload.owner;
+    const project = payload.project;
+    const version = payload.version;
+    const filename = payload.filename;
     const value = payload.value;
-    const owner = state.session.route.segments[1];
-    const project = state.session.route.segments[2];
-    return Tools.setIn(state, ["session", "edits", owner, "projects", project, "versions", "workingCopy", "files", filename], {
+    return Tools.setIn(state, ["session", "edits", owner, "projects", project, "versions", version, "files", filename], {
       name: filename,
       value: value,
       timestamp: new Date().getTime()
@@ -161,23 +162,33 @@ class AppReducers {
     }
   }
 
+  static _makeWorkingCopy(_editProjectObject, _actualVersion) {
+    try {
+      if (!_editProjectObject)
+        return _actualVersion;
+      let wcv = _editProjectObject.versions["workingCopy"];
+      let mergedFiles = {};
+      const workingCopyVersionFiles = wcv.files;
+      if (workingCopyVersionFiles) {
+        for (let filename in workingCopyVersionFiles) {
+          if (workingCopyVersionFiles[filename].deleted)
+            mergedFiles = Tools.setIn(mergedFiles, [filename], null);
+          else
+            mergedFiles = Tools.setIn(mergedFiles, [filename], workingCopyVersionFiles[filename]);
+        }
+      }
+      return Tools.setIn(wcv, ["files"], mergedFiles);
+    } catch (propertyOnNullObjectError) {
+      return undefined;
+    }
+  }
+
   static _mergedProjectObject(savedProject, editedProject) {
     if (!savedProject)
       return editedProject;
     if (!editedProject)
       return savedProject;
 
-    let latestVersionObjectFiles = savedProject.versions[savedProject.latestVersion].files;
-    const workingCopyVersionFiles = editedProject.versions[workingCopy].files;
-    if (workingCopyVersionFiles) {
-      for (let filename in workingCopyVersionFiles) {
-        if (workingCopyVersionFiles[filename].deleted)
-          latestVersionObjectFiles = Tools.setIn(latestVersionObjectFiles, [filename], null);
-        else
-          latestVersionObjectFiles = Tools.setIn(latestVersionObjectFiles, [filename], workingCopyVersionFiles[filename]);
-      }
-    }
-    return latestVersionObjectFiles;
   }
 
   /**

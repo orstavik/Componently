@@ -102,7 +102,7 @@
           lineWrapping: true
         });
         this.editor.on('change', (e) => {
-          this.$emit('controller-file-edited', {name: this.name, value: e.getValue()});
+          this.$emit('file-edited', {filename: this.name, value: e.getValue()});
         });
         window.addEventListener('resize', (e) => {
           this.$throttle(() => this._refreshEditor(), 1000/30);

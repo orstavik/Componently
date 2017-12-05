@@ -58,7 +58,9 @@
           Version:
           <select on-change="_changeVersion">
             <template is="dom-repeat" items="[[_toArray(versions)]]">
-              <option value="[[item.name]]" selected="[[_isSelectedVersion(item.name, version.name)]]">[[item.name]] [[item.comment]]</option>
+              <option value="[[item.name]]" selected="[[_isSelectedVersion(item.name, version.name)]]">[[item.name]]
+                [[item.comment]]
+              </option>
             </template>
           </select>
         </div>
@@ -66,7 +68,8 @@
     </slide-bar>
     <resizable-boxes id="editors">
       <template is="dom-repeat" items="[[_toArray(version.files)]]">
-        <code-editor name="[[item.name]]" mode="[[_getExt(item.name)]]" value="[[item.value]]"></code-editor>
+        <code-editor name="[[item.name]]" mode="[[_getExt(item.name)]]" value="[[item.value]]"
+                     on-file-edited="_fileEdited"></code-editor>
       </template>
     </resizable-boxes>
     <code-preview id="preview" owner="[[owner]]" project="[[project]]" files="[[files]]"></code-preview>
@@ -85,6 +88,19 @@
           version: Object,
           versions: Object,
         }
+      }
+
+      _fileEdited(e) {
+        e.stopPropagation();
+        this.$emit("controller-file-edited",
+          {
+            owner: this.owner,
+            project: this.project,
+            version: this.version.name,
+            filename: e.detail.filename,
+            value: e.detail.value
+          }
+        );
       }
 
       _isSelectedVersion(item, version) {
