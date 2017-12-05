@@ -1,11 +1,17 @@
-class AppState {
+class ObservableState {
 
-  constructor() {
+  constructor(initial) {
     this.state = {};
     this.history = [];
     this.computer = new FunctionalComputer();
     this.observers = new FunctionalComputer();
     this.listeners = [];
+
+    let stored = JSON.parse(localStorage.getItem('state'));
+    if (stored)
+      initial = Tools.setIn(initial, ["persistent"], stored);
+    initial = Tools.deepFreeze(initial);
+    this._updateState(initial, 'init');
   }
 
   bindReducer(eventName, reducer) {
@@ -42,14 +48,5 @@ class AppState {
 
   onChange(cb) {
     this.listeners.push(cb);
-  }
-
-  init(initial) {
-    let stored = JSON.parse(localStorage.getItem('state'));
-    let res;
-    if (stored)
-      res = Tools.deepFreeze(Tools.setIn(initial, ["persistent"], stored));
-    res = Tools.deepFreeze(initial);
-    this._updateState(res, 'init');
   }
 }
