@@ -290,7 +290,7 @@
       }
 
       _toArray(obj) {
-        return Object.keys(obj);
+        return !obj ? [] : Object.keys(obj);
       }
     }
     customElements.define(HomePage.is, HomePage);

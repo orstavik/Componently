@@ -1,17 +1,19 @@
 class AppReducers {
 
-  static getLatestVersionNumber(persistent, username, project) {
-    if (!username ||
-      !project ||
-      !Tools.testPath(persistent, ["users", username, "projects", project, "versions"])) {
+  static _makeActualVersionNumber(selected, project) {
+    try {
+      return selected ? selected : Object.keys(project.versions).map(n => Number(n)).sort((a, b) => b - a)[0];
+    } catch (err) {
       return undefined;
     }
-    let versions = persistent.users[username].projects[project].versions;
-    return AppReducers.getLatestVersionNumberFromVersionObject(versions);
   }
 
-  static getLatestVersionNumberFromVersionObject(versions) {
-    return Object.keys(versions).map(n => Number(n)).sort((a, b) => b - a)[0];
+  static _makeActualVersion(actualVersion, project) {
+    try {
+      return project.versions[actualVersion];
+    } catch (err) {
+      return undefined;
+    }
   }
 
   static _changeRoute(state, route) {
@@ -26,12 +28,7 @@ class AppReducers {
       Tools.navigate("/home/" + newR[1]);
       return state;
     }
-    state = Tools.setIn(state, ['session', 'route'], route);
-
-    let actualVersion = newR[3];
-    if (!actualVersion)
-      actualVersion = AppReducers.getLatestVersionNumber(state.persistent, newR[1], newR[2]);
-    return Tools.setIn(state, ['session', 'actualVersion'], actualVersion);
+    return Tools.setIn(state, ['session', 'route'], route);
   }
 
   /**
@@ -58,14 +55,7 @@ class AppReducers {
     let project = payload.project;
     let owner = payload.owner;
     let versionsShallow = payload.versions;
-    const segments = state.session.route.segments;
-    state = Tools.filterFirestore(state, ["persistent", "users", owner, "projects", project, "versions"], versionsShallow);
-    const latestVersionNumber = AppReducers.getLatestVersionNumber(state.persistent, segments[1], segments[2]);
-    state = Tools.filterFirestore(state, ["persistent", "users", owner, "projects", project, "latestVersion"], latestVersionNumber);
-
-    if (!segments[3] && segments[1] === owner && segments[2] === project)
-      state = Tools.setIn(state, ['session', 'actualVersion'], latestVersionNumber);
-    return state;
+    return Tools.filterFirestore(state, ["persistent", "users", owner, "projects", project, "versions"], versionsShallow);
   }
 
   static _newFiles(state, payload) {
@@ -214,36 +204,21 @@ class AppReducers {
     Tools.emit("controller-new-projects-subscription", {username: username, unsubscribe: unsubscribe});
   }
 
-  static _updateVersionsListener(segments) {
-    if (!segments)
-      return;
-    const urlPage = segments[0];
-    const owner = segments[1];
-    const project = segments[2];
-    if ((urlPage !== "editor") || (!owner || !project))
-      return;
-
-    if (!owner || !project)
-      Tools.emit("controller-new-versions", null);
-    const cb = data => Tools.emit("controller-new-versions", {owner: owner, project: project, versions: data});
-    const unsubscribe = AppData.listenToVersions(owner, project, cb);
-    Tools.emit("controller-new-version-subscription", {owner: owner, project: project, unsubscribe: unsubscribe});
+  static _updateVersionsListener(owner, project) {
+    let subscription = null;
+    if (owner && project) {
+      const cb = data => Tools.emit("controller-new-versions", {owner: owner, project: project, versions: data});
+      const unsubscribe = AppData.listenToVersions(owner, project, cb);
+      subscription = {owner: owner, project: project, unsubscribe: unsubscribe};
+    }
+    Tools.emit("controller-new-version-subscription", subscription);
   }
 
-  static async _listenForFiles(segments, actualVersion, persistent) {
-    if (!segments || !actualVersion)
-      return;
-    if (segments[0] !== "editor")
-      return;
-
-    const owner = segments[1];
-    const project = segments[2];
-    if (!owner || !project)
-      return;
-    if (Tools.testPath(persistent, ["users", owner, "projects", project, "versions", actualVersion, "files"]))
-      return;
-    const files = await AppData.getFiles(owner, project, actualVersion);
-    Tools.emit("controller-new-files", {owner: owner, project: project, version: actualVersion, files: files});
+  static async _observeMissingFilesForVersion(version, owner, project, versionNumber) {
+    if (version && versionNumber && !version.files) {
+      const files = await AppData.getFiles(owner, project, versionNumber);
+      Tools.emit("controller-new-files", {owner: owner, project: project, version: versionNumber, files: files});
+    }
   }
 
   static _editsChanged(edits) {

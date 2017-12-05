@@ -31,6 +31,7 @@ class MicroObserver {
     // pathsCache = MicroObserver.__compute(0, this.functionsRegister, pathsCache);
     // this.state = copyAllTheNewCachedValuesIntoTheCurrentPropsState(this.state, pathsCache);
     let res = MicroObserver.__compute(newValue, this.maxStackSize, this.functionsRegister, {});
+    // MicroObserver.debug(this.functionsRegister, res.functions);
     this.functionsRegister = res.functions;
     return this.state = res.state;
   }
@@ -64,5 +65,22 @@ class MicroObserver {
       return MicroObserver.__compute(newProps, stackRemainderCount--, functions, pathsCache);
     }
     return {state: props, functions: functions};
+  }
+
+  static debug(old, nevv){
+    //print out a list of compute functions that was run
+    for (let funcObjName in old) {
+      let oldVal = old[funcObjName];
+      let newVal = nevv[funcObjName];
+      if (oldVal === newVal)
+        continue;
+      console.log("Ran computed function named: " + funcObjName);
+      for(let i= 0; i< newVal.argsValue.length; i++){
+        let oldArg = oldVal.argsValue[i];
+        let nevvArg = newVal.argsValue[i];
+        if (oldArg !== nevvArg)
+          console.log(" triggered by(" +i+ "):   " + oldVal.argsPaths[i] + "  =  " + oldArg +" / " + nevvArg);
+      }
+    }
   }
 }
