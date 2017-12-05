@@ -31,7 +31,7 @@ class MicroObserver {
     // pathsCache = MicroObserver.__compute(0, this.functionsRegister, pathsCache);
     // this.state = copyAllTheNewCachedValuesIntoTheCurrentPropsState(this.state, pathsCache);
     let res = MicroObserver.__compute(newValue, this.maxStackSize, this.functionsRegister, {});
-    // MicroObserver.debug(this.functionsRegister, res.functions);
+    this.oldFunctionsRegister = this.functionsRegister;
     this.functionsRegister = res.functions;
     return this.state = res.state;
   }
@@ -67,20 +67,26 @@ class MicroObserver {
     return {state: props, functions: functions};
   }
 
-  static debug(old, nevv){
+  static debug(aFuncReg, bFuncReg){
     //print out a list of compute functions that was run
-    for (let funcObjName in old) {
-      let oldVal = old[funcObjName];
-      let newVal = nevv[funcObjName];
-      if (oldVal === newVal)
+    let C = {};
+    for (let key in aFuncReg) {
+      let A = aFuncReg[key];
+      let B = bFuncReg[key];
+      if (A === B)
         continue;
-      console.log("Ran computed function named: " + funcObjName);
-      for(let i= 0; i< newVal.argsValue.length; i++){
-        let oldArg = oldVal.argsValue[i];
-        let nevvArg = newVal.argsValue[i];
-        if (oldArg !== nevvArg)
-          console.log(" triggered by(" +i+ "):   " + oldVal.argsPaths[i] + "  =  " + oldArg +" / " + nevvArg);
+      C = Tools.setIn(C, [key, "triggers"], {});
+      for(let i= 0; i< B.argsValue.length; i++){
+        let a = A.argsValue[i];
+        let b = B.argsValue[i];
+        if (a !== b)
+          C = Tools.setIn(C, [key, "triggers", A.argsPaths[i]], b);
+        // console.log(" triggered by(" +i+ "):   " + oldVal.argsPaths[i] + "  =  " + oldArg +" / " + nevvArg);
       }
     }
+  }
+
+  getDebugInfo(){
+    return MicroObserver.debug(this.oldFunctionsRegister, this.functionsRegister);
   }
 }

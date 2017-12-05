@@ -107,7 +107,7 @@ class AppReducers {
     const filename = payload.filename;
     const username = state.persistent.user.nickname;
     const owner = state.session.route.segments[1];
-    const project = state.session.route.segments[2];
+    const project = state.session.route.segments[2];                                       //todo
     return Tools.setIn(state, ["session", "edits", owner, "projects", project, "versions", "workingCopy", "files", filename], {
       name: filename,
       value: AppReducers.getDefaultText(filename, username),
@@ -120,7 +120,7 @@ class AppReducers {
   static _removeFile(state, payload) {
     const filename = payload;
     const owner = state.session.route.segments[1];
-    const project = state.session.route.segments[2];
+    const project = state.session.route.segments[2];                                       //todo
     return Tools.setIn(state, ["session", "edits", owner, "projects", project, "versions", "workingCopy", "files", filename], null);
   }
 

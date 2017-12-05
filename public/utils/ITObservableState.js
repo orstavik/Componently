@@ -4,7 +4,7 @@ class ITObservableState {
     this.state = {};
     this.history = [];
     this.computer = new MicroObserver();
-    this.observers = new MicroObserver();
+    this.observer = new MicroObserver();
 
     // let stored = JSON.parse(localStorage.getItem('state'));
     // if (stored)
@@ -23,7 +23,7 @@ class ITObservableState {
   }
 
   bindObserve(observeFunc, argsAsStrings) {
-    this.observers.bind("__observableValueDoNotUseIt", observeFunc, argsAsStrings);
+    this.observer.bind("__resultFromObserver__ifYouNeedThisBindToComputeNotObserve", observeFunc, argsAsStrings);
   }
 
   _runOrAddToQue(e, reducer, update) {
@@ -44,24 +44,38 @@ class ITObservableState {
   }
 
   reduceComputeObserveInner(task) {
-    console.log("start: ", task.reducer.name, task.event.detail);
+    let start = performance.now();
     const reducer = task.reducer;
     const e = task.event;
-    const startState = this.state;
-    const reducedState = reducer(startState, e.detail);         //1. reduce
-    this.state = this.computer.update(reducedState);            //2. compute
-    this.observers.update(this.state);                          //3. observe
+    let oldState = this.state;
+    let reducedState = reducer(oldState, e.detail);         //1. reduce
+    let computedState = this.computer.update(reducedState); //2. compute
+    this.state = this.observer.update(computedState);       //3. observe
     this.history = ITObservableState.addToHistory(this.history, this.state, e.type);
+    this.que.shift();
+    let stop = performance.now();
+    this.debugInfo = {
+      start,
+      stop,
+      oldState,
+      reducedState,
+      computedState,
+      task,
+      newState: this.state,
+      computerInfo: this.computer.getDebugInfo(),
+      observerInfo: this.observer.getDebugInfo(),
+      que: this.que.splice()
+    };
     Tools.emit("state-changed", this.state);
     Tools.emit("state-history-changed", this.history);
+    Tools.emit("state-debug-info", this.debugInfo);
 
 
     // if (this.state.persistent)
     //   localStorage.setItem('state', JSON.stringify(this.state.persistent));
-    let taskCompleted = this.que.shift();
-    console.log("stop: ", taskCompleted.reducer.name);
-    if (taskCompleted !== task)
-      throw new Error("completed task is not the same as the first task in the que?!");
+    // let lastCompletedTask = this.que.shift();
+    // if (lastCompletedTask !== task)                                                                //todo unnecessary
+    //   throw new Error("completed task is not the same as the first task in the que?!");            //todo unnecessary
     // if (this.que.length > 100)
     //   setTimeout(()=> this.reduceComputeObserveInner(this.que[0]), 0);
     if (this.que.length > 0)
