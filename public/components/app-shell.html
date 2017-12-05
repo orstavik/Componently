@@ -27,6 +27,7 @@
                    owner="[[state.session.route.segments.1]]"
                    project="[[state.session.route.segments.2]]"
                    version="[[state._actualVersion]]"
+                   edited-version="[[state._editActualVersion]]"
                    versions="[[state._fullProjectObject.versions]]">
       </editor-page>
       <notfound-page page="notfound"></notfound-page>
@@ -94,6 +95,7 @@
         this.state.bindCompute("_actualVersionNumber", AppReducers._makeActualVersionNumber, ["session.route.segments.3", "_fullProjectObject"]);
         this.state.bindCompute("_actualVersion", AppReducers._makeActualVersion, ["_actualVersionNumber", "_fullProjectObject"]);
         this.state.bindCompute("_editProjectObject", AppReducers._makeProjectObject, ["session.route.segments.1", "session.route.segments.2", "session.edits"]);
+        this.state.bindCompute("_editActualVersion", AppReducers._makeActualVersion, ["_actualVersionNumber", "_editProjectObject"]);
 //        this.state.bindCompute("_workingCopyVersion", AppReducers._makeWorkingCopy, ["_editProjectObject", "_actualVersion"]);
 //        this.state.bindCompute("_projectObjectWithWorkingCopy", AppReducers._mergedProjectObject, ["_fullProjectObject", "_editProjectObject"]);
 

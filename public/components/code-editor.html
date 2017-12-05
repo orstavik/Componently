@@ -114,10 +114,10 @@
       }
 
       _updateEditor() {
-        if (this.editor)
-          this.editor.setValue(this.value);
-//        if (this.editor && this.value !== this.editor.getValue())
-//          console.log("we have a different text in editor and state!!");
+//        if (this.editor)
+//          this.editor.setValue(this.value);
+        if (this.editor && this.value !== this.editor.getValue())
+          console.log("we have a different text in editor and state!!");
       }
 
       _removeFile() {

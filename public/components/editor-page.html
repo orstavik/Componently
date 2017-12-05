@@ -67,7 +67,7 @@
       </div>
     </slide-bar>
     <resizable-boxes id="editors">
-      <template is="dom-repeat" items="[[_toArray(version.files)]]">
+      <template is="dom-repeat" items="[[_mergeToArray(version.files, editedVersion.files, showEdits)]]">
         <code-editor name="[[item.name]]" mode="[[_getExt(item.name)]]" value="[[item.value]]"
                      on-file-edited="_fileEdited"></code-editor>
       </template>
@@ -86,7 +86,12 @@
           owner: String,
           project: String,
           version: Object,
+          editedVersion: Object,
           versions: Object,
+          showEdits: {
+            type: Boolean,
+            value: true
+          }
         }
       }
 
@@ -101,6 +106,17 @@
             value: e.detail.value
           }
         );
+      }
+
+      _mergeToArray(files, editedFiles){
+        if (!editedFiles)
+          return this._toArray(files);
+        let res = Tools.mergeDeepWithNullToDelete(files, editedFiles);
+        for (let filename in editedFiles) {
+          if (editedFiles[filename].deleted)
+            delete res[filename];
+        }
+        return this._toArray(res);
       }
 
       _isSelectedVersion(item, version) {
