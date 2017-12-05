@@ -1,21 +1,5 @@
 class AppReducers {
 
-  static _makeActualVersionNumber(selected, project) {
-    try {
-      return selected ? selected : Object.keys(project.versions).map(n => Number(n)).sort((a, b) => b - a)[0];
-    } catch (err) {
-      return undefined;
-    }
-  }
-
-  static _makeActualVersion(actualVersion, project) {
-    try {
-      return project.versions[actualVersion];
-    } catch (err) {
-      return undefined;
-    }
-  }
-
   static _changeRoute(state, route) {
     const newR = route.segments;
     if (state.session.route) {
@@ -153,8 +137,28 @@ class AppReducers {
    * COMPUTE FUNCTIONS
    */
 
+  static _makeActualVersionNumber(selected, project) {
+    try {
+      return selected ? selected : Object.keys(project.versions).map(n => Number(n)).sort((a, b) => b - a)[0];
+    } catch (propertyOnNullObjectError) {
+      return undefined;
+    }
+  }
+
+  static _makeActualVersion(actualVersion, project) {
+    try {
+      return project.versions[actualVersion];
+    } catch (propertyOnNullObjectError) {
+      return undefined;
+    }
+  }
+
   static _makeProjectObject(owner, project, users) {
-    return !owner || !project || !users || !users[owner] || !users[owner].projects ? undefined : users[owner].projects[project];
+    try {
+      return users[owner].projects[project];
+    } catch (propertyOnNullObjectError) {
+      return undefined;
+    }
   }
 
   static _mergedProjectObject(savedProject, editedProject) {

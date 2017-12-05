@@ -57,15 +57,15 @@
           <button hidden="[[!true]]" on-tap="_saveChanges">Save</button>
           Version:
           <select on-change="_changeVersion">
-            <template is="dom-repeat" items="[[_toArray(projectObject.versions)]]">
-              <option value="[[item]]" selected="[[_isSelectedVersion(item.name, version)]]">[[item.name]] [[item.comment]]</option>
+            <template is="dom-repeat" items="[[_toArray(versions)]]">
+              <option value="[[item.name]]" selected="[[_isSelectedVersion(item.name, version.name)]]">[[item.name]] [[item.comment]]</option>
             </template>
           </select>
         </div>
       </div>
     </slide-bar>
     <resizable-boxes id="editors">
-      <template is="dom-repeat" items="[[_toArray(currentVersion.files)]]">
+      <template is="dom-repeat" items="[[_toArray(version.files)]]">
         <code-editor name="[[item.name]]" mode="[[_getExt(item.name)]]" value="[[item.value]]"></code-editor>
       </template>
     </resizable-boxes>
@@ -82,25 +82,13 @@
         return {
           owner: String,
           project: String,
-          version: Number,
-          projectObject: Object,
-          currentVersion: {
-            type: Object,
-            computed: '_makeCurrentVersion(projectObject, version)'
-          }
+          version: Object,
+          versions: Object,
         }
       }
 
       _isSelectedVersion(item, version) {
         return item == version;
-      }
-
-      _makeCurrentVersion(project,version) {
-        try {
-          return project.versions[version];
-        } catch(NullObjectError) {
-          return undefined;
-        }
       }
 
       _changeVersion(e) {

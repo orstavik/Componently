@@ -26,9 +26,8 @@
       <editor-page page="editor"
                    owner="[[state.session.route.segments.1]]"
                    project="[[state.session.route.segments.2]]"
-                   version="[[state.session.actualVersion]]"
-                   project-object="[[state._projectObjectWithWorkingCopy]]"
-                   versions="[[state._projectObject.versions]]">
+                   version="[[state._actualVersion]]"
+                   versions="[[state._fullProjectObject.versions]]">
       </editor-page>
       <notfound-page page="notfound"></notfound-page>
     </app-pages>
@@ -94,14 +93,14 @@
         this.state.bindCompute("_fullProjectObject", AppReducers._makeProjectObject, ["session.route.segments.1", "session.route.segments.2", "persistent.users"]);
         this.state.bindCompute("_actualVersionNumber", AppReducers._makeActualVersionNumber, ["session.route.segments.3", "_fullProjectObject"]);
         this.state.bindCompute("_actualVersion", AppReducers._makeActualVersion, ["_actualVersionNumber", "_fullProjectObject"]);
-        this.state.bindCompute("_editProjectObject", AppReducers._makeProjectObject, ["session.route.segments.1", "session.route.segments.2", "session.edits"]);
-        this.state.bindCompute("_projectObjectWithWorkingCopy", AppReducers._mergedProjectObject, ["_fullProjectObject", "_editProjectObject"]);
+//        this.state.bindCompute("_editProjectObject", AppReducers._makeProjectObject, ["session.route.segments.1", "session.route.segments.2", "session.edits"]);
+//        this.state.bindCompute("_projectObjectWithWorkingCopy", AppReducers._mergedProjectObject, ["_fullProjectObject", "_editProjectObject"]);
 
         this.state.bindObserve(AppReducers._observeMissingFilesForVersion, ["_actualVersion", "session.route.segments.1", "session.route.segments.2", "_actualVersionNumber"]);
         this.state.bindObserve(AppReducers._updateVersionsListener, ["session.route.segments.1", "session.route.segments.2"]);
         this.state.bindObserve(AppReducers._updateProjectsListener, ["persistent.user.nickname"]);
-        this.state.bindObserve(AppReducers._projectsEdited, ["session.edits", "persistent.user.nickname"]);
-        this.state.bindObserve(AppReducers._editsChanged, ["session.edits"]);
+//        this.state.bindObserve(AppReducers._projectsEdited, ["session.edits", "persistent.user.nickname"]);
+//        this.state.bindObserve(AppReducers._editsChanged, ["session.edits"]);
 
         AppShell.initFirebase();
 
