@@ -3,20 +3,21 @@
     <style>
       :host {
         display: block;
-        --height: 60px;
-        z-index: 1;
+        position: relative;
+        z-index: 10;
       }
       :host #container {
-        height: 0px;
+        position: absolute;
         transition: 0.4s;
-        overflow: hidden;
+        transform: translateY(-100%);
       }
       :host([opened]) #container {
-        height: var(--height);
+        transform: translateY(0);
       }
       #trigger {
         display: block;
         position: fixed;
+        z-index: 1;
         top: 0;
         width: 100vw;
         height: 6px;

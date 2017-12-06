@@ -14,8 +14,7 @@
       }
       ::slotted(.separator) {
         display: inline-block;
-        flex-basis: var(--separator-width);
-        background-color: grey;
+        background-color: black;
         cursor: col-resize;
       }
     </style>
@@ -96,8 +95,10 @@
       _separatorDraged(e) {
         if (e.detail.state === 'start')
           this.$.grid.classList.add('unselectable');
-        if (e.detail.state === 'end')
+        if (e.detail.state === 'end') {
           this.$.grid.classList.remove('unselectable');
+          this._refreshEditors();
+        }
         const ddx = e.detail.ddx !== undefined ? e.detail.ddx : e.detail.dx;
         const ddy = e.detail.ddy !== undefined ? e.detail.ddy : e.detail.dy;
         const width = this.getBoundingClientRect().width;
@@ -121,7 +122,6 @@
           this._gridColumns[prevIndex] = frSum - 120/fr;
         }
         this._applyStyle();
-        this._refreshEditors();
       }
 
       _applyStyle() {

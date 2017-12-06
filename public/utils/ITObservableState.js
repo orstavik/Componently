@@ -93,7 +93,7 @@ class ITObservableState {
     let compared = ITObservableState.compareObjects2("state", debugInfo.startState, debugInfo.reducedState, debugInfo.computedState);
     // let visualizedData = ITObservableState.visualizeComparedObj(compared);
     const printTest = ITObservableState.printTest(compared, 0);
-    console.log(printTest);
+    // console.log(printTest);
   }
 
   static printTest(visualVersion, depth) {
