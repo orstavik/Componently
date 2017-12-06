@@ -92,7 +92,8 @@ class ITObservableState {
   static testAll(debugInfo) {
     let compared = ITObservableState.compareObjects2("state", debugInfo.startState, debugInfo.reducedState, debugInfo.computedState);
     // let visualizedData = ITObservableState.visualizeComparedObj(compared);
-    ITObservableState.printTest(compared, 0);
+    const printTest = ITObservableState.printTest(compared, 0);
+    console.log(printTest);
   }
 
   static printTest(visualVersion, depth) {
@@ -105,9 +106,10 @@ class ITObservableState {
     res += " = " + visualVersion.values.startState;
     res += " / " + visualVersion.values.reducedState;
     res += " / " + visualVersion.values.computedState;
-    console.log(res);
+    // console.log(res);
     for (let childName in visualVersion.children)
-      ITObservableState.printTest(visualVersion.children[childName], depth + 1);
+      res += "\n" + ITObservableState.printTest(visualVersion.children[childName], depth + 1);
+    return res;
   }
 
   static getStyle(diffs) {
