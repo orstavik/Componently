@@ -11,8 +11,8 @@ class ITObservableState {
     this.que = [];
   }
 
-  bindReduce(eventName, reducer, update = true) {
-    window.addEventListener(eventName, e => this._runOrAddToQue(e, reducer, update));
+  bindReduce(eventName, reducer, throttle = true) {
+    window.addEventListener(eventName, e => this._runOrAddToQue(e, reducer, throttle));
   }
 
   bindCompute(returnProp, computeFunc, argsAsStrings) {
@@ -23,8 +23,8 @@ class ITObservableState {
     this.observer.bind("__resultFromObserver__ifYouNeedThisBindToComputeNotObserve", observeFunc, argsAsStrings);
   }
 
-  _runOrAddToQue(e, reducer, update) {
-    if (update) {
+  _runOrAddToQue(e, reducer, throttle) {
+    if (throttle) {                          //todo make this a bit prettier
       for (let task of this.que) {
         if (task.reducer === reducer) {
           task.event = e;
@@ -43,29 +43,31 @@ class ITObservableState {
   reduceComputeObserveInner(task) {
     let start = performance.now();
     const reducer = task.reducer;
+    const startQueLength = this.que.length - 1;              //for debug
     const e = task.event;
-    let oldState = this.state;
-    let reducedState = reducer(oldState, e.detail);         //1. reduce
+    let startState = this.state;
+    let reducedState = reducer(startState, e.detail);         //1. reduce
     let computedState = this.computer.update(reducedState); //2. compute
-    this.state = this.observer.update(computedState);       //3. observe
+    this.observer.update(computedState);                    //3. observe
+    this.state = computedState;
     this.history = ITObservableState.addToHistory(this.history, this.state, e.type);
     this.que.shift();
-    let stop = performance.now();
-    this.debugInfo = {
-      start,
-      stop,
-      oldState,
-      reducedState,
-      computedState,
-      task,
-      newState: this.state,
-      computerInfo: this.computer.getDebugInfo(),
-      observerInfo: this.observer.getDebugInfo(),
-      que: this.que.splice()
-    };
+    if (ITObservableState.debug)
+      Tools.emit("state-changed-debug", {
+        start,
+        stop: performance.now(),
+        startState,
+        reducedState,
+        computedState,
+        task,
+        newState: this.state,
+        computerInfo: this.computer.getDebugInfo(),
+        observerInfo: this.observer.getDebugInfo(),
+        startQueLength,
+        que: this.que.splice()
+      });
     Tools.emit("state-changed", this.state);
     Tools.emit("state-history-changed", this.history);
-    Tools.emit("state-changed-debug", this.debugInfo);
 
 
     // let lastCompletedTask = this.que.shift();
@@ -86,4 +88,96 @@ class ITObservableState {
     };
     return [snap].concat(history);
   }
+
+  static testAll(debugInfo) {
+    let compared = ITObservableState.compareObjects2("state", debugInfo.startState, debugInfo.reducedState, debugInfo.computedState);
+    // let visualizedData = ITObservableState.visualizeComparedObj(compared);
+    ITObservableState.printTest(compared, 0);
+  }
+
+  static printTest(visualVersion, depth) {
+    let res = "";
+    for (let i = 0; i < depth; i++) res += "  ";
+    res += visualVersion.name;
+    res += " (";
+    res += visualVersion.style.join(", ");
+    res += ")";
+    res += " = " + visualVersion.values.startState;
+    res += " / " + visualVersion.values.reducedState;
+    res += " / " + visualVersion.values.computedState;
+    console.log(res);
+    for (let childName in visualVersion.children)
+      ITObservableState.printTest(visualVersion.children[childName], depth + 1);
+  }
+
+  static getStyle(diffs) {
+    return ["reduce" + ITObservableState.typeOfChange(diffs[0]), "compute" + ITObservableState.typeOfChange(diffs[1])];
+  }
+
+  static typeOfChange(code) {
+    if (code === 0)
+      return "NoChange";
+    if (code === 1)
+      return "Altered";
+    if (code === 2)
+      return "Added";
+    if (code === 3)
+      return "Deleted";
+  }
+
+  //.diff, .values, .children
+  static compareObjects2(name, startState, reducedState, computedState) {
+    let res = {};
+    res.name = name;
+    res.diff = [ITObservableState.diff(startState, reducedState), ITObservableState.diff(reducedState, computedState)];
+    res.values = {
+      startState,
+      reducedState,
+      computedState
+    };
+    res.style = ITObservableState.getStyle(res.diff);
+    res.children = {};
+
+    for (let prop of ITObservableState.getAllObjectKeys(computedState, reducedState, startState)) {
+      let start = startState ? startState[prop] : undefined;
+      let reduced = reducedState ? reducedState[prop] : undefined;
+      let computed = computedState ? computedState[prop] : undefined;
+      res.children[prop] = ITObservableState.compareObjects2(prop, start, reduced, computed);
+    }
+    return res;
+  }
+
+  static getAllObjectKeys(computedState, reducedState, startState) {
+    let allKeys = [];
+    if (computedState && typeof computedState === "object")
+      allKeys = Object.keys(computedState);
+    if (reducedState && typeof reducedState === "object")
+      for (let key in reducedState)
+        if (allKeys.indexOf(key) === -1)
+          allKeys.push(key);
+    if (startState && typeof startState === "object")
+      for (let key in startState)
+        if (allKeys.indexOf(key) === -1)
+          allKeys.push(key);
+    return allKeys;
+  }
+
+//returns
+  //0 = no changes from a to b
+  //1 = a changed to b, from something to something
+  //2 = b is new
+  //3 = b is deleted
+  static diff(a, b) {
+    if (a === b)
+      return 0;
+    if (a === undefined)
+      return 2;
+    if (b === undefined)
+      return 3;
+    return 1;
+  }
 }
+
+ITObservableState.debug = true;
+
+window.addEventListener("state-changed-debug", e => ITObservableState.testAll(e.detail));
