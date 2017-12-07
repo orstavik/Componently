@@ -20,6 +20,7 @@ class MicroObserver {
     this.functionsRegister[propName + '__' + func.name] = {
       returnProp: propName,
       func: func,
+      funcName : func.name,
       argsPaths: pathsAsArray,
       argsValue: pathsAsArray.map(p => undefined)    //here we store the values of the last time we ran the function
     };
@@ -67,26 +68,7 @@ class MicroObserver {
     return {state: props, functions: functions};
   }
 
-  static debug(aFuncReg, bFuncReg){
-    //print out a list of compute functions that was run
-    let C = {};
-    for (let key in aFuncReg) {
-      let A = aFuncReg[key];
-      let B = bFuncReg[key];
-      if (A === B)
-        continue;
-      C = Tools.setIn(C, [key, "triggers"], {});
-      for(let i= 0; i< B.argsValue.length; i++){
-        let a = A.argsValue[i];
-        let b = B.argsValue[i];
-        if (a !== b)
-          C = Tools.setIn(C, [key, "triggers", A.argsPaths[i]], b);
-        // console.log(" triggered by(" +i+ "):   " + oldVal.argsPaths[i] + "  =  " + oldArg +" / " + nevvArg);
-      }
-    }
-  }
-
   getDebugInfo(){
-    return MicroObserver.debug(this.oldFunctionsRegister, this.functionsRegister);
+    return {start: this.oldFunctionsRegister, end: this.functionsRegister};
   }
 }
