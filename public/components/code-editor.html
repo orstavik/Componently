@@ -41,6 +41,24 @@
       .CodeMirror {
         flex: 1;
       }
+      .CodeMirror-vscrollbar::-webkit-scrollbar-track
+      {
+        -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+        border-radius: 4px;
+        background-color: transparent;
+      }
+      
+      .CodeMirror-vscrollbar::-webkit-scrollbar
+      {
+        width: 8px;
+        background-color: transparent;
+      }
+      
+      .CodeMirror-vscrollbar::-webkit-scrollbar-thumb
+      {
+        border-radius: 10px;
+        background-color: rgba(255,255,255,0.2);
+      }
     </style>
 
     <div id="title">
@@ -106,7 +124,10 @@
         });
         window.addEventListener('resize', (e) => {
           this.$throttle(() => this._refreshEditor(), 1000/30);
-        })
+        });
+        setTimeout(() => {
+          this._refreshEditor();
+        }, 0);
       }
 
       _refreshEditor() {
