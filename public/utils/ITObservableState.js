@@ -53,9 +53,9 @@ class ITObservableState {
     this.que.shift();
     const snapShot = ITObservableState._takeSnapshot(startState, reducedState, computedState, this.state, task, this.computer.getDebugInfo(), this.observer.getDebugInfo(), start, startQueLength, this.que.splice());
     this.history = [snapShot].concat(this.history);
+    ITObservableState.debugList.push(snapShot);
     // if (this.history.length > 100)
     //   this.history.slice(0,50);
-    ITObservableState.debugList = this.history;
     Tools.emit("state-changed", this.state);
     Tools.emit("state-history-changed", this.history);
 
@@ -71,7 +71,7 @@ class ITObservableState {
     task.taskName = task.reducer.name;
     task.eventType = task.event.type;
     task.start = start;
-    task.end = performance.now();
+    task.stop = performance.now();
     return {
       startState,
       reducedState,

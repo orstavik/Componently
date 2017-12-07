@@ -69,6 +69,6 @@ class MicroObserver {
   }
 
   getDebugInfo(){
-    return {start: this.oldFunctionsRegister, end: this.functionsRegister};
+    return {start: this.oldFunctionsRegister, stop: this.functionsRegister};
   }
 }
