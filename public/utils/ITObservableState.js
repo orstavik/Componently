@@ -53,7 +53,8 @@ class ITObservableState {
     this.que.shift();
     const snapShot = ITObservableState._takeSnapshot(startState, reducedState, computedState, this.state, task, this.computer.getDebugInfo(), this.observer.getDebugInfo(), start, startQueLength, this.que.splice());
     this.history = [snapShot].concat(this.history);
-    ITObservableState.debugList.push(snapShot);
+    Tools.emit('state-changed-debug', JSON.stringify(snapShot));
+    // ITObservableState.debugList.push(snapShot);
     // if (this.history.length > 100)
     //   this.history.slice(0,50);
     Tools.emit("state-changed", this.state);
@@ -86,7 +87,7 @@ class ITObservableState {
   }
 }
 
-ITObservableState.debugList = [];
+// ITObservableState.debugList = [];
 // ITObservableState.debug = true;
 
 // window.addEventListener("state-changed-debug", e => ITObservableState.testAll(e.detail));
