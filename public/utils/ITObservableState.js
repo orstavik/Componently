@@ -53,15 +53,13 @@ class ITObservableState {
     this.que.shift();
     const snapShot = ITObservableState._takeSnapshot(startState, reducedState, computedState, this.state, task, this.computer.getDebugInfo(), this.observer.getDebugInfo(), start, startQueLength, this.que.splice());
     this.history = [snapShot].concat(this.history);
-    Tools.emit('state-changed-debug', JSON.stringify(snapShot));
-    // ITObservableState.debugList.push(snapShot);
+    if (ITObservableState.debugHook)
+      ITObservableState.debugHook(snapShot);
     // if (this.history.length > 100)
     //   this.history.slice(0,50);
     Tools.emit("state-changed", this.state);
     Tools.emit("state-history-changed", this.history);
 
-
-    // let lastCompletedTask = this.que.shift();
     // if (this.que.length > 100)
     //   setTimeout(()=> this.reduceComputeObserveInner(this.que[0]), 0);
     if (this.que.length > 0)
@@ -86,8 +84,3 @@ class ITObservableState {
     };
   }
 }
-
-// ITObservableState.debugList = [];
-// ITObservableState.debug = true;
-
-// window.addEventListener("state-changed-debug", e => ITObservableState.testAll(e.detail));
