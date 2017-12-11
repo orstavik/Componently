@@ -51,7 +51,7 @@ class ITObservableState {
     this.observer.update(computedState);                    //3. observe
     this.state = computedState;
     this.que.shift();
-    const snapShot = ITObservableState._takeSnapshot(startState, reducedState, computedState, this.state, task, this.computer.getDebugInfo(), this.observer.getDebugInfo(), start, startQueLength, this.que.splice());
+    const snapShot = ITObservableState._takeSnapshot(startState, reducedState, computedState, this.state, task, this.computer, this.observer, start, startQueLength, this.que.splice());
     this.history = [snapShot].concat(this.history);
     // if (this.history.length > 100)
     //   this.history.slice(0,50);
@@ -75,8 +75,8 @@ class ITObservableState {
       computedState,
       newState,
       task,
-      computerInfo,
-      observerInfo,
+      computerInfo: computerInfo.getStartStopRegisters(),
+      observerInfo: observerInfo.getStartStopRegisters(),
       startQueLength,
       que
     };
