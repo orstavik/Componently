@@ -65,8 +65,7 @@ class ITObservableState {
 
   static _takeSnapshot(startState, reducedState, computedState, newState, task, computerInfo, observerInfo, start, startQueLength, que) {
     task.taskName = task.reducer.name;
-    task.eventType = task.event.type;
-    task.eventInput = task.event.detail;
+    task.event = {type: event.type, detail: event.detail};
     task.start = start;
     task.stop = performance.now();
     return {
