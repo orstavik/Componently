@@ -16,7 +16,7 @@ class PathRegister {
     return path;
   }
 
-  getUniqueForString(path){
+  getUniqueForString(path) {
     const ar = path.split(".").map(p => p.trim());
     return this.getUnique(ar);
   }
@@ -24,27 +24,29 @@ class PathRegister {
 
 class MicroObserver {
 
-  constructor(maxStackSize) {
+  constructor(maxStackSize, observeOnly) {
     this.maxStackSize = maxStackSize || 100;
     this.functionsRegister = {};
     this.pathRegister = new PathRegister();
     this.state = {};
+    this.observeOnly = observeOnly;
   }
 
   //todo, here we could reorder the functionsRegister so that the functions with fewest arguments are listed before the functions with more arguments,
   //todo, this could make the functions faster.
-  bind(propName, func, pathsAsStrings) {
-    let argsPaths = pathsAsStrings.map(path => this.pathRegister.getUniqueForString(path));
-    let returnPath = pathsAsStrings.map(path => this.pathRegister.getUniqueForString(propName));
-    this.functionsRegister[propName + '__' + func.name] = {
-      returnProp: propName,
-      returnPath: returnPath,
-      returnValue: undefined,
+  bind(func, pathsAsStrings, returnName) {
+    const res = {
       func: func,
       funcName: func.name,
-      argsPaths: argsPaths,
-      argsValue: argsPaths.map(p => undefined)    //here we store the values of the last time we ran the function
+      argsPaths: pathsAsStrings.map(path => this.pathRegister.getUniqueForString(path)),
+      argsValue: pathsAsStrings.map(p => undefined)
     };
+    if(this.observeOnly)
+      return this.functionsRegister[func.name] = res;
+    res.returnProp = returnName;
+    res.returnPath = this.pathRegister.getUniqueForString(returnName);
+    res.returnValue = undefined;
+    this.functionsRegister[returnName] = res;
   }
 
   update(newValue) {
@@ -75,8 +77,9 @@ class MicroObserver {
 
       functions = Tools.setIn(functions, [funcName, "argsValue"], newArgsValues);
       let newComputedValue = func.apply(null, newArgsValues);
-      if (newComputedValue === props[propName])    //we changed the arguments, but the result didn't change.
+      if (newComputedValue === funcObj.returnValue)    //we changed the arguments, but the result didn't change.
         continue;                                 //Therefore, we don't need to recheck any of the previous functions run.
+      functions = Tools.setIn(functions, [funcName, "returnValue"], newComputedValue);
       pathsCache[propName] = newComputedValue;
       const newProps = Tools.setIn(props, [propName], newComputedValue);
       return MicroObserver.__compute(newProps, stackRemainderCount--, functions, pathsCache);

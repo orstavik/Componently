@@ -3,8 +3,8 @@ class ITObservableState {
   constructor(initial) {
     this.state = {};
     this.history = [];
-    this.computer = new MicroObserver();
-    this.observer = new MicroObserver();
+    this.computer = new MicroObserver(100, false);
+    this.observer = new MicroObserver(0, true);
 
     this.state = Tools.deepFreeze(initial);
     this.history = [];
@@ -16,11 +16,11 @@ class ITObservableState {
   }
 
   bindCompute(returnProp, computeFunc, argsAsStrings) {
-    this.computer.bind(returnProp, computeFunc, argsAsStrings);
+    this.computer.bind(computeFunc, argsAsStrings, returnProp);
   }
 
   bindObserve(observeFunc, argsAsStrings) {
-    this.observer.bind("__resultFromObserver__ifYouNeedThisBindToComputeNotObserve", observeFunc, argsAsStrings);
+    this.observer.bind(observeFunc, argsAsStrings);
   }
 
   _runOrAddToQue(e, reducer, throttle) {
