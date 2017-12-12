@@ -4,7 +4,6 @@ class MicroObserver {
     this.maxStackSize = maxStackSize || 100;
     this.functionsRegister = {};
     this.pathRegister = new PathRegister();
-    this.state = {};
     this.observeOnly = observeOnly;
   }
 
@@ -25,43 +24,40 @@ class MicroObserver {
   }
 
   update(newValue) {
-    const pathsCache = this.pathRegister.getPathsCache(newValue);
-    let res = MicroObserver.__compute(this.maxStackSize, this.functionsRegister, pathsCache, this.observeOnly);
-    let resState = newValue;
-    for (let pathString in res.pathsCache) {
-      let pathValue = res.pathsCache[pathString];
-      resState = Tools.setIn(resState, pathValue.path, pathValue.value);
-    }
-    this.oldFunctionsRegister = this.functionsRegister;
-    this.functionsRegister = res.functions;
-    return this.state = MicroObserver.copyAllTheNewCachedValuesIntoTheCurrentPropsState(newValue, res.pathsCache);
+    const start = {functions: this.functionsRegister, pathsCache: this.pathRegister.getPathsCache(newValue)};
+    const stop = MicroObserver.__compute(this.maxStackSize, start, this.observeOnly);
+    this.oldFunctionsRegister = start.functionsRegister;
+    this.functionsRegister = stop.functions;
+    return MicroObserver.copyAllTheNewCachedValuesIntoTheCurrentPropsState(newValue, stop.pathsCache);
   }
 
   //pathsCache is a mutable structure passed into __compute stack
-  static __compute(stackRemainderCount, functions, pathsCache, observeOnly) {
+  static __compute(stackRemainderCount, startingPoint, observeOnly) {
     stackRemainderCount = MicroObserver.checkStackCount(stackRemainderCount);
-    for (let funcName in functions) {
-      const funcObj = functions[funcName];
+
+    let workingPoint = startingPoint;
+    for (let funcName in workingPoint.functions) {
+      const funcObj = workingPoint.functions[funcName];
       const func = funcObj.func;
       const propName = funcObj.returnPath;
       const argsValues = funcObj.argsValue;
-      const newArgsValues = funcObj.argsPaths.map(path => pathsCache[path].value);
+      const newArgsValues = funcObj.argsPaths.map(path => workingPoint.pathsCache[path].value);
 
       const isEqual = argsValues.every((v, i) => v === newArgsValues[i]);
       if (isEqual)                      //none of the arguments have changed, then we do nothing.
         continue;
 
-      functions = Tools.setIn(functions, [funcName, "argsValue"], newArgsValues);
+      workingPoint = Tools.setIn(workingPoint, ["functions", funcName, "argsValue"], newArgsValues);
       let newComputedValue = func.apply(null, newArgsValues);
       if (observeOnly)
         continue;
       if (newComputedValue === funcObj.returnValue)    //we changed the arguments, but the result didn't change.
-        continue;                                 //Therefore, we don't need to recheck any of the previous functions run.
-      functions = Tools.setIn(functions, [funcName, "returnValue"], newComputedValue);
-      pathsCache = Tools.setIn(pathsCache, [propName, "value"], newComputedValue);
-      return MicroObserver.__compute(stackRemainderCount, functions, pathsCache, observeOnly/*is always false here*/);
+        continue;                                      //Therefore, we don't need to recheck any of the previous functions run.
+      workingPoint = Tools.setIn(workingPoint, ["functions", funcName, "returnValue"], newComputedValue);      //todo, we are storing the returnValue in the function as well.. this is not necessary..
+      workingPoint = Tools.setIn(workingPoint, ["pathsCache", propName, "value"], newComputedValue);
+      return MicroObserver.__compute(stackRemainderCount, workingPoint, false);
     }
-    return {functions: functions, pathsCache: pathsCache};
+    return workingPoint;
   }
 
   static checkStackCount(stackRemainderCount) {
