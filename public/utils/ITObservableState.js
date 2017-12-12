@@ -9,6 +9,7 @@ class ITObservableState {
     this.state = Tools.deepFreeze(initial);
     this.history = [];
     this.que = [];
+    window.addEventListener("state-get-history", e => Tools.emit("state-history-changed", this.history));     //this object will fire its history when queried.
   }
 
   bindReduce(eventName, reducer, throttle = true) {
