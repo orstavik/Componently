@@ -19,28 +19,34 @@ class MicroObserver {
     };
     if (this.observeOnly)
       return this.functionsRegister[func.name] = res;
-    res.returnProp = returnName;
+    // res.returnProp = returnName;
     res.returnPath = this.pathRegister.getUniqueForString(returnName);
     res.returnValue = undefined;
     return this.functionsRegister[returnName] = res;
   }
 
   update(newValue) {
-    let res = MicroObserver.__compute(newValue, this.maxStackSize, this.functionsRegister, {}, this.observeOnly);
+    const pathsCache = this.pathRegister.getPathsCache(newValue);
+    let res = MicroObserver.__compute(/*newValue, */this.maxStackSize, this.functionsRegister, pathsCache, this.observeOnly);
+    let resState = newValue;
+    for (let pathString in res.pathsCache) {
+      let pathValue = res.pathsCache[pathString];
+      resState = Tools.setIn(resState, pathValue.path, pathValue.value);
+    }
     this.oldFunctionsRegister = this.functionsRegister;
     this.functionsRegister = res.functions;
-    return this.state = res.state;
+    return this.state = MicroObserver.copyAllTheNewCachedValuesIntoTheCurrentPropsState(newValue, res.pathsCache);
   }
 
   //pathsCache is a mutable structure passed into __compute stack
-  static __compute(props, stackRemainderCount, functions, pathsCache, observeOnly) {
+  static __compute(/*props, */stackRemainderCount, functions, pathsCache, observeOnly) {
     stackRemainderCount = MicroObserver.checkStackCount(stackRemainderCount);
     for (let funcName in functions) {
       const funcObj = functions[funcName];
       const func = funcObj.func;
-      const propName = funcObj.returnProp;
+      const propName = funcObj.returnPath;
       const argsValues = funcObj.argsValue;
-      const newArgsValues = funcObj.argsPaths.map(path => pathsCache[path] || (pathsCache[path] = Tools.getIn(props, path)));
+      const newArgsValues = funcObj.argsPaths.map(path => pathsCache[path].value);
 
       const isEqual = argsValues.every((v, i) => v === newArgsValues[i]);
       if (isEqual)                      //none of the arguments have changed, then we do nothing.
@@ -53,11 +59,11 @@ class MicroObserver {
       if (newComputedValue === funcObj.returnValue)    //we changed the arguments, but the result didn't change.
         continue;                                 //Therefore, we don't need to recheck any of the previous functions run.
       functions = Tools.setIn(functions, [funcName, "returnValue"], newComputedValue);
-      pathsCache[propName] = newComputedValue;
-      const newProps = Tools.setIn(props, [propName], newComputedValue);
-      return MicroObserver.__compute(newProps, stackRemainderCount, functions, pathsCache, observeOnly/*is always false here*/);
+      pathsCache[propName].value = newComputedValue;
+      // const newProps = Tools.setIn(props, [propName], newComputedValue);
+      return MicroObserver.__compute(/*newProps, */stackRemainderCount, functions, pathsCache, observeOnly/*is always false here*/);
     }
-    return {state: props, functions: functions};
+    return {/*state: props,*/ functions: functions, pathsCache: pathsCache};
   }
 
   static checkStackCount(stackRemainderCount) {
@@ -72,30 +78,11 @@ class MicroObserver {
     return {start: this.oldFunctionsRegister, stop: this.functionsRegister};
   }
 
-  //todo not implemented
-  newUpdate(newValue) {
-    let pathsCache = ITObservableState.getAllFunctionPathValues(this.functionsRegister, this.state);
-    let res = MicroObserver.__compute(0, this.functionsRegister, pathsCache);   //with a complete pathsCache, no props need to be sent in.
-    this.state = ITObservableState.copyAllTheNewCachedValuesIntoTheCurrentPropsState(this.state, res.pathsCache);
-    this.oldFunctionsRegister = this.functionsRegister;
-    this.functionsRegister = res.functions;
-  }
-
-  //todo not implemented
-  static getAllFunctionPathValues(functions, obj) {
-    let pathsCache = {};
-    for (let funcName in functions) {
-      const funcObj = functions[funcName];
-      pathsCache[funcObj.returnProp] = undefined;
-      funcObj.argsPaths.map(path => pathsCache[path] = Tools.getIn(obj, path));
-    }
-    return pathsCache;
-  }
-
-  //todo not implemented
   static copyAllTheNewCachedValuesIntoTheCurrentPropsState(state, pathsCache) {
-    for (let path in pathsCache)
-      state = Tools.setIn(state, path, pathsCache[path]);
+    for (let pathString in pathsCache) {
+      let pathValue = pathsCache[pathString];
+      state = Tools.setIn(state, pathValue.path, pathValue.value);
+    }
     return state;
   }
 }
@@ -103,6 +90,13 @@ class MicroObserver {
 class PathRegister {
   constructor() {
     this.register = [];
+  }
+
+  getPathsCache(obj){
+    let res = {};
+    for (let path of this.register)
+      res[path] = {value: Tools.getIn(obj, path), path: path};
+    return res;
   }
 
   getUnique(path) {
@@ -114,6 +108,8 @@ class PathRegister {
       if (path.every((path_i, i) => path_i === pathB[i]))
         return pathB;
     }
+    if (this.register[path])
+      throw new Error("Illegal path name! You have probably used a string with comma as a pathname somehow. " + path);
     this.register.push(path);
     return path;
   }
