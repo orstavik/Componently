@@ -19,7 +19,6 @@ class MicroObserver {
     };
     if (this.observeOnly)
       return this.functionsRegister[func.name] = res;
-    // res.returnProp = returnName;
     res.returnPath = this.pathRegister.getUniqueForString(returnName);
     res.returnValue = undefined;
     return this.functionsRegister[returnName] = res;
@@ -27,7 +26,7 @@ class MicroObserver {
 
   update(newValue) {
     const pathsCache = this.pathRegister.getPathsCache(newValue);
-    let res = MicroObserver.__compute(/*newValue, */this.maxStackSize, this.functionsRegister, pathsCache, this.observeOnly);
+    let res = MicroObserver.__compute(this.maxStackSize, this.functionsRegister, pathsCache, this.observeOnly);
     let resState = newValue;
     for (let pathString in res.pathsCache) {
       let pathValue = res.pathsCache[pathString];
@@ -39,7 +38,7 @@ class MicroObserver {
   }
 
   //pathsCache is a mutable structure passed into __compute stack
-  static __compute(/*props, */stackRemainderCount, functions, pathsCache, observeOnly) {
+  static __compute(stackRemainderCount, functions, pathsCache, observeOnly) {
     stackRemainderCount = MicroObserver.checkStackCount(stackRemainderCount);
     for (let funcName in functions) {
       const funcObj = functions[funcName];
@@ -59,11 +58,10 @@ class MicroObserver {
       if (newComputedValue === funcObj.returnValue)    //we changed the arguments, but the result didn't change.
         continue;                                 //Therefore, we don't need to recheck any of the previous functions run.
       functions = Tools.setIn(functions, [funcName, "returnValue"], newComputedValue);
-      pathsCache[propName].value = newComputedValue;
-      // const newProps = Tools.setIn(props, [propName], newComputedValue);
-      return MicroObserver.__compute(/*newProps, */stackRemainderCount, functions, pathsCache, observeOnly/*is always false here*/);
+      pathsCache = Tools.setIn(pathsCache, [propName, "value"], newComputedValue);
+      return MicroObserver.__compute(stackRemainderCount, functions, pathsCache, observeOnly/*is always false here*/);
     }
-    return {/*state: props,*/ functions: functions, pathsCache: pathsCache};
+    return {functions: functions, pathsCache: pathsCache};
   }
 
   static checkStackCount(stackRemainderCount) {
@@ -92,7 +90,7 @@ class PathRegister {
     this.register = [];
   }
 
-  getPathsCache(obj){
+  getPathsCache(obj) {
     let res = {};
     for (let path of this.register)
       res[path] = {value: Tools.getIn(obj, path), path: path};
