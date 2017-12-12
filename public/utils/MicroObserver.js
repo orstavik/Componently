@@ -1,30 +1,49 @@
+class PathRegister {
+  constructor() {
+    this.register = [];
+  }
+
+  getUnique(path) {
+    if (!Array.isArray(path) || path.length === 0)
+      throw new Error("Cannot use this as path in ITObservableState: " + path);
+    for (let pathB of this.register) {
+      if (path.length !== pathB.length)
+        continue;
+      if (path.every((path_i, i) => path_i === pathB[i]))
+        return pathB;
+    }
+    this.register.push(path);
+    return path;
+  }
+
+  getUniqueForString(path){
+    const ar = path.split(".").map(p => p.trim());
+    return this.getUnique(ar);
+  }
+}
+
 class MicroObserver {
 
   constructor(maxStackSize) {
     this.maxStackSize = maxStackSize || 100;
     this.functionsRegister = {};
-    this.uniquePathsAsArray = {};
+    this.pathRegister = new PathRegister();
     this.state = {};
   }
 
   //todo, here we could reorder the functionsRegister so that the functions with fewest arguments are listed before the functions with more arguments,
   //todo, this could make the functions faster.
   bind(propName, func, pathsAsStrings) {
-    let pathsAsArray = pathsAsStrings.map(path => path.split(".").map(p => p.trim()));
-    //make sure you use the same object for all identical paths
-    pathsAsArray = pathsAsArray.map(path => {
-      let existing = Tools.getIn(this.uniquePathsAsArray, path);
-      if (existing)
-        return existing;
-      this.uniquePathsAsArray = Tools.setInNoCheck(this.uniquePathsAsArray, path, path);
-      return path;
-    });
+    let argsPaths = pathsAsStrings.map(path => this.pathRegister.getUniqueForString(path));
+    let returnPath = pathsAsStrings.map(path => this.pathRegister.getUniqueForString(propName));
     this.functionsRegister[propName + '__' + func.name] = {
       returnProp: propName,
+      returnPath: returnPath,
+      returnValue: undefined,
       func: func,
       funcName: func.name,
-      argsPaths: pathsAsArray,
-      argsValue: pathsAsArray.map(p => undefined)    //here we store the values of the last time we ran the function
+      argsPaths: argsPaths,
+      argsValue: argsPaths.map(p => undefined)    //here we store the values of the last time we ran the function
     };
   }
 
@@ -70,7 +89,7 @@ class MicroObserver {
   }
 
   //todo not implemented
-  newUpdate(newValue){
+  newUpdate(newValue) {
     let pathsCache = ITObservableState.getAllFunctionPathValues(this.functionsRegister, this.state);
     let res = MicroObserver.__compute(0, this.functionsRegister, pathsCache);   //with a complete pathsCache, no props need to be sent in.
     this.state = ITObservableState.copyAllTheNewCachedValuesIntoTheCurrentPropsState(this.state, res.pathsCache);
@@ -90,7 +109,7 @@ class MicroObserver {
   }
 
   //todo not implemented
-  static copyAllTheNewCachedValuesIntoTheCurrentPropsState(state, pathsCache){
+  static copyAllTheNewCachedValuesIntoTheCurrentPropsState(state, pathsCache) {
     for (let path in pathsCache)
       state = Tools.setIn(state, path, pathsCache[path]);
     return state;
