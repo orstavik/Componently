@@ -5,10 +5,11 @@ class MicroObserver {
     this.functionsRegister = {};
     this.pathRegister = new PathRegister();
     this.observeOnly = observeOnly;
+    this.stack = [];
   }
 
-  //todo, here we could reorder the functionsRegister so that the functions with fewest arguments are listed before the functions with more arguments,
-  //todo, this could make the functions faster.
+  //here we could reorder the functionsRegister so that the functions with fewest arguments are listed before the functions with more arguments,
+  //this could make the functions faster.
   bind(func, pathsAsStrings, returnName) {
     const res = {
       func: func,
@@ -23,12 +24,15 @@ class MicroObserver {
     return this.functionsRegister[returnName] = res;
   }
 
+  //this.functionsRegister remember the last situation of the stack run, between updates(!),
+  //via argumentValues and returnValues of its functions. Not sure if that is a good thing..
+  //but we must have this "between update memory" to avoid running observers and computers when things do not change.
+  //the pathsCache is refreshed for every update.
   update(newValue) {
     const start = {functions: this.functionsRegister, pathsCache: this.pathRegister.getPathsCache(newValue)};
-    const stop = MicroObserver.__compute(this.maxStackSize, start, this.observeOnly);
-    this.oldFunctionsRegister = start.functionsRegister;
-    this.functionsRegister = stop.functions;
-    return MicroObserver.copyAllTheNewCachedValuesIntoTheCurrentPropsState(newValue, stop.pathsCache);
+    this.stack = MicroObserver.__compute(this.maxStackSize, start, this.observeOnly);
+    this.functionsRegister = this.stack[0].functions;
+    return MicroObserver.copyAllTheNewCachedValuesIntoTheCurrentPropsState(newValue, this.stack[0].pathsCache);
   }
 
   //pathsCache is a mutable structure passed into __compute stack
@@ -47,6 +51,7 @@ class MicroObserver {
       if (isEqual)                      //none of the arguments have changed, then we do nothing.
         continue;
 
+      //todo When we change the workingPoint, we can make a mark in a list which function has triggered a change.
       workingPoint = Tools.setIn(workingPoint, ["functions", funcName, "argsValue"], newArgsValues);
       let newComputedValue = func.apply(null, newArgsValues);
       if (observeOnly)
@@ -55,9 +60,9 @@ class MicroObserver {
         continue;                                      //Therefore, we don't need to recheck any of the previous functions run.
       workingPoint = Tools.setIn(workingPoint, ["functions", funcName, "returnValue"], newComputedValue);      //todo, we are storing the returnValue in the function as well.. this is not necessary..
       workingPoint = Tools.setIn(workingPoint, ["pathsCache", propName, "value"], newComputedValue);
-      return MicroObserver.__compute(stackRemainderCount, workingPoint, false);
+      return MicroObserver.__compute(stackRemainderCount, workingPoint, false).concat([workingPoint]);
     }
-    return workingPoint;
+    return [workingPoint];
   }
 
   static checkStackCount(stackRemainderCount) {
@@ -69,7 +74,7 @@ class MicroObserver {
   }
 
   getStartStopRegisters() {
-    return {start: this.oldFunctionsRegister, stop: this.functionsRegister};
+    return {start: this.stack[this.stack.length-1].functions, stop: this.stack[0].functions};
   }
 
   static copyAllTheNewCachedValuesIntoTheCurrentPropsState(state, pathsCache) {
