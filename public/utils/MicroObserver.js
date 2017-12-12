@@ -1,27 +1,3 @@
-class PathRegister {
-  constructor() {
-    this.register = [];
-  }
-
-  getUnique(path) {
-    if (!Array.isArray(path) || path.length === 0)
-      throw new Error("Cannot use this as path in ITObservableState: " + path);
-    for (let pathB of this.register) {
-      if (path.length !== pathB.length)
-        continue;
-      if (path.every((path_i, i) => path_i === pathB[i]))
-        return pathB;
-    }
-    this.register.push(path);
-    return path;
-  }
-
-  getUniqueForString(path) {
-    const ar = path.split(".").map(p => p.trim());
-    return this.getUnique(ar);
-  }
-}
-
 class MicroObserver {
 
   constructor(maxStackSize, observeOnly) {
@@ -41,29 +17,24 @@ class MicroObserver {
       argsPaths: pathsAsStrings.map(path => this.pathRegister.getUniqueForString(path)),
       argsValue: pathsAsStrings.map(p => undefined)
     };
-    if(this.observeOnly)
+    if (this.observeOnly)
       return this.functionsRegister[func.name] = res;
     res.returnProp = returnName;
     res.returnPath = this.pathRegister.getUniqueForString(returnName);
     res.returnValue = undefined;
-    this.functionsRegister[returnName] = res;
+    return this.functionsRegister[returnName] = res;
   }
 
   update(newValue) {
-    let res = MicroObserver.__compute(newValue, this.maxStackSize, this.functionsRegister, {});
+    let res = MicroObserver.__compute(newValue, this.maxStackSize, this.functionsRegister, {}, this.observeOnly);
     this.oldFunctionsRegister = this.functionsRegister;
     this.functionsRegister = res.functions;
     return this.state = res.state;
   }
 
   //pathsCache is a mutable structure passed into __compute stack
-  static __compute(props, stackRemainderCount, functions, pathsCache) {
-    if (stackRemainderCount < 0)
-      throw new Error(
-        "StackOverFlowError in MicroObserver (ITObservableState).\n " +
-        "More than " + this.maxStackSize + " __compute cycles. Likely infinite loop.\n " +
-        "Tip: Even if it is not an infinite loop, you should still simplify your compute structure.");
-
+  static __compute(props, stackRemainderCount, functions, pathsCache, observeOnly) {
+    stackRemainderCount = MicroObserver.checkStackCount(stackRemainderCount);
     for (let funcName in functions) {
       const funcObj = functions[funcName];
       const func = funcObj.func;
@@ -77,14 +48,24 @@ class MicroObserver {
 
       functions = Tools.setIn(functions, [funcName, "argsValue"], newArgsValues);
       let newComputedValue = func.apply(null, newArgsValues);
+      if (observeOnly)
+        continue;
       if (newComputedValue === funcObj.returnValue)    //we changed the arguments, but the result didn't change.
         continue;                                 //Therefore, we don't need to recheck any of the previous functions run.
       functions = Tools.setIn(functions, [funcName, "returnValue"], newComputedValue);
       pathsCache[propName] = newComputedValue;
       const newProps = Tools.setIn(props, [propName], newComputedValue);
-      return MicroObserver.__compute(newProps, stackRemainderCount--, functions, pathsCache);
+      return MicroObserver.__compute(newProps, stackRemainderCount, functions, pathsCache, observeOnly/*is always false here*/);
     }
     return {state: props, functions: functions};
+  }
+
+  static checkStackCount(stackRemainderCount) {
+    if (stackRemainderCount >= 0)
+      return stackRemainderCount - 1;
+    throw new Error(
+      "StackOverFlowError in MicroObserver (ITObservableState). Probably an infinite loop.\n " +
+      "Tip: Even if it is not an infinite loop, you should still simplify your compute structure.");
   }
 
   getStartStopRegisters() {
@@ -116,5 +97,29 @@ class MicroObserver {
     for (let path in pathsCache)
       state = Tools.setIn(state, path, pathsCache[path]);
     return state;
+  }
+}
+
+class PathRegister {
+  constructor() {
+    this.register = [];
+  }
+
+  getUnique(path) {
+    if (!Array.isArray(path) || path.length === 0)
+      throw new Error("Cannot use this as path in ITObservableState: " + path);
+    for (let pathB of this.register) {
+      if (path.length !== pathB.length)
+        continue;
+      if (path.every((path_i, i) => path_i === pathB[i]))
+        return pathB;
+    }
+    this.register.push(path);
+    return path;
+  }
+
+  getUniqueForString(path) {
+    const ar = path.split(".").map(p => p.trim());
+    return this.getUnique(ar);
   }
 }
