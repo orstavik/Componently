@@ -48,7 +48,7 @@ const IntertextMixin = (superClass) => class extends superClass {
       }
     }
   }
-  
+
   $debounce(callback, ms) {
     let _debouncers = window.__superSpecificPolymerDebouncerLongNameArray;
     if (!_debouncers)
