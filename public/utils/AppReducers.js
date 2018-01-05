@@ -35,6 +35,7 @@ class AppReducers {
     let projects = Tools.getIn(state, ["persistent", "users", payload.username, "projects"]);
     projects = Tools.mergeDeepWithNullToDelete(projects, payload.ids);
     return Tools.setIn(state, ["persistent", "users", payload.username, "projects"], projects);
+    // todo: clean edits
   }
 
   static _newVersions(state, payload) {
@@ -209,9 +210,9 @@ class AppReducers {
       const keys = Object.keys(proj);
       if (keys.length !== 1)
         continue;
-      if (keys[0] === created)
+      if (keys[0] === 'created')
         AppData.addProject(name, projectName);              //todo here we could await the result and throw an event
-      else if (keys[0] === deleted)
+      else if (keys[0] === 'deleted')
         AppData.removeProject(name, projectName);           //todo here we could await the result and throw an event
     }
   }
@@ -235,7 +236,7 @@ class AppReducers {
   }
 
   static async _observeMissingFilesForVersion(version, owner, project, versionNumber) {
-    if (version && versionNumber && !version.files) {
+    if (version == null && versionNumber == null && !version.files) {
       const files = await AppData.getFiles(owner, project, versionNumber);
       Tools.emit("controller-new-files", {owner: owner, project: project, version: versionNumber, files: files});
     }

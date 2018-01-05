@@ -101,7 +101,7 @@
         this.state.bindObserve(AppReducers._observeMissingFilesForVersion, ["_actualVersion", "session.route.segments.1", "session.route.segments.2", "_actualVersionNumber"]);
         this.state.bindObserve(AppReducers._updateVersionsListener, ["session.route.segments.1", "session.route.segments.2"]);
         this.state.bindObserve(AppReducers._updateProjectsListener, ["persistent.user.nickname"]);
-//        this.state.bindObserve(AppReducers._projectsEdited, ["session.edits", "persistent.user.nickname"]);
+        this.state.bindObserve(AppReducers._projectsEdited, ["session.edits", "persistent.user.nickname"]);
 //        this.state.bindObserve(AppReducers._editsChanged, ["session.edits"]);
 
         AppShell.initFirebase();
