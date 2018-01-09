@@ -44,12 +44,15 @@ class ITObservableState {
   reduceComputeObserveInner(task) {
     let start = performance.now();
     const reducer = task.reducer;
-    const startQueLength = this.que.length - 1;              //for debug
+    const startQueLength = this.que.length - 1;               //for debug
     const e = task.event;
     let startState = this.state;
-    let reducedState = reducer(startState, e.detail);       //1. reduce
-    let computedState = this.computer.update(reducedState); //2. compute
-    this.observer.update(computedState);                    //3. observe
+    let reducedState = reducer(startState, e.detail);         //1. reduce
+    let computedState;
+    if(startState !== reducedState){
+      computedState = this.computer.update(reducedState);     //2. compute
+      this.observer.update(computedState);                    //3. observe
+    }
     this.state = computedState;
     this.que.shift();
     const snapShot = ITObservableState._takeSnapshot(startState, reducedState, computedState, this.state, task, this.computer, this.observer, start, startQueLength, this.que.splice());
