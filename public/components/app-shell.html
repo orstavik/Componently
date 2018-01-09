@@ -3,11 +3,11 @@
 <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase.js"></script>
 <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-firestore.js"></script>
 <link rel="import" href="../bower_components/polymer/polymer.html">
-<link rel="import" href="app-pages.html">
+<script src="app-pages.js"></script>
 <link rel="import" href="app-dialog.html">
 <link rel="import" href="home-page.html">
 <link rel="import" href="editor-page.html">
-<link rel="import" href="notfound-page.html">
+<script src="notfound-page.js"></script>
 
 <dom-module id="app-shell">
   <template>
@@ -17,7 +17,7 @@
       }
     </style>
 
-    <app-pages page="[[state.session.route.segments.0]]" fallback="notfound">
+    <app-pages page$="[[state.session.route.segments.0]]" fallback="notfound">
       <home-page page="home"
                  user="[[state.persistent.user]]"
                  user-data="[[state._userObject]]">
