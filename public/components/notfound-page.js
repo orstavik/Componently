@@ -1,5 +1,3 @@
-// import HyperHTMLElement from "";
-
 class NotfoundPage extends HyperHTMLElement {
 
   /**
@@ -13,6 +11,7 @@ class NotfoundPage extends HyperHTMLElement {
 
   render() {
     return this.html`
+      <style>${NotfoundPage._style()}</style>
       <p> 404 </p>
     `;
   }
