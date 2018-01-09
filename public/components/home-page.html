@@ -172,10 +172,10 @@
 
     <header>
       <a href="/home">Code2JS</a>
-      <div class="userBox" hidden="[[_userIn]]">
+      <div class="userBox" hidden="[[_checkUser(user)]]">
         <button id="signIn">Sign In</button>
       </div>
-      <div class="userBox" hidden="[[!_userIn]]">
+      <div class="userBox" hidden="[[!_checkUser(user)]]">
         <span>Let's code, [[user.nickname]]!</span>
         <img src="[[user.photo]]" alt="user photo">
         <button id="signOut" area-label="Sign out">
@@ -220,15 +220,8 @@
             type: Object,
             value: null
           },
-          userData: Object,
-          _userIn: Boolean
+          userData: Object
         }
-      }
-
-      static get observers() {
-        return [
-          '_checkUser(user)'
-        ]
       }
 
       connectedCallback() {
@@ -240,7 +233,7 @@
       }
 
       _checkUser(user) {
-        this._userIn = !!user;
+        return !!user;
       }
 
       _signIn() {
