@@ -24,8 +24,8 @@
       }
     </style>
 
-    <div id="trigger" on-mouseenter="_slideIn"></div>
-    <div id="container" on-mouseleave="_slideOut">
+    <div id="trigger"></div>
+    <div id="container">
       <slot></slot>
     </div>
 
@@ -44,6 +44,12 @@
             reflectToAttribute: true
           }
         }
+      }
+
+      connectedCallback(){
+        super.connectedCallback();
+        this.shadowRoot.querySelector("#trigger").addEventListener("mouseenter", this._slideIn.bind(this));
+        this.shadowRoot.querySelector("#container").addEventListener("mouseleave", this._slideOut.bind(this));
       }
 
       _slideIn() {

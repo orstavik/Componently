@@ -46,13 +46,13 @@
         <h2 id="title">[[project]]</h2>
         <div>
           <input type="text" id="newFileName" style="width: 120px;" placeholder="file">
-          <button on-tap="_addFile">+</button>
-          <button on-tap="_openPreview">Preview</button>
+          <button id="addFile">+</button>
+          <button id="openPreview">Preview</button>
           <input hidden="[[!true]]" type="text" id="versionComment" style="width: 120px;"
                  placeholder="version comment">
-          <button hidden="[[!true]]" on-tap="_saveChanges">Save</button>
+          <button id="save" hidden="[[!true]]">Save</button>
           Version:
-          <select on-change="_changeVersion">
+          <select id="changeVersion">
             <template is="dom-repeat" items="[[_toArray(versions)]]">
               <option value="[[item.name]]" selected="[[_isSelectedVersion(item.name, version.name)]]">[[item.name]]
                 [[item.comment]]
@@ -64,8 +64,7 @@
     </slide-bar>
     <resizable-boxes id="editors">
       <template is="dom-repeat" items="[[_mergeToArray(version.files, editedVersion.files, showEdits)]]">
-        <code-editor name="[[item.name]]" mode="[[_getExt(item.name)]]" value="[[item.value]]"
-                     on-file-edited="_fileEdited"></code-editor>
+        <code-editor name="[[item.name]]" mode="[[_getExt(item.name)]]" value="[[item.value]]"></code-editor>
       </template>
     </resizable-boxes>
     <code-preview id="preview" owner="[[owner]]" project="[[project]]" files="[[files]]"></code-preview>
@@ -89,6 +88,15 @@
             value: true
           }
         }
+      }
+
+      connectedCallback(){
+        super.connectedCallback();
+        Polymer.Gestures.addListener(this.shadowRoot.querySelector("#addFile"), "tap", this._addFile.bind(this));
+        Polymer.Gestures.addListener(this.shadowRoot.querySelector("#openPreview"), "tap", this._openPreview.bind(this));
+        Polymer.Gestures.addListener(this.shadowRoot.querySelector("#save"), "tap", this._saveChanges.bind(this));
+        this.shadowRoot.querySelector("#changeVersion").addEventListener("change", this._changeVersion.bind(this));
+        this.shadowRoot.querySelector("#editors").addEventListener("file-edited", this._fileEdited.bind(this));
       }
 
       _fileEdited(e) {
@@ -154,12 +162,13 @@
           return name.split('.').pop();
       }
 
-//      _saveChanges() {               //todo this should be reshaped into a comment version
+      _saveChanges() {               //todo this should be reshaped into a comment version
+        alert("not implemented");
 //        let comment = this.$.versionComment.value;
 //        this.$emit('controller-save-new-version', comment);
 //        this.$.versionComment.value = '';
-//      }
-//
+      }
+
       _openPreview() {
         //todo here we can choose to have different html pages and autoload
         this.$.preview.openPreview("index.html", true);

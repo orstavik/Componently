@@ -1,17 +1,15 @@
 <dom-module id="home-page">
   <template>
     <style>
-       :host {
+      :host {
         display: flex;
         flex-direction: column;
         min-height: 100vh;
       }
-
       button:focus,
       input:focus {
         outline: none;
       }
-
       header {
         display: flex;
         position: relative;
@@ -22,7 +20,6 @@
         0 1px 10px 0 rgba(0, 0, 0, 0.12),
         0 2px 4px -1px rgba(0, 0, 0, 0.4);
       }
-
       header a {
         flex: 1;
         margin: 12px 0;
@@ -30,14 +27,12 @@
         text-decoration: none;
         font-family: 'Vollkorn SC';
         font-size: 48px;
-      /*  animation: Pulse 1s ease-in-out alternate infinite;*/
+        /*  animation: Pulse 1s ease-in-out alternate infinite;*/
       }
-
       .userBox {
         display: flex;
         align-items: center;
       }
-
       .userBox img {
         width: 54px;
         height: 54px;
@@ -46,11 +41,9 @@
         filter: brightness(110%) contrast(120%);
         margin: 0 12px;
       }
-
       .userBox span {
         color: rgba(255, 255, 255, 0.7);
       }
-
       #signIn,
       #addProject button {
         background-color: rgba(0, 0, 0, 0);
@@ -65,58 +58,48 @@
         transition: 0.1s;
         cursor: pointer;
       }
-
       #signIn:active,
       #addProject button:active {
         background-color: #00E676;
         color: black;
         box-shadow: 0 0 8px 0px #00E676;
       }
-
       #signOut {
         border: none;
         background: transparent;
         transition: 0.1s;
         cursor: pointer;
       }
-
       #signOut:active {
         color: #00E676;
         filter: drop-shadow(0 0 3px);
       }
-
       #signOut .signout-icon {
         width: 32px;
         height: 32px;
         fill: rgba(255, 255, 255, 0.4);
         transition: 0.1s;
       }
-
       #signOut:hover .signout-icon {
         fill: rgba(255, 255, 255, 0.6);
       }
-
       #signOut:active .signout-icon {
         fill: #00E676;
       }
-
       main {
         flex: 1;
         padding: 24px;
         background-color: #555;
         color: #fff;
       }
-
       main h2 {
         letter-spacing: -1px;
         margin: 0;
       }
-
       main hr {
         border: 1px solid #fff;
         opacity: 0.3;
       }
-
       #gridContainer {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -125,7 +108,6 @@
         list-style: none;
         padding: 0;
       }
-
       #gridContainer li {
         display: flex;
         flex-direction: column;
@@ -133,53 +115,46 @@
         background-color: #fff;
         transition: 0.28s cubic-bezier(0.4, 0, 0.2, 1);;
         box-shadow: 0 3px 4px 0 rgba(0, 0, 0, 0.14),
-                    0 1px 8px 0 rgba(0, 0, 0, 0.12),
-                    0 3px 3px -2px rgba(0, 0, 0, 0.4);
+        0 1px 8px 0 rgba(0, 0, 0, 0.12),
+        0 3px 3px -2px rgba(0, 0, 0, 0.4);
         cursor: pointer;
       }
-      
       #gridContainer li:hover:not(#addProject) {
         box-shadow: 0 8px 10px 1px rgba(0, 0, 0, 0.14),
-                    0 3px 14px 2px rgba(0, 0, 0, 0.12),
-                    0 5px 5px -3px rgba(0, 0, 0, 0.4);
+        0 3px 14px 2px rgba(0, 0, 0, 0.12),
+        0 5px 5px -3px rgba(0, 0, 0, 0.4);
       }
-
       #gridContainer li:first-child {
         grid-row: 1 / 3;
         grid-column: 1 / 3;
       }
-
       #gridContainer li h4 {
         color: black;
         margin: 12px;
       }
-
       li#addProject {
         align-items: center;
         justify-content: center;
-        background-color: rgba(0,0,0,0.2);
+        background-color: rgba(0, 0, 0, 0.2);
         box-shadow: inset 0 3px 4px 0 rgba(0, 0, 0, 0.14),
-                    inset 0 1px 8px 0 rgba(0, 0, 0, 0.12),
-                    inset 0 3px 3px -2px rgba(0, 0, 0, 0.4);
+        inset 0 1px 8px 0 rgba(0, 0, 0, 0.12),
+        inset 0 3px 3px -2px rgba(0, 0, 0, 0.4);
       }
-
       #addProject input {
         border: 1px solid #777;
         border-radius: 3px;
         padding: 8px;
         margin-bottom: 16px;
-        background-color: rgba(0,0,0,0.5);
+        background-color: rgba(0, 0, 0, 0.5);
         font-family: Quicksand;
         font-size: 16px;
         text-align: center;
         color: #00E676;
         text-shadow: 0 0 2px #00E676;
       }
-
       #addProject input::placeholder {
         text-shadow: none;
       }
-
       @keyframes Pulse {
         from {
           text-shadow: 0 0 4px #000,
@@ -190,7 +165,6 @@
           0 0 24px #00E676;
         }
       }
-
       *[hidden] {
         display: none !important;
       }
@@ -199,14 +173,15 @@
     <header>
       <a href="/home">Code2JS</a>
       <div class="userBox" hidden="[[_userIn]]">
-        <button on-tap="_signIn" id="signIn">Sign In</button>
+        <button id="signIn">Sign In</button>
       </div>
       <div class="userBox" hidden="[[!_userIn]]">
         <span>Let's code, [[user.nickname]]!</span>
         <img src="[[user.photo]]" alt="user photo">
-        <button on-tap="_signOut" id="signOut" area-label="Sign out">
+        <button id="signOut" area-label="Sign out">
           <svg class="signout-icon">
-            <path d="M14.08,15.59L16.67,13H7V11H16.67L14.08,8.41L15.5,7L20.5,12L15.5,17L14.08,15.59M19,3A2,2 0 0,1 21,5V9.67L19,7.67V5H5V19H19V16.33L21,14.33V19A2,2 0 0,1 19,21H5C3.89,21 3,20.1 3,19V5C3,3.89 3.89,3 5,3H19Z" />
+            <path
+                d="M14.08,15.59L16.67,13H7V11H16.67L14.08,8.41L15.5,7L20.5,12L15.5,17L14.08,15.59M19,3A2,2 0 0,1 21,5V9.67L19,7.67V5H5V19H19V16.33L21,14.33V19A2,2 0 0,1 19,21H5C3.89,21 3,20.1 3,19V5C3,3.89 3.89,3 5,3H19Z"/>
           </svg>
         </button>
       </div>
@@ -216,7 +191,7 @@
       <hr>
       <ul id="gridContainer">
         <template is="dom-repeat" items="[[_toArray(userData.projects)]]">
-          <li on-tap="_selectProject" data-id$="[[item]]">
+          <li class="projectItem" data-id$="[[item]]">
             <div style="flex: 1"></div>
             <div class="description">
               <h4>[[item]]</h4>
@@ -226,14 +201,15 @@
         </template>
         <li id="addProject">
           <input type="text" id="newProjectName" placeholder="project">
-          <button on-tap="_addProject">Add project</button>
+          <button>Add project</button>
         </li>
       </ul>
     </main>
 
   </template>
   <script>
-    class HomePage extends Polymer.GestureEventListeners(IntertextMixin(Polymer.Element)) {
+    class HomePage extends IntertextMixin(Polymer.Element) {
+
       static get is() {
         return 'home-page';
       }
@@ -257,6 +233,10 @@
 
       connectedCallback() {
         super.connectedCallback();
+        this.shadowRoot.querySelector("#signIn").addEventListener("click", this._signIn.bind(this));
+        this.shadowRoot.querySelector("#signOut").addEventListener("click", this._signOut.bind(this));
+        this.shadowRoot.querySelector("#gridContainer").addEventListener("click", this._selectProject.bind(this));
+        this.shadowRoot.querySelector("#addProject").addEventListener("click", this._addProject.bind(this));
       }
 
       _checkUser(user) {
@@ -284,14 +264,28 @@
       }
 
       _selectProject(e) {
-        const project = e.currentTarget.dataset.id;
+        let target;
+        for (let item of e.path) {
+          if (item.classList && item.classList.contains("projectItem"))
+            target = item;
+        }
+        const project = target.dataset.id;
         this.$emit('controller-select-project', {owner: this.user.nickname, project: project});
       }
 
       _toArray(obj) {
         return !obj ? [] : Object.keys(obj);
       }
+
+      $emit(name, payload) {
+        return this.dispatchEvent(new CustomEvent(name, {
+          composed: true,
+          bubbles: true,
+          detail: payload,
+        }));
+      }
     }
+
     customElements.define(HomePage.is, HomePage);
   </script>
 </dom-module>
