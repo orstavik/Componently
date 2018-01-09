@@ -5,10 +5,14 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <script src="app-pages.js"></script>
 <link rel="import" href="app-dialog.html">
-<!--<link rel="import" href="home-page.html">-->
 <script src="home-page.js"></script>
-<link rel="import" href="editor-page.html">
+<script src="editor-page.js"></script>
 <script src="notfound-page.js"></script>
+
+<link rel="import" href="code-editor.html">
+<link rel="import" href="code-preview.html">
+<link rel="import" href="resizable-boxes.html">
+<script src="slide-bar.js"></script>
 
 <dom-module id="app-shell">
   <template>
@@ -20,17 +24,11 @@
 
     <app-pages page$="[[state.session.route.segments.0]]" fallback="notfound">
       <home-page page="home"></home-page>
-      <editor-page page="editor"
-                   owner="[[state.session.route.segments.1]]"
-                   project="[[state.session.route.segments.2]]"
-                   version="[[state._actualVersion]]"
-                   edited-version="[[state._editActualVersion]]"
-                   versions="[[state._fullProjectObject.versions]]">
-      </editor-page>
+      <editor-page page="editor"></editor-page>
       <notfound-page page="notfound"></notfound-page>
     </app-pages>
 
-    <app-dialog id="nickDialog" >
+    <app-dialog id="nickDialog">
       <form>
         <p>Enter your nickname to register</p>
         <input type="text" id="nickname" placeholder="nickname">
@@ -52,7 +50,7 @@
         }
       }
 
-      connectedCallback(){
+      connectedCallback() {
         super.connectedCallback();
         const dialog = this.shadowRoot.querySelector("#nickDialog");
         dialog.addEventListener("dialog-canceled", this._signOut.bind(this));
@@ -118,6 +116,12 @@
           if (!this.shadowRoot)
             return;
           this.shadowRoot.querySelector("home-page").updateState(e.detail.persistent ? e.detail.persistent.user : undefined, e.detail._userObject)
+          this.shadowRoot.querySelector("editor-page").updateState(
+            e.detail.session && e.detail.session.route && e.detail.session.route.segments ? e.detail.session.route.segments[1] : undefined,
+            e.detail.session && e.detail.session.route && e.detail.session.route.segments ? e.detail.session.route.segments[2] : undefined,
+            e.detail._actualVersion,
+            e.detail._editActualVersion,
+            e.detail._fullProjectObject? e.detail._fullProjectObject.versions : undefined);
         });
         window.addEventListener("state-history-changed", e => this.set("history", e.detail));
 
