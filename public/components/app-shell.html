@@ -5,7 +5,8 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <script src="app-pages.js"></script>
 <link rel="import" href="app-dialog.html">
-<link rel="import" href="home-page.html">
+<!--<link rel="import" href="home-page.html">-->
+<script src="home-page.js"></script>
 <link rel="import" href="editor-page.html">
 <script src="notfound-page.js"></script>
 
@@ -18,10 +19,7 @@
     </style>
 
     <app-pages page$="[[state.session.route.segments.0]]" fallback="notfound">
-      <home-page page="home"
-                 user="[[state.persistent.user]]"
-                 user-data="[[state._userObject]]">
-      </home-page>
+      <home-page page="home"></home-page>
       <editor-page page="editor"
                    owner="[[state.session.route.segments.1]]"
                    project="[[state.session.route.segments.2]]"
@@ -115,7 +113,12 @@
 
         window.addEventListener('ui-nickname-dialog', (e) => this.shadowRoot.querySelector("#nickDialog").open());
 
-        window.addEventListener("state-changed", e => this.set("state", e.detail));
+        window.addEventListener("state-changed", e => {
+          this.set("state", e.detail);
+          if (!this.shadowRoot)
+            return;
+          this.shadowRoot.querySelector("home-page").updateState(e.detail.persistent ? e.detail.persistent.user : undefined, e.detail._userObject)
+        });
         window.addEventListener("state-history-changed", e => this.set("history", e.detail));
 
         window.addEventListener('controller-select-project', this._selectProject);
