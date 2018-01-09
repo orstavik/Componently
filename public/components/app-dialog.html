@@ -1,6 +1,4 @@
 <link rel="import" href="css-animation.html">
-
-
 <dom-module id="app-dialog">
   <template>
     <style>
@@ -76,7 +74,7 @@
   </template>
 
   <script>
-    class AppDialog extends IntertextMixin(Polymer.GestureEventListeners(Polymer.Element)) {
+    class AppDialog extends Polymer.GestureEventListeners(Polymer.Element) {
       static get is() {
         return "app-dialog";
       }
@@ -123,6 +121,14 @@
         	this.opened = false;
           this.$emit('dialog-closed');
 				});
+      }
+
+      $emit(name, payload) {
+        return this.dispatchEvent(new CustomEvent(name, {
+          composed: true,
+          bubbles: true,
+          detail: payload,
+        }));
       }
     }
     customElements.define(AppDialog.is, AppDialog);
