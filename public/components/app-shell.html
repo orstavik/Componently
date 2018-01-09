@@ -17,7 +17,7 @@
       }
     </style>
 
-    <app-pages page="[[state.session.route.segments.0]]">
+    <app-pages page="[[state.session.route.segments.0]]" fallback="notfound">
       <home-page page="home"
                  user="[[state.persistent.user]]"
                  user-data="[[state._userObject]]">
