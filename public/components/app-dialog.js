@@ -90,7 +90,6 @@ class AppDialog extends HyperHTMLElement {
     `;
   }
 
-
   open() {
     this.setAttribute("opened", "");
     this.shadowRoot.querySelector("#overlay").enter();
