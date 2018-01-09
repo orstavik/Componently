@@ -30,7 +30,7 @@
         background: black;
         color: lightgray;
       }
-      #hide {
+      #remove {
         position: absolute;
         font-weight: bold;
         font-family: Arial;
@@ -63,7 +63,7 @@
 
     <div id="title">
       [[name]]
-      <span id="hide" on-click="_removeFile">x</span>
+      <span id="remove">x</span>
     </div>
 
   </template>
@@ -122,6 +122,7 @@
         this.editor.on('change', (e) => {
           this.$emit('file-edited', {filename: this.name, value: e.getValue()});
         });
+        this.shadowRoot.querySelector("#remove").addEventListener("click", this._removeFile.bind(this));
         window.addEventListener('resize', (e) => {
           this.$throttle(() => this._refreshEditor(), 1000/30);
         });
