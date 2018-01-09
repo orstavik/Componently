@@ -3,10 +3,11 @@
 <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase.js"></script>
 <script src="https://www.gstatic.com/firebasejs/4.6.2/firebase-firestore.js"></script>
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
-<link rel="import" href="app-router.html">
 <link rel="import" href="app-pages.html">
-<link rel="import" href="app-iconset.html">
 <link rel="import" href="app-dialog.html">
+<link rel="import" href="home-page.html">
+<link rel="import" href="editor-page.html">
+<link rel="import" href="notfound-page.html">
 
 <dom-module id="app-shell">
   <template>
@@ -15,8 +16,6 @@
         display: block;
       }
     </style>
-
-    <app-router default-url="home"></app-router>
 
     <app-pages page="[[state.session.route.segments.0]]">
       <home-page page="home"
@@ -66,7 +65,8 @@
         };
         this.state = new ITObservableState(initialState);
 
-        this.state.bindReduce('state-change-route', AppReducers._changeRoute, true);          //select-project
+        //router
+        this.state.bindReduce("popstate", RouterReducer._changeRoute, true);
 
         //auth
         this.state.bindReduce('controller-auth-changed', UserReducers._authChanged, true);
@@ -115,6 +115,8 @@
         window.addEventListener('controller-select-version', this._selectVersion);
         window.addEventListener('state-changed-debug', (e) => console.log(e.type));
 
+        //initialize the state with route data.
+        window.dispatchEvent(new Event("popstate"));
       }
 
       static initFirebase() {

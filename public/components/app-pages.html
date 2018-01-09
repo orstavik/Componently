@@ -1,25 +1,18 @@
-<link rel="import" href="../bower_components/iron-pages/iron-pages.html">
-<link rel="import" href="../bower_components/lazy-imports/lazy-imports-mixin.html">
-
 <dom-module id="app-pages">
-  <link rel="lazy-import" href="home-page.html" group="home">
-  <link rel="lazy-import" href="editor-page.html" group="editor">
-  <link rel="lazy-import" href="notfound-page.html" group="notfound">
   <template>
     <style>
       :host {
         display: block;
       }
+      :host > ::slotted(:not(slot):not(.page-selected)) {
+        display: none !important;
+      }
     </style>
-
-    <iron-pages id="pages" selected="[[page]]" fallback-selection="notfound"
-                attr-for-selected="page" selected-attribute="current">
-      <slot></slot>
-    </iron-pages>
-
+    <slot></slot>
   </template>
+
   <script>
-    class AppPages extends Polymer.LazyImportsMixin(IntertextMixin(Polymer.Element)) {
+    class AppPages extends Polymer.Element {
       static get is() {
         return 'app-pages';
       }
@@ -38,12 +31,15 @@
 
       _pageChanged(page) {
         if (['home','editor'].indexOf(page) === -1)
-          this.page = 'notfound';
-        this.importLazyGroup(page).then((results) => {
-          this.$emit('lazy-loaded', results);
-        }).catch((err) => {
-          throw err;
-        })
+          page = 'notfound';
+        const pages = this.shadowRoot.querySelector("slot").assignedNodes();
+        for (let slotPage of pages) {
+          if(slotPage.getAttribute("page") === page){
+            slotPage.classList.add("page-selected");
+          }
+          else
+            slotPage.classList.remove("page-selected");
+        }
       }
     }
     customElements.define(AppPages.is, AppPages);
