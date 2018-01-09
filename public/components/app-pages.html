@@ -35,7 +35,9 @@
           page = 'notfound';
         const pages = this.shadowRoot.querySelector("slot").assignedNodes();
         for (let slotPage of pages) {
-          if(slotPage.getAttribute("page") === page){
+          if (slotPage.nodeName == '#text')
+            continue;
+          if (slotPage.getAttribute("page") === page){
             slotPage.classList.add("page-selected");
           }
           else
