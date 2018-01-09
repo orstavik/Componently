@@ -59,7 +59,6 @@ class EditorPage extends HyperHTMLElement {
           <code-editor name="${item.name}" mode="${this._getExt(item.name)}" value="${item.value}"></code-editor>
         `)}
       </resizable-boxes>
-      <code-preview id="preview" owner="${this.state.owner}" project="${this.state.project}" files="${this.state.files}"></code-preview>
     `;
   }
 
@@ -171,8 +170,7 @@ class EditorPage extends HyperHTMLElement {
   }
 
   _openPreview() {
-    //todo here we can choose to have different html pages and autoload
-    this.shadowRoot.querySelector("#preview").openPreview("index.html", true);
+    this.$emit("open-preview", {page: "index.html", autoload: true});
   }
 
   $emit(name, payload) {

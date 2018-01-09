@@ -3,7 +3,7 @@
 var cacheVersion = 1;
 var currentCache = {
   preview: 'preview'
-  //todo careful here, dont do as below. The "preview" name is also used to reference the cache instance in code-preview.html.
+  //todo careful here, dont do as below. The "preview" name is also used to reference the cache instance in code-preview.js.
   //preview: 'preview' + cacheVersion
 };
 //inspired by:

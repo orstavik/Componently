@@ -8,9 +8,9 @@
 <script src="home-page.js"></script>
 <script src="editor-page.js"></script>
 <script src="notfound-page.js"></script>
+<script src="code-preview.js"></script>
 
 <link rel="import" href="code-editor.html">
-<link rel="import" href="code-preview.html">
 <link rel="import" href="resizable-boxes.html">
 <script src="slide-bar.js"></script>
 
@@ -27,6 +27,8 @@
       <editor-page page="editor"></editor-page>
       <notfound-page page="notfound"></notfound-page>
     </app-pages>
+
+    <code-preview></code-preview>
 
     <app-dialog id="nickDialog">
       <form>
@@ -121,12 +123,19 @@
             e.detail.session && e.detail.session.route && e.detail.session.route.segments ? e.detail.session.route.segments[2] : undefined,
             e.detail._actualVersion,
             e.detail._editActualVersion,
-            e.detail._fullProjectObject? e.detail._fullProjectObject.versions : undefined);
+            e.detail._fullProjectObject? e.detail._fullProjectObject.versions : undefined
+          );
+          this.shadowRoot.querySelector("code-preview").updateState(
+            e.detail.session && e.detail.session.route && e.detail.session.route.segments ? e.detail.session.route.segments[1] : undefined,
+            e.detail.session && e.detail.session.route && e.detail.session.route.segments ? e.detail.session.route.segments[2] : undefined,
+            e.detail._editActualVersion ? e.detail._editActualVersion.files : undefined
+          );
         });
         window.addEventListener("state-history-changed", e => this.set("history", e.detail));
 
         window.addEventListener('controller-select-project', this._selectProject);
         window.addEventListener('controller-select-version', this._selectVersion);
+        window.addEventListener('open-preview', this._openPreview.bind(this));
         window.addEventListener('state-changed-debug', (e) => console.log(e.type));
 
         //initialize the state with route data.
@@ -157,6 +166,10 @@
 
       _selectVersion(e) {
         Tools.navigate(`/editor/${e.detail.owner}/${e.detail.project}/${e.detail.version}`);
+      }
+
+      _openPreview(e) {
+        this.shadowRoot.querySelector("code-preview").openPreview(e.detail.page, e.detail.autoload);
       }
 
       _submitNickname(e) {
