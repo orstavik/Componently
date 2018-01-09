@@ -26,36 +26,58 @@ class Tools {
       callback);
   }
 
-  static lockPath(obj, path, msg){
+  static lockPath(obj, path, msg) {
     return {};//todo not implemented
   }
 
   static objectEquals(x, y) {
-    if (x === null || x === undefined || y === null || y === undefined) { return x === y; }
+    if (x === null || x === undefined || y === null || y === undefined) {
+      return x === y;
+    }
     // after this just checking type of one would be enough
-    if (x.constructor !== y.constructor) { return false; }
+    if (x.constructor !== y.constructor) {
+      return false;
+    }
     // if they are functions, they should exactly refer to same one (because of closures)
-    if (x instanceof Function) { return x === y; }
+    if (x instanceof Function) {
+      return x === y;
+    }
     // if they are regexps, they should exactly refer to same one (it is hard to better equality check on current ES)
-    if (x instanceof RegExp) { return x === y; }
-    if (x === y || x.valueOf() === y.valueOf()) { return true; }
-    if (Array.isArray(x) && x.length !== y.length) { return false; }
+    if (x instanceof RegExp) {
+      return x === y;
+    }
+    if (x === y || x.valueOf() === y.valueOf()) {
+      return true;
+    }
+    if (Array.isArray(x) && x.length !== y.length) {
+      return false;
+    }
 
     // if they are dates, they must had equal valueOf
-    if (x instanceof Date) { return false; }
+    if (x instanceof Date) {
+      return false;
+    }
 
     // if they are strictly equal, they both need to be object at least
-    if (!(x instanceof Object)) { return false; }
-    if (!(y instanceof Object)) { return false; }
+    if (!(x instanceof Object)) {
+      return false;
+    }
+    if (!(y instanceof Object)) {
+      return false;
+    }
 
     // recursive object equality check
     let p = Object.keys(x);
-    return Object.keys(y).every(function (i) { return p.indexOf(i) !== -1; }) &&
-      p.every(function (i) { return Tools.objectEquals(x[i], y[i]); });
+    return Object.keys(y).every(function (i) {
+        return p.indexOf(i) !== -1;
+      }) &&
+      p.every(function (i) {
+        return Tools.objectEquals(x[i], y[i]);
+      });
   }
 
-  static testPath(root, path){
-    if(!root)
+  static testPath(root, path) {
+    if (!root)
       return false;
     for (let key of path) {
       if (!root[key])
@@ -65,7 +87,7 @@ class Tools {
     return true;
   }
 
-  static removeUndefinedFields(obj){
+  static removeUndefinedFields(obj) {
     let res = Object.assign({}, obj);
     for (let key in res) {
       if (res[key] === undefined)
@@ -277,6 +299,15 @@ class Tools {
     return res;
   }
 
+
+  static strToArray(str) {
+    return Tools.pathCache[str] || (Tools.pathCache[str] = str.split("."));
+  }
+
+  static getInStr(obj, path) {
+    return Tools.getIn(obj, Tools.strToArray(path));
+  }
+
   static getIn(obj, path) {
     if (!(obj instanceof Object)) return undefined;
     for (let i = 0; i < path.length - 1; i++) {
@@ -437,6 +468,9 @@ class Tools {
     return id;
   }
 }
+
+Tools.pathCache = {};
+
 
 // Modeled after base64 web-safe chars, but ordered by ASCII.
 Tools.PUSH_CHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';

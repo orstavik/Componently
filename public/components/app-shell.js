@@ -64,27 +64,7 @@ class AppShell extends HyperHTMLElement {
 
     window.addEventListener('ui-nickname-dialog', (e) => this.shadowRoot.querySelector("#nickDialog").open());
 
-    window.addEventListener("state-changed", e => {
-      // this.set("state", e.detail);
-      if (!this.shadowRoot)
-        return;
-      this.shadowRoot.querySelector("home-page").updateState(e.detail.persistent ? e.detail.persistent.user : undefined, e.detail._userObject)
-      this.shadowRoot.querySelector("editor-page").updateState(
-        e.detail.session && e.detail.session.route && e.detail.session.route.segments ? e.detail.session.route.segments[1] : undefined,
-        e.detail.session && e.detail.session.route && e.detail.session.route.segments ? e.detail.session.route.segments[2] : undefined,
-        e.detail._actualVersion,
-        e.detail._editActualVersion,
-        e.detail._fullProjectObject ? e.detail._fullProjectObject.versions : undefined
-      );
-      this.shadowRoot.querySelector("code-preview").updateState(
-        e.detail.session && e.detail.session.route && e.detail.session.route.segments ? e.detail.session.route.segments[1] : undefined,
-        e.detail.session && e.detail.session.route && e.detail.session.route.segments ? e.detail.session.route.segments[2] : undefined,
-        e.detail._editActualVersion ? e.detail._editActualVersion.files : undefined
-      );
-      this.shadowRoot.querySelector("app-pages").updateState(
-        e.detail.session && e.detail.session.route && e.detail.session.route.segments ? e.detail.session.route.segments[0] : undefined
-      );
-    });
+    window.addEventListener("state-changed", this.stateChanged.bind(this));
     // window.addEventListener("state-history-changed", e => console.log("history", e.detail));
 
     window.addEventListener('controller-select-project', AppShell._selectProject);
@@ -94,6 +74,27 @@ class AppShell extends HyperHTMLElement {
 
     //initialize the state with route data.
     window.dispatchEvent(new Event("popstate"));
+  }
+
+  stateChanged(e) {
+    this.shadowRoot.querySelector("home-page").updateState(
+      Tools.getInStr(e.detail, 'persistent.user'),
+      e.detail._userObject
+    );
+    this.shadowRoot.querySelector("editor-page").updateState(
+      Tools.getInStr(e.detail, 'session.route.segments.1'),
+      Tools.getInStr(e.detail, 'session.route.segments.2'),
+      e.detail._actualVersion,
+      e.detail._editActualVersion,
+      Tools.getInStr(e.detail, '_fullProjectObject.versions')
+    );
+    this.shadowRoot.querySelector("code-preview").updateState(
+      Tools.getInStr(e.detail, 'session.route.segments.1'),
+      Tools.getInStr(e.detail, 'session.route.segments.2'),
+      Tools.getInStr(e.detail, '_editActualVersion.files')             //todo not sure if this is the right files..
+    );
+    const page = Tools.getInStr(e.detail, 'session.route.segments.0');
+    this.shadowRoot.querySelector("app-pages").updateState(page);
   }
 
   render() {
@@ -158,7 +159,7 @@ class AppShell extends HyperHTMLElement {
       storageBucket: "two-js-no.appspot.com",
       messagingSenderId: "1032974918154"
     });
-    firebase.auth().onAuthStateChanged(user =>Tools.emit('controller-auth-changed', user));
+    firebase.auth().onAuthStateChanged(user => Tools.emit('controller-auth-changed', user));
   }
 }
 
