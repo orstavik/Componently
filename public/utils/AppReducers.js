@@ -17,10 +17,10 @@ class AppReducers {
   }
 
   static _newProjects(state, payload) {
-    let projects = Tools.getIn(state, ["persistent", "users", payload.username, "projects"]);
-    projects = Tools.mergeDeepWithNullToDelete(projects, payload.ids);
-    return Tools.setIn(state, ["persistent", "users", payload.username, "projects"], projects);
-    // todo: clean edits
+    return Tools.filterFirestore(state, ["persistent", "users", payload.username, "projects"], payload.ids);
+    // let projects = Tools.getIn(state, ["persistent", "users", payload.username, "projects"]);
+    // projects = Tools.mergeDeepWithNullToDelete(projects, payload.ids);
+    // return Tools.setIn(state, ["persistent", "users", payload.username, "projects"], projects);
   }
 
   static _newVersions(state, payload) {
@@ -221,7 +221,7 @@ class AppReducers {
   }
 
   static async _observeMissingFilesForVersion(version, owner, project, versionNumber) {
-    if (version == null && versionNumber == null && !version.files) {
+    if (version != null && versionNumber != null && !version.files) {
       const files = await AppData.getFiles(owner, project, versionNumber);
       Tools.emit("controller-new-files", {owner: owner, project: project, version: versionNumber, files: files});
     }
