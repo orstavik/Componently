@@ -5,7 +5,7 @@ class Tools {
 
   static navigate(path) {
     history.pushState({}, null, path);
-    window.dispatchEvent(new CustomEvent('location-changed'));
+    window.dispatchEvent(new Event('popstate'));
   }
 
   static emit(name, payload) {

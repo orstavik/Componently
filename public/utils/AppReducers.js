@@ -1,20 +1,5 @@
 class AppReducers {
 
-  static _changeRoute(state, route) {
-    const newR = route.segments;
-    if (state.session.route) {
-      const oldR = state.session.route.segments;
-      if (newR[0] === oldR[0] && newR[1] === oldR[1] && newR[2] === oldR[2] && newR[3] === oldR[3])
-        return state;
-    }
-    //check for invalid route, and if so, redirect /home
-    if (newR[0] === "editor" && !newR[2]) {
-      Tools.navigate("/home/" + newR[1]);
-      return state;
-    }
-    return Tools.setIn(state, ['session', 'route'], route);
-  }
-
   /**
    * DB INITIATED EVENTS
    */
