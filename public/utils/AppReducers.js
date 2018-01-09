@@ -17,9 +17,10 @@ class AppReducers {
   }
 
   static _newProjects(state, payload) {
-    let projects = Tools.getIn(state, ["persistent", "users", payload.username, "projects"]);
-    projects = Tools.mergeDeepWithNullToDelete(projects, payload.ids);
-    return Tools.setIn(state, ["persistent", "users", payload.username, "projects"], projects);
+    return Tools.filterFirestore(state, ["persistent", "users", payload.username, "projects"], payload.ids);
+    // let projects = Tools.getIn(state, ["persistent", "users", payload.username, "projects"]);
+    // projects = Tools.mergeDeepWithNullToDelete(projects, payload.ids);
+    // return Tools.setIn(state, ["persistent", "users", payload.username, "projects"], projects);
   }
 
   static _newVersions(state, payload) {
