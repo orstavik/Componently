@@ -1,7 +1,7 @@
 class NotfoundPage extends HyperHTMLElement {
 
   /**
-   * Creates an instance of StatePath
+   * Creates an instance of NotfoundPage
    */
   constructor() {
     super();
