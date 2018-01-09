@@ -74,7 +74,7 @@
   </template>
 
   <script>
-    class AppDialog extends Polymer.GestureEventListeners(Polymer.Element) {
+    class AppDialog extends Polymer.Element {
       static get is() {
         return "app-dialog";
       }
@@ -97,13 +97,13 @@
 			connectedCallback() {
 				super.connectedCallback();
 				if (!this.closeOnActions)
-					Polymer.Gestures.addListener(this.$.overlay, 'tap', (e) => this.cancel());
+					Polymer.Gestures.addListener(this.shadowRoot.querySelector("#overlay"), 'tap', (e) => this.cancel());
 			}
 
       open() {
         this.opened = true;
-        this.$.overlay.enter();
-        this.$.body.enter();
+        this.shadowRoot.querySelector("#overlay").enter();
+        this.shadowRoot.querySelector("#body").enter();
         this.$emit('dialog-opened');
       }
 
@@ -114,8 +114,8 @@
 
       close() {
 				const closeAnimations = [
-					this.$.overlay.leave(),
-					this.$.body.leave()
+					this.shadowRoot.querySelector("#overlay").leave(),
+					this.shadowRoot.querySelector("#body").leave()
 				];
 				return Promise.all(closeAnimations).then(() => {
         	this.opened = false;

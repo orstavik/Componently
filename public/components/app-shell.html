@@ -42,7 +42,7 @@
 
   </template>
   <script>
-    class AppShell extends IntertextMixin(Polymer.Element) {
+    class AppShell extends Polymer.Element {
       static get is() {
         return 'app-shell';
       }
@@ -113,7 +113,7 @@
 
         AppShell.initFirebase();
 
-        window.addEventListener('ui-nickname-dialog', (e) => this.$.nickDialog.open());
+        window.addEventListener('ui-nickname-dialog', (e) => this.shadowRoot.querySelector("#nickDialog").open());
 
         window.addEventListener("state-changed", e => this.set("state", e.detail));
         window.addEventListener("state-history-changed", e => this.set("history", e.detail));
@@ -154,9 +154,9 @@
 
       _submitNickname(e) {
         e.preventDefault();
-        this.$.nickDialog.close();
-        Tools.emit('controller-user-nickname', this.$.nickname.value);
-        this.$.nickname.value = '';
+        this.shadowRoot.querySelector("#nickDialog").close();
+        Tools.emit('controller-user-nickname', this.shadowRoot.querySelector("#nickname").value);
+        this.shadowRoot.querySelector("#nickname").value = '';
       }
 
       _signOut(e) {

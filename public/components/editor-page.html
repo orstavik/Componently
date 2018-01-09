@@ -71,7 +71,7 @@
 
   </template>
   <script>
-    class EditorPage extends Polymer.GestureEventListeners(IntertextMixin(Polymer.Element)) {
+    class EditorPage extends Polymer.Element {
       static get is() {
         return 'editor-page';
       }
@@ -139,11 +139,11 @@
       }
 
       _addFile(e) {
-        const name = this.$.newFileName.value;
+        const name = this.shadowRoot.querySelector("#newFileName").value;
         if (!EditorPage.validateFileName(name))
           return alert("wrong filename!! " + name);
         this.$emit('controller-add-file', {filename: name, id: this.projectId, version: this.version});
-        this.$.newFileName.value = '';
+        this.shadowRoot.querySelector("#newFileName").value = '';
       }
 
       static validateFileName(name) {
@@ -164,14 +164,22 @@
 
       _saveChanges() {               //todo this should be reshaped into a comment version
         alert("not implemented");
-//        let comment = this.$.versionComment.value;
+//        let comment = this.shadowRoot.querySelector("#versionComment").value;
 //        this.$emit('controller-save-new-version', comment);
-//        this.$.versionComment.value = '';
+//        this.shadowRoot.querySelector("#versionComment").value = '';
       }
 
       _openPreview() {
         //todo here we can choose to have different html pages and autoload
-        this.$.preview.openPreview("index.html", true);
+        this.shadowRoot.querySelector("#preview").openPreview("index.html", true);
+      }
+
+      $emit(name, payload) {
+        return this.dispatchEvent(new CustomEvent(name, {
+          composed: true,
+          bubbles: true,
+          detail: payload,
+        }));
       }
     }
 

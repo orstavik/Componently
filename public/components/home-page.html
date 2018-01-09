@@ -208,7 +208,7 @@
 
   </template>
   <script>
-    class HomePage extends IntertextMixin(Polymer.Element) {
+    class HomePage extends Polymer.Element {
 
       static get is() {
         return 'home-page';
@@ -245,10 +245,10 @@
       }
 
       _addProject() {
-        const name = this.$.newProjectName.value;
+        const name = this.shadowRoot.querySelector("#newProjectName").value;
         if (name) {
           this.$emit('controller-add-project', name);
-          this.$.newProjectName.value = '';
+          this.shadowRoot.querySelector("#newProjectName").value = '';
         }
       }
 

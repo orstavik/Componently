@@ -25,7 +25,7 @@
 
   </template>
   <script>
-    class ResizableBoxes extends Polymer.GestureEventListeners(IntertextMixin(Polymer.Element)) {
+    class ResizableBoxes extends Polymer.Element {
       static get is() {
         return 'resizable-boxes';
       }
@@ -49,7 +49,7 @@
         setTimeout(() => {
           this.set('_boxes', this._detectBoxes());
         }, 0);
-        this.$.slot.addEventListener('slotchange', (e) => {
+        this.shadowRoot.querySelector("#slot").addEventListener('slotchange', (e) => {
           this.set('_boxes', this._detectBoxes());
         });
       }
@@ -60,7 +60,7 @@
       }
 
       _detectBoxes() {
-        return this.$.slot.assignedNodes().filter((node) => {
+        return this.shadowRoot.querySelector("#slot").assignedNodes().filter((node) => {
           return node.nodeType === 1 && ['dom-repeat','template'].indexOf(node.localName) === -1 && !node.classList.contains('separator')
         });
       }
@@ -94,9 +94,9 @@
 
       _separatorDraged(e) {
         if (e.detail.state === 'start')
-          this.$.grid.classList.add('unselectable');
+          this.shadowRoot.querySelector("#grid").classList.add('unselectable');
         if (e.detail.state === 'end') {
-          this.$.grid.classList.remove('unselectable');
+          this.shadowRoot.querySelector("#grid").classList.remove('unselectable');
           this._refreshEditors();
         }
         const ddx = e.detail.ddx !== undefined ? e.detail.ddx : e.detail.dx;
@@ -131,7 +131,7 @@
           if (i < this._boxes.length-1)
             gridColumns += ' 6px ';
         }
-        this.$.grid.style.gridTemplateColumns = gridColumns;
+        this.shadowRoot.querySelector("#grid").style.gridTemplateColumns = gridColumns;
       }
 
       _refreshEditors() {

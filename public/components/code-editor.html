@@ -68,7 +68,7 @@
 
   </template>
   <script>
-    class CodeEditor extends IntertextMixin(Polymer.Element) {
+    class CodeEditor extends (Polymer.Element) {
       static get is() {
         return 'code-editor';
       }
@@ -144,6 +144,22 @@
 
       _removeFile() {
         this.$emit('controller-remove-file', this.name)
+      }
+      $emit(name, payload) {
+        return this.dispatchEvent(new CustomEvent(name, {
+          composed: true,
+          bubbles: true,
+          detail: payload,
+        }));
+      }
+
+      $throttle(callback, ms) {
+        this._throttleTimeout = this._throttleTimeout || null;
+        if (!this._throttleTimeout)
+          this._throttleTimeout = setTimeout(() => {
+            this._throttleTimeout = null;
+            callback();
+          }, ms);
       }
     }
 
