@@ -50,6 +50,7 @@ class CodeEditor extends HyperHTMLElement {
 
   render() {
     return this.html`
+      ${CodeEditor._style()}
       <div id="title">
         ${name}
         <span id="remove">x</span>

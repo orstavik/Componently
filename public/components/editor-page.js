@@ -55,7 +55,11 @@ class EditorPage extends HyperHTMLElement {
         </div>
       </slide-bar>
       <resizable-boxes id="editors">
-        ${this._mergeToArray(this.state.version ? this.state.version.files : undefined, this.state.editedVersion ? this.state.editedVersion.files : undefined, this.state.showEdits).map(item => HyperHTMLElement.wire()`
+        ${this._mergeToArray(
+          Tools.getInStr(this.state, 'version.files'),
+          Tools.getInStr(this.state, 'editedVersion.files'),
+          this.state.showEdits
+        ).map(item => HyperHTMLElement.wire()`
           <code-editor name="${item.name}" mode="${this._getExt(item.name)}" value="${item.value}"></code-editor>
         `)}
       </resizable-boxes>
