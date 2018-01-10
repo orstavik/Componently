@@ -20,7 +20,7 @@ class EditorPage extends HyperHTMLElement {
     this.state.project = project;
     this.state.version = version;
     this.state.versions = versions;
-    this.state._mergedResult = allFiles;
+    this.state._allFiles = allFiles;
     this.render();
   }
 
@@ -43,8 +43,8 @@ class EditorPage extends HyperHTMLElement {
             <button id="save" hidden="${false}">Save</button>
             Version:
             <select id="changeVersion">
-              ${EditorPage._toArray(this.state.versions).map(item => HyperHTMLElement.wire()`
-                <option value="${item.name}" selected="${EditorPage._isSelectedVersion(item.name, this.state.version ? this.state.version.name : undefined)}">
+              ${Object.values(this.state.versions || {}).map(item => HyperHTMLElement.wire()`
+                <option value="${item.name}" selected="${item.name === Tools.getInStr(this.state, "version.name")}">
                   ${item.name} ${item.comment}
                 </option>
               `)}
@@ -53,8 +53,8 @@ class EditorPage extends HyperHTMLElement {
         </div>
       </slide-bar>
       <resizable-boxes id="editors">
-        ${Object.values(this.state._mergedResult || {}).map(item => HyperHTMLElement.wire()`
-          <code-editor name="${item.name}" mode="${EditorPage._getExt(item.name)}" value="${item.value}"></code-editor>
+        ${Object.values(this.state._allFiles || {}).map(item => HyperHTMLElement.wire()`
+          <code-editor name="${item.name}" mode="${item.name ? item.name.split('.').pop() : ""}" value="${item.value}"></code-editor>
         `)}
       </resizable-boxes>
     `;
@@ -121,15 +121,11 @@ class EditorPage extends HyperHTMLElement {
     return res;
   }
 
-  static _isSelectedVersion(item, version) {
-    return item == version;
-  }
-
   _changeVersion(e) {
     if (e.target.value) {
       const versionElect = {
-        owner: this.owner,
-        project: this.project,
+        owner: this.state.owner,
+        project: this.state.project,
         version: Number(e.target.value)
       };
       this.$emit('controller-select-version', versionElect);
@@ -149,15 +145,6 @@ class EditorPage extends HyperHTMLElement {
       return false;
     const fileType = name.split(".").pop();
     return ["html", "css", "js", "json"].indexOf(fileType) !== -1;
-  }
-
-  static _toArray(obj) {
-    return !obj ? [] : Object.keys(obj).map(key => obj[key]);
-  }
-
-  static _getExt(name) {
-    if (name)
-      return name.split('.').pop();
   }
 
   _saveChanges() {               //todo this should be reshaped into a comment version
