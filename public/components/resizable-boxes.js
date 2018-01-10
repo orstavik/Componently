@@ -12,7 +12,6 @@ class ResizableBoxes extends HyperHTMLElement {
     setTimeout(this._detectBoxes.bind(this), 0);
 
     this.state._boxes = [];
-    this.state._gridColumns = [];
   }
 
   render() {
@@ -25,8 +24,15 @@ class ResizableBoxes extends HyperHTMLElement {
   }
 
   _detectBoxes() {
-    this.state._boxes = this.shadowRoot.querySelector("#slot").assignedNodes().filter((node) => {
-      return node.nodeType === 1 && ['dom-repeat', 'template'].indexOf(node.localName) === -1 && !node.classList.contains('separator')
+    let i = 0;
+    this.shadowRoot.querySelector("#slot").assignedNodes().forEach((node) => {
+      if (
+        node.nodeType === 1 && 
+        ['dom-repeat', 'template'].indexOf(node.localName) === -1 && 
+        !node.classList.contains('separator')
+      ) {
+        this.state._boxes[i++] = {node: node};
+      }
     });
     this._boxesChange();
   }
@@ -37,7 +43,10 @@ class ResizableBoxes extends HyperHTMLElement {
   }
 
   _makeGridColumns() {
-    this.state._gridColumns = this.state._boxes.map((node, i) => this.state._gridColumns[i] || 1);
+    this.state._boxes = this.state._boxes.map((node, i) => {
+      node.width = node.width || 1;
+      return node;
+    });
     this._applyStyle();
   }
 
@@ -46,7 +55,7 @@ class ResizableBoxes extends HyperHTMLElement {
       const divTemplate = document.createElement('div');
       divTemplate.classList.add('separator');
       for (let i = 1; i < this.state._boxes.length; i++) {
-        let box = this.state._boxes[i];
+        let box = this.state._boxes[i].node;
         if (!box.previousElementSibling.classList.contains('separator')) {
           let div = draggable(divTemplate.cloneNode());
           div.addEventListener('draggingstart', (e) => {
@@ -72,32 +81,32 @@ class ResizableBoxes extends HyperHTMLElement {
 
   _separatorDraged(e) {
     const width = this.getBoundingClientRect().width;
-    const n = this.state._gridColumns.length;
+    const n = this.state._boxes.length;
     const fr = (width - ((n - 1) * 6)) / n;
     const px = e.detail.movementX / fr;
     const py = e.detail.movementY / fr;
     const prevBox = e.srcElement.previousElementSibling;
     const nextBox = e.srcElement.nextElementSibling;
-    const prevIndex = this.state._boxes.indexOf(prevBox);
-    const nextIndex = this.state._boxes.indexOf(nextBox);
-    const frSum = this.state._gridColumns[prevIndex] + this.state._gridColumns[nextIndex];
-    this.state._gridColumns[prevIndex] += px;
-    this.state._gridColumns[nextIndex] -= px;
-    if (this.state._gridColumns[prevIndex] < 120 / fr) {
-      this.state._gridColumns[prevIndex] = 120 / fr;
-      this.state._gridColumns[nextIndex] = frSum - 120 / fr;
+    const prevIndex = this.state._boxes.findIndex((box) => box.node === prevBox);
+    const nextIndex = this.state._boxes.findIndex((box) => box.node === nextBox);
+    const frSum = this.state._boxes[prevIndex].width + this.state._boxes[nextIndex].width;
+    this.state._boxes[prevIndex].width += px;
+    this.state._boxes[nextIndex].width -= px;
+    if (this.state._boxes[prevIndex].width < 120 / fr) {
+      this.state._boxes[prevIndex].width = 120 / fr;
+      this.state._boxes[nextIndex].width = frSum - 120 / fr;
     }
-    if (this.state._gridColumns[nextIndex] < 120 / fr) {
-      this.state._gridColumns[nextIndex] = 120 / fr;
-      this.state._gridColumns[prevIndex] = frSum - 120 / fr;
+    if (this.state._boxes[nextIndex].width < 120 / fr) {
+      this.state._boxes[nextIndex].width = 120 / fr;
+      this.state._boxes[prevIndex].width = frSum - 120 / fr;
     }
     this._applyStyle();
   }
 
   _applyStyle() {
     let gridColumns = '';
-    for (let i = 0; i < this.state._gridColumns.length; i++) {
-      gridColumns += `minmax(120px, ${this.state._gridColumns[i]}fr)`;
+    for (let i = 0; i < this.state._boxes.length; i++) {
+      gridColumns += `minmax(120px, ${this.state._boxes[i].width}fr)`;
       if (i < this.state._boxes.length - 1)
         gridColumns += ' 6px ';
     }
@@ -106,7 +115,7 @@ class ResizableBoxes extends HyperHTMLElement {
 
   _refreshEditors() {
     for (let box of this.state._boxes)
-      box.state.editor.refresh();
+      box.node.state.editor.refresh();
   }
 
   static _style() {
