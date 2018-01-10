@@ -13,6 +13,7 @@
   <script src="/utils/ITObservableState.js"></script>
   <script src="/utils/MicroObserver.js"></script>
 
+  <script src="/utils/AppState.js"></script>
   <script src="/utils/AppData.js"></script>
   <script src="/utils/AppReducers.js"></script>
   <script src="/utils/UserReducers.js"></script>
@@ -53,6 +54,21 @@
   <script>
     //    if ('serviceWorker' in navigator)
     //      navigator.serviceWorker.register('/sw.js');
+
+    //initialize state
+    const stateManager = new AppState();
+
+    firebase.initializeApp({
+      apiKey: "AIzaSyA2Bv86HdUKVodeuGON0vC7nPFikIlfzwQ",
+      authDomain: "two-js-no.firebaseapp.com",
+      databaseURL: "https://two-js-no.firebaseio.com",
+      projectId: "two-js-no",
+      storageBucket: "two-js-no.appspot.com",
+      messagingSenderId: "1032974918154"
+    });
+    //make the onAuthStateChanged fire an event instead
+    firebase.auth().onAuthStateChanged(user => Tools.emit('controller-auth-changed', user));
+
   </script>
   <style>
     @import url('https://fonts.googleapis.com/css?family=Quicksand:300,400,500,700%7CVollkorn+SC:400,600,700,900');
