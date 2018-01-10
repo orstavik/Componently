@@ -44,6 +44,9 @@ class AppShell extends HyperHTMLElement {
     this.state.bindCompute("_actualVersion", AppReducers._makeActualVersion, ["_actualVersionNumber", "_fullProjectObject"]);
     this.state.bindCompute("_editProjectObject", AppReducers._makeProjectObject, ["session.route.segments.1", "session.route.segments.2", "session.edits"]);
     this.state.bindCompute("_editActualVersion", AppReducers._makeActualVersion, ["_actualVersionNumber", "_editProjectObject"]);
+    this.state.bindCompute("_allFiles", AppReducers._mergeFilesAndEditedFiles, ["_actualVersion", "_editActualVersion"]);
+    //todo fix this critical bug!
+    // this.state.bindCompute("_allFiles", AppReducers._mergeFilesAndEditedFiles, ["_actualVersion.files", "_editActualVersion.files"]);
 //        this.state.bindCompute("_workingCopyVersion", AppReducers._makeWorkingCopy, ["_editProjectObject", "_actualVersion"]);
 //        this.state.bindCompute("_projectObjectWithWorkingCopy", AppReducers._mergedProjectObject, ["_fullProjectObject", "_editProjectObject"]);
 
@@ -86,7 +89,8 @@ class AppShell extends HyperHTMLElement {
       Tools.getInStr(e.detail, 'session.route.segments.2'),
       e.detail._actualVersion,
       e.detail._editActualVersion,
-      Tools.getInStr(e.detail, '_fullProjectObject.versions')
+      Tools.getInStr(e.detail, '_fullProjectObject.versions'),
+      e.detail._allFiles
     );
     this.shadowRoot.querySelector("code-preview").updateState(
       Tools.getInStr(e.detail, 'session.route.segments.1'),

@@ -15,14 +15,12 @@ class EditorPage extends HyperHTMLElement {
     this.shadowRoot.querySelector("#editors").addEventListener("file-edited", this._fileEdited.bind(this));
   }
 
-  updateState(owner, project, version, editedVersion, versions) {
+  updateState(owner, project, version, editedVersion, versions, allFiles) {
     this.state.owner = owner;
     this.state.project = project;
     this.state.version = version;
-    this.state.editedVersion = editedVersion;
     this.state.versions = versions;
-    this.state.showEdits = true;
-
+    this.state._mergedResult = allFiles;
     this.render();
   }
 
@@ -45,8 +43,8 @@ class EditorPage extends HyperHTMLElement {
             <button id="save" hidden="${false}">Save</button>
             Version:
             <select id="changeVersion">
-              ${this._toArray(this.state.versions).map(item => HyperHTMLElement.wire()`
-                <option value="${item.name}" selected="${this._isSelectedVersion(item.name, this.state.version ? this.state.version.name : undefined)}">
+              ${EditorPage._toArray(this.state.versions).map(item => HyperHTMLElement.wire()`
+                <option value="${item.name}" selected="${EditorPage._isSelectedVersion(item.name, this.state.version ? this.state.version.name : undefined)}">
                   ${item.name} ${item.comment}
                 </option>
               `)}
@@ -55,12 +53,8 @@ class EditorPage extends HyperHTMLElement {
         </div>
       </slide-bar>
       <resizable-boxes id="editors">
-        ${this._mergeToArray(
-          Tools.getInStr(this.state, 'version.files'),
-          Tools.getInStr(this.state, 'editedVersion.files'),
-          this.state.showEdits
-        ).map(item => HyperHTMLElement.wire()`
-          <code-editor name="${item.name}" mode="${this._getExt(item.name)}" value="${item.value}"></code-editor>
+        ${Object.values(this.state._mergedResult || {}).map(item => HyperHTMLElement.wire()`
+          <code-editor name="${item.name}" mode="${EditorPage._getExt(item.name)}" value="${item.value}"></code-editor>
         `)}
       </resizable-boxes>
     `;
@@ -116,18 +110,18 @@ class EditorPage extends HyperHTMLElement {
     );
   }
 
-  _mergeToArray(files, editedFiles){
+  static _mergeToArray(files, editedFiles){
     if (!editedFiles)
-      return this._toArray(files);
+      return files;
     let res = Tools.mergeDeepWithNullToDelete(files, editedFiles);
     for (let filename in editedFiles) {
       if (editedFiles[filename].deleted)
         delete res[filename];
     }
-    return this._toArray(res);
+    return res;
   }
 
-  _isSelectedVersion(item, version) {
+  static _isSelectedVersion(item, version) {
     return item == version;
   }
 
@@ -157,11 +151,11 @@ class EditorPage extends HyperHTMLElement {
     return ["html", "css", "js", "json"].indexOf(fileType) !== -1;
   }
 
-  _toArray(obj) {
+  static _toArray(obj) {
     return !obj ? [] : Object.keys(obj).map(key => obj[key]);
   }
 
-  _getExt(name) {
+  static _getExt(name) {
     if (name)
       return name.split('.').pop();
   }

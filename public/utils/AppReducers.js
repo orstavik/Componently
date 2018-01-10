@@ -150,6 +150,21 @@ class AppReducers {
     }
   }
 
+  static _mergeFilesAndEditedFiles(actualVersion, editedVersion) {
+    let files = actualVersion ? actualVersion.files : undefined;
+    let editedFiles = editedVersion ? editedVersion.files : undefined;
+    if (!editedVersion || !editedVersion.files)
+      return files;
+    let res = Tools.mergeDeepWithNullToDelete(files, editedFiles);
+    if (res === files)
+      res = Object.assign({}, res);
+    for (let filename in editedFiles) {
+      if (editedFiles[filename].deleted)
+        delete res[filename];
+    }
+    return res;
+  }
+
   static _makeWorkingCopy(_editProjectObject, _actualVersion) {
     try {
       if (!_editProjectObject)
