@@ -12,6 +12,8 @@ class ResizableBoxes extends HyperHTMLElement {
     setTimeout(this._detectBoxes.bind(this), 0);
 
     this.state._boxes = [];
+    this.state.minWidth = 120;
+    this.state.sepWidth = 6;
   }
 
   render() {
@@ -52,22 +54,11 @@ class ResizableBoxes extends HyperHTMLElement {
 
   _makeSeparators() {
     if (this.state._boxes.length > 1) {
-      const divTemplate = document.createElement('div');
-      divTemplate.classList.add('separator');
+      const divTemplate = ResizableBoxes.separatorTemplate();
       for (let i = 1; i < this.state._boxes.length; i++) {
         let box = this.state._boxes[i].node;
         if (!box.previousElementSibling.classList.contains('separator')) {
-          let div = draggable(divTemplate.cloneNode());
-          div.addEventListener('draggingstart', (e) => {
-            this.shadowRoot.querySelector("#grid").classList.add('unselectable');
-          })
-          div.addEventListener('dragging', (e) => {
-            this._separatorDraged(e);
-          })
-          div.addEventListener('draggingend', (e) => {
-            this.shadowRoot.querySelector("#grid").classList.remove('unselectable');
-            this._refreshEditors();
-          })
+          let div = this._makeDraggableSeparator(divTemplate);
           this.insertBefore(div, box);
         }
       }
@@ -78,27 +69,39 @@ class ResizableBoxes extends HyperHTMLElement {
     if (lastBox && lastBox.nextElementSibling.classList.contains('separator'))
       lastBox.nextElementSibling.remove()
   }
+  
+  _makeDraggableSeparator(tmpl) {
+    let div = draggable(tmpl.cloneNode());
+    div.addEventListener('draggingstart', (e) => {
+      this.shadowRoot.querySelector("#grid").classList.add('unselectable');
+    });
+    div.addEventListener('dragging', (e) => {
+      this._separatorDraged(e);
+    });
+    div.addEventListener('draggingend', (e) => {
+      this.shadowRoot.querySelector("#grid").classList.remove('unselectable');
+      this._refreshEditors();
+    });
+    return div;
+  }
 
   _separatorDraged(e) {
-    const width = this.getBoundingClientRect().width;
-    const n = this.state._boxes.length;
-    const fr = (width - ((n - 1) * 6)) / n;
-    const px = e.detail.movementX / fr;
-    const py = e.detail.movementY / fr;
+    const fr = ResizableBoxes.calcFraction(this.getBoundingClientRect().width, this.state._boxes.length, this.state.sepWidth);
     const prevBox = e.srcElement.previousElementSibling;
     const nextBox = e.srcElement.nextElementSibling;
     const prevIndex = this.state._boxes.findIndex((box) => box.node === prevBox);
     const nextIndex = this.state._boxes.findIndex((box) => box.node === nextBox);
     const frSum = this.state._boxes[prevIndex].width + this.state._boxes[nextIndex].width;
-    this.state._boxes[prevIndex].width += px;
-    this.state._boxes[nextIndex].width -= px;
-    if (this.state._boxes[prevIndex].width < 120 / fr) {
-      this.state._boxes[prevIndex].width = 120 / fr;
-      this.state._boxes[nextIndex].width = frSum - 120 / fr;
+    this.state._boxes[prevIndex].width += e.detail.movementX / fr;
+    this.state._boxes[nextIndex].width -= e.detail.movementY / fr;
+    const min = this.state.minWidth;
+    if (this.state._boxes[prevIndex].width < min / fr) {
+      this.state._boxes[prevIndex].width = min / fr;
+      this.state._boxes[nextIndex].width = frSum - min / fr;
     }
-    if (this.state._boxes[nextIndex].width < 120 / fr) {
-      this.state._boxes[nextIndex].width = 120 / fr;
-      this.state._boxes[prevIndex].width = frSum - 120 / fr;
+    if (this.state._boxes[nextIndex].width < min / fr) {
+      this.state._boxes[nextIndex].width = min / fr;
+      this.state._boxes[prevIndex].width = frSum - min / fr;
     }
     this._applyStyle();
   }
@@ -106,9 +109,9 @@ class ResizableBoxes extends HyperHTMLElement {
   _applyStyle() {
     let gridColumns = '';
     for (let i = 0; i < this.state._boxes.length; i++) {
-      gridColumns += `minmax(120px, ${this.state._boxes[i].width}fr)`;
+      gridColumns += 'minmax(120px, ' + this.state._boxes[i].width + 'fr)';
       if (i < this.state._boxes.length - 1)
-        gridColumns += ' 6px ';
+        gridColumns += ` ${this.state.sepWidth}px `;
     }
     this.shadowRoot.querySelector("#grid").style.gridTemplateColumns = gridColumns;
   }
@@ -138,6 +141,16 @@ class ResizableBoxes extends HyperHTMLElement {
         cursor: col-resize;
       }
     `;
+  }
+
+  static calcFraction(w, n, s) {
+    return (w - ((n - 1) * s)) / n;
+  }
+
+  static separatorTemplate() {
+    const div = document.createElement('div');
+    div.classList.add('separator');
+    return div;
   }
 }
 customElements.define("resizable-boxes", ResizableBoxes);
