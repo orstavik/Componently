@@ -8,9 +8,9 @@ class EditorPage extends HyperHTMLElement {
     this.attachShadow({mode: 'open'});
     this.render();
 
-    Polymer.Gestures.addListener(this.shadowRoot.querySelector("#addFile"), "tap", this._addFile.bind(this));
-    Polymer.Gestures.addListener(this.shadowRoot.querySelector("#openPreview"), "tap", this._openPreview.bind(this));
-    Polymer.Gestures.addListener(this.shadowRoot.querySelector("#save"), "tap", this._saveChanges.bind(this));
+    this.shadowRoot.querySelector("#addFile").addEventListener("click", this._addFile.bind(this));
+    this.shadowRoot.querySelector("#openPreview").addEventListener("click", this._openPreview.bind(this));
+    this.shadowRoot.querySelector("#save").addEventListener("click", this._saveChanges.bind(this));
     this.shadowRoot.querySelector("#changeVersion").addEventListener("change", this._changeVersion.bind(this));
     this.shadowRoot.querySelector("#editors").addEventListener("file-edited", this._fileEdited.bind(this));
 
@@ -25,8 +25,8 @@ class EditorPage extends HyperHTMLElement {
     this.state._allFiles = allFiles;
 
     let res = {};
-    for (let file of Object.values(allFiles||{}))
-      res[file.name] = CodeEditor.makeOrUpdate(this.state._fileToEditorMap[file.name],file.name, file.value);
+    for (let file of Object.values(allFiles || {}))
+      res[file.name] = CodeEditor.makeOrUpdate(this.state._fileToEditorMap[file.name], file.name, file.value);
     this.state._fileToEditorMap = res;
 
     this.render();
@@ -69,36 +69,36 @@ class EditorPage extends HyperHTMLElement {
   static _style() {
     //language=CSS
     return `
-      :host {
-          display: flex;
-          height: 100vh;
-          flex-direction: column;
-      }
-      #header {
-          display: flex;
-          flex-direction: row;
-          align-items: center;
-          justify-content: space-between;
-          width: 100vw;
-          height: 60px;
-          background-color: grey;
-      }
-      #homeLink {
-          color: white;
-          font-size: 30px;
-          font-weight: bold;
-          font-family: Arial;
-          margin: 0 20px;
-          text-decoration: none;
-      }
-      #title {
-          color: white;
-          margin: 0;
-      }
-      #editors {
-          display: block;
-          flex: 1;
-      }
+        :host {
+            display: flex;
+            height: 100vh;
+            flex-direction: column;
+        }
+        #header {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            width: 100vw;
+            height: 60px;
+            background-color: grey;
+        }
+        #homeLink {
+            color: white;
+            font-size: 30px;
+            font-weight: bold;
+            font-family: Arial;
+            margin: 0 20px;
+            text-decoration: none;
+        }
+        #title {
+            color: white;
+            margin: 0;
+        }
+        #editors {
+            display: block;
+            flex: 1;
+        }
     `;
   }
 
