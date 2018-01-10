@@ -15,7 +15,7 @@ class EditorPage extends HyperHTMLElement {
     this.shadowRoot.querySelector("#editors").addEventListener("file-edited", this._fileEdited.bind(this));
   }
 
-  updateState(owner, project, version, editedVersion, versions, allFiles) {
+  updateState(owner, project, version, versions, allFiles) {
     this.state.owner = owner;
     this.state.project = project;
     this.state.version = version;
@@ -108,17 +108,6 @@ class EditorPage extends HyperHTMLElement {
         value: e.detail.value
       }
     );
-  }
-
-  static _mergeToArray(files, editedFiles){
-    if (!editedFiles)
-      return files;
-    let res = Tools.mergeDeepWithNullToDelete(files, editedFiles);
-    for (let filename in editedFiles) {
-      if (editedFiles[filename].deleted)
-        delete res[filename];
-    }
-    return res;
   }
 
   _changeVersion(e) {

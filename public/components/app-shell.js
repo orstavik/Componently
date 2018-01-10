@@ -88,7 +88,6 @@ class AppShell extends HyperHTMLElement {
       Tools.getInStr(e.detail, 'session.route.segments.1'),
       Tools.getInStr(e.detail, 'session.route.segments.2'),
       e.detail._actualVersion,
-      e.detail._editActualVersion,
       Tools.getInStr(e.detail, '_fullProjectObject.versions'),
       e.detail._allFiles
     );
