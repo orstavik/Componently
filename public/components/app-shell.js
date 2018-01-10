@@ -94,7 +94,7 @@ class AppShell extends HyperHTMLElement {
       Tools.getInStr(e.detail, '_editActualVersion.files')             //todo not sure if this is the right files..
     );
     const page = Tools.getInStr(e.detail, 'session.route.segments.0');
-    this.shadowRoot.querySelector("app-pages").updateState(page);
+    this.shadowRoot.querySelector("app-pages").setAttribute("page", page);
   }
 
   render() {

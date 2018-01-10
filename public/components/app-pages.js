@@ -17,11 +17,6 @@ class AppPages extends HyperHTMLElement {
       this._pageChanged(newValue);
   }
 
-  updateState(page){
-    this._pageChanged(page);
-    this.setAttribute("page", page);
-  }
-
   render() {
     return this.html`
       <style>${AppPages._style()}</style>
