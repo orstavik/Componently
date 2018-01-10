@@ -48,10 +48,17 @@ class ResizableBoxes extends HyperHTMLElement {
       for (let i = 1; i < this.state._boxes.length; i++) {
         let box = this.state._boxes[i];
         if (!box.previousElementSibling.classList.contains('separator')) {
-          let div = divTemplate.cloneNode();
-          Polymer.Gestures.addListener(div, 'track', (e) => {
+          let div = draggable(divTemplate.cloneNode());
+          div.addEventListener('draggingstart', (e) => {
+            this.shadowRoot.querySelector("#grid").classList.add('unselectable');
+          })
+          div.addEventListener('dragging', (e) => {
             this._separatorDraged(e);
-          });
+          })
+          div.addEventListener('draggingend', (e) => {
+            this.shadowRoot.querySelector("#grid").classList.remove('unselectable');
+            this._refreshEditors();
+          })
           this.insertBefore(div, box);
         }
       }
@@ -64,19 +71,11 @@ class ResizableBoxes extends HyperHTMLElement {
   }
 
   _separatorDraged(e) {
-    if (e.detail.state === 'start')
-      this.shadowRoot.querySelector("#grid").classList.add('unselectable');
-    if (e.detail.state === 'end') {
-      this.shadowRoot.querySelector("#grid").classList.remove('unselectable');
-      this._refreshEditors();
-    }
-    const ddx = e.detail.ddx !== undefined ? e.detail.ddx : e.detail.dx;
-    const ddy = e.detail.ddy !== undefined ? e.detail.ddy : e.detail.dy;
     const width = this.getBoundingClientRect().width;
     const n = this.state._gridColumns.length;
     const fr = (width - ((n - 1) * 6)) / n;
-    const px = ddx / fr;
-    const py = ddy / fr;
+    const px = e.detail.movementX / fr;
+    const py = e.detail.movementY / fr;
     const prevBox = e.srcElement.previousElementSibling;
     const nextBox = e.srcElement.nextElementSibling;
     const prevIndex = this.state._boxes.indexOf(prevBox);
@@ -107,7 +106,7 @@ class ResizableBoxes extends HyperHTMLElement {
 
   _refreshEditors() {
     for (let box of this.state._boxes)
-      box.editor.refresh();
+      box.state.editor.refresh();
   }
 
   static _style() {
