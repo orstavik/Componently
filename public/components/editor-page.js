@@ -13,6 +13,8 @@ class EditorPage extends HyperHTMLElement {
     Polymer.Gestures.addListener(this.shadowRoot.querySelector("#save"), "tap", this._saveChanges.bind(this));
     this.shadowRoot.querySelector("#changeVersion").addEventListener("change", this._changeVersion.bind(this));
     this.shadowRoot.querySelector("#editors").addEventListener("file-edited", this._fileEdited.bind(this));
+
+    this.state._fileToEditorMap = {};
   }
 
   updateState(owner, project, version, versions, allFiles) {
@@ -21,6 +23,12 @@ class EditorPage extends HyperHTMLElement {
     this.state.version = version;
     this.state.versions = versions;
     this.state._allFiles = allFiles;
+
+    let res = {};
+    for (let file of Object.values(allFiles||{}))
+      res[file.name] = CodeEditor.makeOrUpdate(this.state._fileToEditorMap[file.name],file.name, file.value);
+    this.state._fileToEditorMap = res;
+
     this.render();
   }
 
@@ -53,9 +61,7 @@ class EditorPage extends HyperHTMLElement {
         </div>
       </slide-bar>
       <resizable-boxes id="editors">
-        ${Object.values(this.state._allFiles || {}).map(item => HyperHTMLElement.wire()`
-          <code-editor name="${item.name}" mode="${item.name ? item.name.split('.').pop() : ""}" value="${item.value}"></code-editor>
-        `)}
+        ${Object.values(this.state._fileToEditorMap || {})}
       </resizable-boxes>
     `;
   }

@@ -62,7 +62,7 @@
     </style>
 
     <div id="title">
-      [[name]]
+      [[filename]]
       <span id="remove">x</span>
     </div>
 
@@ -75,13 +75,14 @@
 
       static get properties() {
         return {
-          name: {
-            type: String
+          filename: {
+            type: String,
+            reflectToAttribute: true
           },
           mode: {
             type: String
           },
-          value: String,
+//          value: String,
           theme: {
             type: String,
             value: 'material'
@@ -100,12 +101,12 @@
         }
       }
 
-      static get observers() {
-        return [
-          '_updateEditor(value)'
-        ]
-      }
-
+//      static get observers() {
+//        return [
+//          'updateEditor(value)'
+//        ]
+//      }
+//
       connectedCallback() {
         super.connectedCallback();
         this.editor = CodeMirror(this.shadowRoot, {
@@ -120,7 +121,7 @@
           lineWrapping: true
         });
         this.editor.on('change', (e) => {
-          this.$emit('file-edited', {filename: this.name, value: e.getValue()});
+          this.$emit('file-edited', {filename: this.filename, value: e.getValue()});
         });
         this.shadowRoot.querySelector("#remove").addEventListener("click", this._removeFile.bind(this));
         window.addEventListener('resize', (e) => {
@@ -135,15 +136,15 @@
         this.editor.refresh()
       }
 
-      _updateEditor() {
+      _updateEditor(value) {
 //        if (this.editor)
 //          this.editor.setValue(this.value);
-        if (this.editor && this.value !== this.editor.getValue())
+        if (this.editor && value !== this.editor.getValue())
           console.log("we have a different text in editor and state!!");
       }
 
       _removeFile() {
-        this.$emit('controller-remove-file', this.name)
+        this.$emit('controller-remove-file', this.filename)
       }
       $emit(name, payload) {
         return this.dispatchEvent(new CustomEvent(name, {
