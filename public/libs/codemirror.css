@@ -1,6 +1,3 @@
-<dom-module id="codemirror">
-  <template>
-    <style>
       /* BASICS */
 
       .CodeMirror {
@@ -534,6 +531,3 @@
       span.CodeMirror-selectedtext {
         background: none;
       }
-    </style>
-  </template>
-</dom-module>

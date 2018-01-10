@@ -1,6 +1,3 @@
-<dom-module id="material">
-  <template>
-    <style>
       .cm-s-material.CodeMirror {
         background-color: #263238;
         color: rgba(233, 237, 237, 1);
@@ -133,6 +130,3 @@
         text-decoration: underline;
         color: white !important;
       }
-    </style>
-  </template>
-</dom-module>
