@@ -8,7 +8,7 @@ class AppState {
       },
       persistent: persistent
     };
-    this.state = new ITObservableState(initialState);
+    this.state = new JoiState(initialState);
 
     //router
     this.state.bindReduce("popstate", RouterReducer._changeRoute, true);

@@ -1,6 +1,7 @@
 {
   "name": "Componently",
   "authors": [
+    "orstavik <intertext.no@gmail.com>",
     "enlightenmentor <fales.tom.1994@gmail.com>"
   ],
   "description": "",
@@ -17,6 +18,7 @@
   ],
   "dependencies": {
     "codemirror": "^5.31.0",
-    "draggable": "enlightenmentor/draggable"
+    "draggable": "enlightenmentor/draggable",
+    "joistate": "orstavik/joistate"
   }
 }
