@@ -8,6 +8,7 @@ class ResizableBoxes extends HyperHTMLElement {
     this.attachShadow({mode: 'open'});
     this.render();
 
+    this._grid = this.shadowRoot.querySelector("#grid");
     this._slot = this.shadowRoot.querySelector("#slot");
     this._slot.addEventListener('slotchange', this._setUpBoxes.bind(this));
 
@@ -51,14 +52,16 @@ class ResizableBoxes extends HyperHTMLElement {
   _makeDraggableSeparator() {
     let div = draggable(ResizableBoxes._separatorTemplate.cloneNode());
     div.addEventListener('draggingstart', (e) => {
-      this.shadowRoot.querySelector("#grid").classList.add('unselectable');
+      this._grid.classList.add('unselectable');
     });
     div.addEventListener('dragging', (e) => {
       this._separatorDraged(e);
     });
     div.addEventListener('draggingend', (e) => {
-      this.shadowRoot.querySelector("#grid").classList.remove('unselectable');
-      this._refreshEditors();
+      this._grid.classList.remove('unselectable');
+      //todo, this should fire an event instead probably.
+      for (let box of this.state._boxes)
+        box.node.state.editor.refresh();
     });
     return div;
   }
@@ -85,18 +88,7 @@ class ResizableBoxes extends HyperHTMLElement {
   }
 
   _applyStyle() {
-    let gridColumns = '';
-    for (let i = 0; i < this.state._boxes.length; i++) {
-      gridColumns += 'minmax(120px, ' + this.state._boxes[i].width + 'fr)';
-      if (i < this.state._boxes.length - 1)
-        gridColumns += ` ${this.state.sepWidth}px `;
-    }
-    this.shadowRoot.querySelector("#grid").style.gridTemplateColumns = gridColumns;
-  }
-
-  _refreshEditors() {
-    for (let box of this.state._boxes)
-      box.node.state.editor.refresh();
+    this._grid.style.gridTemplateColumns = ResizableBoxes.boxesToCssGridStyleText(this.state._boxes);
   }
 
   static _style() {
@@ -123,6 +115,10 @@ class ResizableBoxes extends HyperHTMLElement {
 
   static calcFraction(w, n, s) {
     return (w - ((n - 1) * s)) / n;
+  }
+
+  static boxesToCssGridStyleText(boxes) {
+    return boxes.map(box => box.width).map(width => `minmax(120px, ${width}fr)`).join(" 6px ");
   }
 
   static createSeparatorElement() {
