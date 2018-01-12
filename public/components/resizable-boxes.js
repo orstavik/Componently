@@ -93,7 +93,7 @@ class ResizableBoxes extends HyperHTMLElement {
     const nextIndex = this.state._boxes.findIndex((box) => box.node === nextBox);
     const frSum = this.state._boxes[prevIndex].width + this.state._boxes[nextIndex].width;
     this.state._boxes[prevIndex].width += e.detail.movementX / fr;
-    this.state._boxes[nextIndex].width -= e.detail.movementY / fr;
+    this.state._boxes[nextIndex].width -= e.detail.movementX / fr;
     const min = this.state.minWidth;
     if (this.state._boxes[prevIndex].width < min / fr) {
       this.state._boxes[prevIndex].width = min / fr;
