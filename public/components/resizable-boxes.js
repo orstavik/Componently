@@ -26,8 +26,11 @@ class ResizableBoxes extends HyperHTMLElement {
   }
 
   _setUpBoxes() {
-    this.state._boxes = ResizableBoxes.getResizeableSlottedChildren(this._slot.assignedNodes());
-    this._makeSeparators();
+    const slottedChildren = ResizableBoxes.getResizeableSlottedChildren(this._slot.assignedNodes());
+    if (ResizableBoxes.noChangeInSlottedChildren(this.state._boxes, slottedChildren))
+      return;
+    this.state._boxes = slottedChildren;
+    this._insertSeparators();
     this._applyStyle();
   }
 
@@ -40,21 +43,11 @@ class ResizableBoxes extends HyperHTMLElement {
     return _boxes;
   }
 
-  _makeSeparators() {
-    if (this.state._boxes.length <= 1) {
-      this.querySelectorAll('.separator').forEach((sep) => sep.remove());
-    } else {
-      for (let i = 1; i < this.state._boxes.length; i++) {
-        let box = this.state._boxes[i].node;
-        if (!box.previousElementSibling.classList.contains('separator')) {
-          let div = this._makeDraggableSeparator();
-          this.insertBefore(div, box);
-        }
-      }
+  _insertSeparators() {
+    for (let i = this.state._boxes.length - 1; i > 0; i--) {
+      let box = this.state._boxes[i].node;
+      this.insertBefore(this._makeDraggableSeparator(), box);
     }
-    const lastBox = this.state._boxes[this.state._boxes.length - 1];
-    if (lastBox && lastBox.nextElementSibling && lastBox.nextElementSibling.classList.contains('separator'))
-      lastBox.nextElementSibling.remove()
   }
 
   _makeDraggableSeparator() {
@@ -111,22 +104,22 @@ class ResizableBoxes extends HyperHTMLElement {
   static _style() {
 //language=CSS
     return `
-      :host {
-        display: flex;
-        position: relative;
-      }
-      #grid {
-        display: grid;
-        height: 100%;
-      }
-      #grid.unselectable ::slotted(*) {
-        user-select: none;
-      }
-      ::slotted(.separator) {
-        display: inline-block;
-        background-color: black;
-        cursor: col-resize;
-      }
+        :host {
+            display: flex;
+            position: relative;
+        }
+        #grid {
+            display: grid;
+            height: 100%;
+        }
+        #grid.unselectable ::slotted(*) {
+            user-select: none;
+        }
+        ::slotted(.separator) {
+            display: inline-block;
+            background-color: black;
+            cursor: col-resize;
+        }
     `;
   }
 
@@ -139,7 +132,18 @@ class ResizableBoxes extends HyperHTMLElement {
     div.classList.add('separator');
     return div;
   }
+
+  static noChangeInSlottedChildren(old, nevv) {
+    if (!old || !nevv || old.length !== nevv.length)
+      return false;
+    for (let i = 0; i < old.length; i++) {
+      if (old[i].node !== nevv[i].node)
+        return false;
+    }
+    return true;
+  }
 }
+
 ResizableBoxes._separatorTemplate = ResizableBoxes.createSeparatorElement();
 
 customElements.define("resizable-boxes", ResizableBoxes);
