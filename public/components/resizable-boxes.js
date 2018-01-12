@@ -8,10 +8,10 @@ class ResizableBoxes extends HyperHTMLElement {
     this.attachShadow({mode: 'open'});
     this.render();
 
-    this.shadowRoot.querySelector("#slot").addEventListener('slotchange', this._detectBoxes.bind(this));
-    setTimeout(this._detectBoxes.bind(this), 0);
+    this._slot = this.shadowRoot.querySelector("#slot");
+    this._slot.addEventListener('slotchange', this._setUpBoxes.bind(this));
 
-    this.state._boxes = [];
+    this._setUpBoxes();
     this.state.minWidth = 120;
     this.state.sepWidth = 6;
   }
@@ -25,53 +25,40 @@ class ResizableBoxes extends HyperHTMLElement {
     `;
   }
 
-  _detectBoxes() {
-    let i = 0;
-    this.shadowRoot.querySelector("#slot").assignedNodes().forEach((node) => {
-      if (
-        node.nodeType === 1 && 
-        ['dom-repeat', 'template'].indexOf(node.localName) === -1 && 
-        !node.classList.contains('separator')
-      ) {
-        this.state._boxes[i++] = {node: node};
-      }
-    });
-    this._boxesChange();
-  }
-
-  _boxesChange() {
-    this._makeGridColumns();
+  _setUpBoxes() {
+    this.state._boxes = ResizableBoxes.getResizeableSlottedChildren(this._slot.assignedNodes());
     this._makeSeparators();
-  }
-
-  _makeGridColumns() {
-    this.state._boxes = this.state._boxes.map((node, i) => {
-      node.width = node.width || 1;
-      return node;
-    });
     this._applyStyle();
   }
 
+  static getResizeableSlottedChildren(assignedNodes) {
+    let _boxes = [];
+    for (let node of assignedNodes) {
+      if (node.nodeType === 1 && !(node.classList && node.classList.contains('separator')))
+        _boxes.push({node: node, width: 1});
+    }
+    return _boxes;
+  }
+
   _makeSeparators() {
-    if (this.state._boxes.length > 1) {
-      const divTemplate = ResizableBoxes.separatorTemplate();
+    if (this.state._boxes.length <= 1) {
+      this.querySelectorAll('.separator').forEach((sep) => sep.remove());
+    } else {
       for (let i = 1; i < this.state._boxes.length; i++) {
         let box = this.state._boxes[i].node;
         if (!box.previousElementSibling.classList.contains('separator')) {
-          let div = this._makeDraggableSeparator(divTemplate);
+          let div = this._makeDraggableSeparator();
           this.insertBefore(div, box);
         }
       }
-    } else {
-      this.querySelectorAll('.separator').forEach((sep) => sep.remove());
     }
     const lastBox = this.state._boxes[this.state._boxes.length - 1];
-    if (lastBox && lastBox.nextElementSibling.classList.contains('separator'))
+    if (lastBox && lastBox.nextElementSibling && lastBox.nextElementSibling.classList.contains('separator'))
       lastBox.nextElementSibling.remove()
   }
-  
-  _makeDraggableSeparator(tmpl) {
-    let div = draggable(tmpl.cloneNode());
+
+  _makeDraggableSeparator() {
+    let div = draggable(ResizableBoxes._separatorTemplate.cloneNode());
     div.addEventListener('draggingstart', (e) => {
       this.shadowRoot.querySelector("#grid").classList.add('unselectable');
     });
@@ -147,10 +134,12 @@ class ResizableBoxes extends HyperHTMLElement {
     return (w - ((n - 1) * s)) / n;
   }
 
-  static separatorTemplate() {
+  static createSeparatorElement() {
     const div = document.createElement('div');
     div.classList.add('separator');
     return div;
   }
 }
+ResizableBoxes._separatorTemplate = ResizableBoxes.createSeparatorElement();
+
 customElements.define("resizable-boxes", ResizableBoxes);
