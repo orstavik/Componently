@@ -29,8 +29,13 @@ class ResizableBoxes extends HyperHTMLElement {
     const slottedChildren = ResizableBoxes.getResizeableSlottedChildren(this._slot.assignedNodes());
     if (ResizableBoxes.noChangeInSlottedChildren(this.state._boxes, slottedChildren))
       return;
+    for (let node of this._slot.assignedNodes()) {
+      if (node.classList && node.classList.contains('separator'))
+        node.remove();
+    }
     this.state._boxes = slottedChildren;
-    this._insertSeparators();
+    for (let i = this.state._boxes.length - 1; i > 0; i--)
+      this.insertBefore(this._makeDraggableSeparator(), this.state._boxes[i].node);
     this._applyStyle();
   }
 
@@ -41,13 +46,6 @@ class ResizableBoxes extends HyperHTMLElement {
         _boxes.push({node: node, width: 1});
     }
     return _boxes;
-  }
-
-  _insertSeparators() {
-    for (let i = this.state._boxes.length - 1; i > 0; i--) {
-      let box = this.state._boxes[i].node;
-      this.insertBefore(this._makeDraggableSeparator(), box);
-    }
   }
 
   _makeDraggableSeparator() {
